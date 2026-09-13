@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\Aseguradora;
 use App\Models\Doctor;
 use App\Models\Especialidad;
 use App\Models\Horario;
@@ -27,6 +28,8 @@ abstract class CasoClinico extends TestCase
     protected Paciente $paciente;
 
     protected Tratamiento $tratamiento;
+
+    protected Aseguradora $aseguradora;
 
     protected function setUp(): void
     {
@@ -73,6 +76,13 @@ abstract class CasoClinico extends TestCase
                 'activo' => true,
             ]);
         }
+
+        $this->aseguradora = Aseguradora::create([
+            'nombre' => 'SEGURO DE PRUEBAS',
+            'tipo' => 'PRIVADA',
+            'porcentaje_cobertura' => 50,
+            'activo' => true,
+        ]);
 
         $this->paciente = Paciente::create([
             'nombres' => 'Juan',

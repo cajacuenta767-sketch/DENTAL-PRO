@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Pago extends Model
 {
@@ -63,6 +64,11 @@ class Pago extends Model
     public function detalles(): HasMany
     {
         return $this->hasMany(PagoDetalle::class, 'pago_id');
+    }
+
+    public function documentoFiscal(): HasOne
+    {
+        return $this->hasOne(DocumentoFiscal::class, 'pago_id')->where('estado', '!=', 'ANULADO');
     }
 
     /** Genera el correlativo REC-AAAA-NNNNN del siguiente recibo. */

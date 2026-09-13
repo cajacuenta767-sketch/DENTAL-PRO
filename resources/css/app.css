@@ -184,6 +184,24 @@ body {
     opacity: 0.35;
 }
 
+/* Pieza abierta en el panel lateral. */
+.pieza.pieza-activa .pieza-svg {
+    outline: 2px solid var(--os-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.pieza.pieza-activa .pieza-numero {
+    color: var(--os-brand);
+    font-weight: 700;
+}
+
+/* Botón de hallazgo seleccionado en la paleta. */
+.os-hallazgo.active {
+    box-shadow: inset 0 0 0 2px currentColor;
+    font-weight: 600;
+}
+
 .odontograma-leyenda .leyenda-item {
     display: inline-flex;
     align-items: center;

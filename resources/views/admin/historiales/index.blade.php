@@ -16,6 +16,8 @@
 @endsection
 
 @section('contenido')
+@include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'historial'])
+
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card">

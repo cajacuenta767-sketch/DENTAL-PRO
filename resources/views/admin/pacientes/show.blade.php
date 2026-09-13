@@ -12,6 +12,11 @@
                 <i class="ti ti-calendar-plus me-1"></i>Agendar cita
             </a>
         @endcan
+        @can('presupuestos.crear')
+            <a href="{{ route('admin.presupuestos.create', ['paciente_id' => $paciente->id]) }}" class="btn btn-outline-success">
+                <i class="ti ti-file-invoice me-1"></i>Presupuestar
+            </a>
+        @endcan
         @can('pacientes.editar')
             <a href="{{ route('admin.pacientes.edit', $paciente) }}" class="btn btn-primary"><i class="ti ti-edit me-1"></i>Editar</a>
         @endcan
@@ -19,6 +24,57 @@
 @endsection
 
 @section('contenido')
+{{-- Cabecera de datos de contacto y cobertura --}}
+<div class="row row-cards mb-3">
+    <div class="col-md-4">
+        <div class="card card-sm"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Teléfono</div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-phone text-secondary"></i>
+                <span class="fw-medium">{{ $paciente->telefono ?: 'No registra' }}</span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-sm"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Obra social</div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-shield-heart text-secondary"></i>
+                <span class="fw-medium">{{ $paciente->aseguradora?->nombre ?: 'Particular' }}</span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-sm"><div class="card-body">
+            <div class="text-secondary small text-uppercase">N° de afiliado</div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-id-badge-2 text-secondary"></i>
+                <span class="fw-medium">{{ $paciente->numero_afiliado ?: '—' }}</span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-sm"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Documento</div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-credit-card text-secondary"></i>
+                <span class="fw-medium">{{ $paciente->tipo_documento }} {{ $paciente->numero_documento }}</span>
+            </div>
+        </div></div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-sm"><div class="card-body">
+            <div class="text-secondary small text-uppercase">Email</div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-mail text-secondary"></i>
+                <span class="fw-medium text-truncate">{{ $paciente->email ?: 'No registra' }}</span>
+            </div>
+        </div></div>
+    </div>
+</div>
+
+@include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'ficha'])
+
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card">

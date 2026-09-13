@@ -2,15 +2,23 @@
 
 use App\Http\Controllers\Admin\AgendaController;
 use App\Http\Controllers\Admin\AjusteController;
+use App\Http\Controllers\Admin\AseguradoraController;
+use App\Http\Controllers\Admin\BusquedaController;
 use App\Http\Controllers\Admin\CitaController;
 use App\Http\Controllers\Admin\DoctorController;
+use App\Http\Controllers\Admin\DocumentoClinicoController;
+use App\Http\Controllers\Admin\EstudioImagenController;
 use App\Http\Controllers\Admin\EspecialidadController;
+use App\Http\Controllers\Admin\FacturacionController;
 use App\Http\Controllers\Admin\HistorialClinicoController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\HorarioController;
+use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\OdontogramaController;
 use App\Http\Controllers\Admin\PacienteController;
 use App\Http\Controllers\Admin\PagoController;
+use App\Http\Controllers\Admin\PresupuestoController;
+use App\Http\Controllers\Admin\ReservaOnlineController;
 use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\RolController;
 use App\Http\Controllers\Admin\TratamientoController;
@@ -22,6 +30,7 @@ use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\PublicoController;
+use App\Http\Controllers\ReservaPublicaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,6 +40,21 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [PublicoController::class, 'inicio'])->name('publico.inicio');
+
+/*
+|--------------------------------------------------------------------------
+| Reservas en línea (enlace y QR públicos, sin cuenta)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
+    Route::get('/', [ReservaPublicaController::class, 'formulario'])->name('formulario');
+    Route::get('opciones', [ReservaPublicaController::class, 'opciones'])->name('opciones');
+    Route::get('horas', [ReservaPublicaController::class, 'horas'])->name('horas');
+    Route::post('/', [ReservaPublicaController::class, 'reservar'])
+        ->middleware('throttle:10,1')->name('guardar');
+    Route::get('confirmacion/{codigo}', [ReservaPublicaController::class, 'confirmacion'])->name('confirmacion');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -202,4 +226,102 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:reportes.exportar')
         ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos'])
         ->name('reportes.exportar');
+    // --- Búsqueda global ---------------------------------------------------
+    Route::get('buscar', [BusquedaController::class, 'index'])->name('buscar');
+    Route::get('buscar/sugerencias', [BusquedaController::class, 'sugerencias'])->name('buscar.sugerencias');
+
+    // --- Reservas en línea -------------------------------------------------
+    Route::get('reservas-online', [ReservaOnlineController::class, 'edit'])
+        ->middleware('permission:ajustes.reservas')->name('reservas.edit');
+    Route::put('reservas-online', [ReservaOnlineController::class, 'update'])
+        ->middleware('permission:ajustes.reservas')->name('reservas.update');
+    Route::post('reservas-online/regenerar', [ReservaOnlineController::class, 'regenerar'])
+        ->middleware('permission:ajustes.reservas')->name('reservas.regenerar');
+    Route::get('reservas-online/qr', [ReservaOnlineController::class, 'descargarQr'])
+        ->middleware('permission:ajustes.reservas')->name('reservas.qr');
+
+    // --- Aseguradoras ------------------------------------------------------
+    Route::resource('aseguradoras', AseguradoraController::class)->except('show')
+        ->middlewareFor(['index'], 'permission:aseguradoras.ver')
+        ->middlewareFor(['create', 'store'], 'permission:aseguradoras.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:aseguradoras.editar')
+        ->middlewareFor(['destroy'], 'permission:aseguradoras.eliminar');
+
+    // --- Imagenología ------------------------------------------------------
+    Route::get('estudios', [EstudioImagenController::class, 'index'])
+        ->middleware('permission:imagenologia.ver')->name('estudios.index');
+    Route::get('estudios/nuevo', [EstudioImagenController::class, 'create'])
+        ->middleware('permission:imagenologia.crear')->name('estudios.create');
+    Route::post('estudios', [EstudioImagenController::class, 'store'])
+        ->middleware('permission:imagenologia.crear')->name('estudios.store');
+    Route::get('estudios/{estudio}/editar', [EstudioImagenController::class, 'edit'])
+        ->middleware('permission:imagenologia.editar')->name('estudios.edit');
+    Route::put('estudios/{estudio}', [EstudioImagenController::class, 'update'])
+        ->middleware('permission:imagenologia.editar')->name('estudios.update');
+    Route::delete('estudios/{estudio}', [EstudioImagenController::class, 'destroy'])
+        ->middleware('permission:imagenologia.eliminar')->name('estudios.destroy');
+    Route::get('estudios/{estudio}/descargar', [EstudioImagenController::class, 'descargar'])
+        ->middleware('permission:imagenologia.descargar')->name('estudios.descargar');
+    Route::get('pacientes/{paciente}/panoramicas', [EstudioImagenController::class, 'porPaciente'])
+        ->middleware('permission:imagenologia.ver')->name('estudios.paciente');
+
+    // --- Recetas y certificados --------------------------------------------
+    Route::get('documentos', [DocumentoClinicoController::class, 'index'])
+        ->middleware('permission:documentos.ver')->name('documentos.index');
+    Route::get('documentos/nuevo', [DocumentoClinicoController::class, 'create'])
+        ->middleware('permission:documentos.crear')->name('documentos.create');
+    Route::post('documentos', [DocumentoClinicoController::class, 'store'])
+        ->middleware('permission:documentos.crear')->name('documentos.store');
+    Route::get('documentos/{documento}/editar', [DocumentoClinicoController::class, 'edit'])
+        ->middleware('permission:documentos.editar')->name('documentos.edit');
+    Route::put('documentos/{documento}', [DocumentoClinicoController::class, 'update'])
+        ->middleware('permission:documentos.editar')->name('documentos.update');
+    Route::patch('documentos/{documento}/anular', [DocumentoClinicoController::class, 'anular'])
+        ->middleware('permission:documentos.anular')->name('documentos.anular');
+    Route::get('documentos/{documento}/pdf', [DocumentoClinicoController::class, 'pdf'])
+        ->middleware('permission:documentos.ver')->name('documentos.pdf');
+    Route::get('pacientes/{paciente}/documentos', [DocumentoClinicoController::class, 'porPaciente'])
+        ->middleware('permission:documentos.ver')->name('documentos.paciente');
+
+    // --- Presupuestos y plan de tratamiento --------------------------------
+    Route::resource('presupuestos', PresupuestoController::class)
+        ->middlewareFor(['index', 'show'], 'permission:presupuestos.ver')
+        ->middlewareFor(['create', 'store'], 'permission:presupuestos.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:presupuestos.editar')
+        ->middlewareFor(['destroy'], 'permission:presupuestos.eliminar');
+
+    Route::patch('presupuestos/{presupuesto}/estado', [PresupuestoController::class, 'cambiarEstado'])
+        ->middleware('permission:presupuestos.aprobar')->name('presupuestos.estado');
+    Route::patch('presupuesto-detalles/{detalle}/ejecutar', [PresupuestoController::class, 'ejecutarDetalle'])
+        ->middleware('permission:presupuestos.ejecutar')->name('presupuestos.ejecutar');
+    Route::post('presupuestos/{presupuesto}/facturar', [PresupuestoController::class, 'facturar'])
+        ->middleware('permission:pagos.crear')->name('presupuestos.facturar');
+    Route::get('presupuestos/{presupuesto}/pdf', [PresupuestoController::class, 'pdf'])
+        ->middleware('permission:presupuestos.ver')->name('presupuestos.pdf');
+
+    // --- Inventario ---------------------------------------------------------
+    Route::get('inventario/kardex', [InventarioController::class, 'kardex'])
+        ->middleware('permission:inventario.ver')->name('inventario.kardex');
+    Route::post('inventario/{insumo}/movimiento', [InventarioController::class, 'movimiento'])
+        ->middleware('permission:inventario.movimientos')->name('inventario.movimiento');
+    Route::resource('inventario', InventarioController::class)
+        ->parameters(['inventario' => 'insumo'])
+        ->middlewareFor(['index', 'show'], 'permission:inventario.ver')
+        ->middlewareFor(['create', 'store'], 'permission:inventario.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:inventario.editar')
+        ->middlewareFor(['destroy'], 'permission:inventario.eliminar');
+
+    // --- Facturación electrónica --------------------------------------------
+    Route::get('facturacion', [FacturacionController::class, 'index'])
+        ->middleware('permission:facturacion.ver')->name('facturacion.index');
+    Route::get('facturacion/emitir', [FacturacionController::class, 'create'])
+        ->middleware('permission:facturacion.emitir')->name('facturacion.create');
+    Route::post('facturacion', [FacturacionController::class, 'store'])
+        ->middleware('permission:facturacion.emitir')->name('facturacion.store');
+    Route::get('facturacion/{documento}', [FacturacionController::class, 'show'])
+        ->middleware('permission:facturacion.ver')->name('facturacion.show');
+    Route::patch('facturacion/{documento}/anular', [FacturacionController::class, 'anular'])
+        ->middleware('permission:facturacion.anular')->name('facturacion.anular');
+    Route::get('facturacion/{documento}/pdf', [FacturacionController::class, 'pdf'])
+        ->middleware('permission:facturacion.ver')->name('facturacion.pdf');
 });

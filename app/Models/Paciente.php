@@ -14,7 +14,8 @@ class Paciente extends Model
     protected $table = 'pacientes';
 
     protected $fillable = [
-        'usuario_id', 'nombres', 'apellidos', 'tipo_documento', 'numero_documento',
+        'usuario_id', 'aseguradora_id', 'numero_afiliado',
+        'nombres', 'apellidos', 'tipo_documento', 'numero_documento',
         'fecha_nacimiento', 'genero', 'direccion', 'telefono', 'email',
         'grupo_sanguineo', 'alergias', 'enfermedades', 'medicamentos', 'habitos',
         'antecedentes', 'contacto_emergencia', 'telefono_emergencia',
@@ -34,9 +35,29 @@ class Paciente extends Model
         return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
+    public function aseguradora(): BelongsTo
+    {
+        return $this->belongsTo(Aseguradora::class, 'aseguradora_id');
+    }
+
     public function citas(): HasMany
     {
         return $this->hasMany(Cita::class, 'paciente_id');
+    }
+
+    public function estudios(): HasMany
+    {
+        return $this->hasMany(EstudioImagen::class, 'paciente_id');
+    }
+
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(DocumentoClinico::class, 'paciente_id');
+    }
+
+    public function presupuestos(): HasMany
+    {
+        return $this->hasMany(Presupuesto::class, 'paciente_id');
     }
 
     public function historiales(): HasMany

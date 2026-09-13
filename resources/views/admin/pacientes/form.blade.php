@@ -90,6 +90,29 @@
                     <x-campo nombre="direccion" etiqueta="Dirección">
                         <textarea id="direccion" name="direccion" class="form-control" rows="2">{{ old('direccion', $paciente->direccion) }}</textarea>
                     </x-campo>
+
+                    <div class="row">
+                        <div class="col-md-7">
+                            <x-campo nombre="aseguradora_id" etiqueta="Obra social / aseguradora"
+                                     ayuda="Su cobertura se aplica automáticamente en los presupuestos.">
+                                <select id="aseguradora_id" name="aseguradora_id" class="form-select">
+                                    <option value="">— Particular, sin cobertura —</option>
+                                    @foreach ($aseguradoras as $aseguradora)
+                                        <option value="{{ $aseguradora->id }}"
+                                                @selected(old('aseguradora_id', $paciente->aseguradora_id) == $aseguradora->id)>
+                                            {{ $aseguradora->nombre }} ({{ number_format($aseguradora->porcentaje_cobertura, 0) }}%)
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </x-campo>
+                        </div>
+                        <div class="col-md-5">
+                            <x-campo nombre="numero_afiliado" etiqueta="N° de afiliado">
+                                <input type="text" id="numero_afiliado" name="numero_afiliado" class="form-control"
+                                       value="{{ old('numero_afiliado', $paciente->numero_afiliado) }}">
+                            </x-campo>
+                        </div>
+                    </div>
                 </div>
             </div>
 

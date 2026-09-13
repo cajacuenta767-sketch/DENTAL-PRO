@@ -77,6 +77,16 @@ class Cita extends Model
         return $this->hasMany(Pago::class, 'cita_id');
     }
 
+    public function estudios(): HasMany
+    {
+        return $this->hasMany(EstudioImagen::class, 'cita_id');
+    }
+
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(DocumentoClinico::class, 'cita_id');
+    }
+
     public function getColorEstadoAttribute(): string
     {
         return self::COLORES_ESTADO[$this->estado] ?? 'secondary';

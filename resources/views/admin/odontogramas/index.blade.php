@@ -19,6 +19,8 @@
 @endsection
 
 @section('contenido')
+@include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'odontograma'])
+
 @forelse ($odontogramas as $odontograma)
     <div class="card mb-3">
         <div class="card-header">
@@ -33,9 +35,19 @@
                 </div>
             </div>
             <div class="btn-list ms-auto flex-nowrap">
-                <span class="badge bg-orange-lt align-self-center">
-                    {{ $odontograma->piezas_afectadas }} piezas con hallazgo
+                @php($resumenCapas = $odontograma->resumenPorCapa())
+                <span class="badge bg-red-lt align-self-center" title="Piezas con hallazgo por tratar">
+                    {{ $resumenCapas['evaluacion'] }} en evaluación
                 </span>
+                <span class="badge bg-blue-lt align-self-center" title="Piezas ya tratadas">
+                    {{ $resumenCapas['ejecucion'] }} en ejecución
+                </span>
+                @can('presupuestos.crear')
+                    <a href="{{ route('admin.presupuestos.create', ['paciente_id' => $paciente->id, 'odontograma_id' => $odontograma->id]) }}"
+                       class="btn btn-sm btn-outline-success" title="Generar presupuesto con estos hallazgos">
+                        <i class="ti ti-file-invoice"></i>
+                    </a>
+                @endcan
                 @can('odontogramas.editar')
                     <a href="{{ route('admin.odontogramas.edit', $odontograma) }}" class="btn btn-sm btn-outline-primary" title="Editar">
                         <i class="ti ti-edit"></i>

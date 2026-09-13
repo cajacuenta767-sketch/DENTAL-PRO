@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Aseguradora;
 use App\Models\Paciente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class PacienteController extends Controller
     public function index(Request $request): View
     {
         $pacientes = Paciente::query()
+            ->with('aseguradora')
             ->withCount('citas')
             ->buscar($request->buscar)
             ->when($request->filled('estado'), fn ($q) => $q->where('activo', $request->estado === 'activo'))
@@ -36,6 +38,7 @@ class PacienteController extends Controller
     {
         return view('admin.pacientes.form', [
             'paciente' => new Paciente(['activo' => true, 'tipo_documento' => 'CI', 'genero' => 'M']),
+            'aseguradoras' => Aseguradora::activas()->orderBy('nombre')->get(),
         ]);
     }
 
@@ -56,6 +59,7 @@ class PacienteController extends Controller
     public function show(Paciente $paciente): View
     {
         $paciente->load([
+            'aseguradora',
             'citas' => fn ($q) => $q->with(['doctor', 'tratamiento'])->orderByDesc('fecha')->orderByDesc('hora')->limit(10),
             'historiales' => fn ($q) => $q->with('doctor')->orderByDesc('fecha')->limit(5),
             'odontogramas' => fn ($q) => $q->orderByDesc('fecha')->limit(3),
@@ -72,7 +76,10 @@ class PacienteController extends Controller
 
     public function edit(Paciente $paciente): View
     {
-        return view('admin.pacientes.form', compact('paciente'));
+        return view('admin.pacientes.form', [
+            'paciente' => $paciente,
+            'aseguradoras' => Aseguradora::activas()->orderBy('nombre')->get(),
+        ]);
     }
 
     public function update(Request $request, Paciente $paciente): RedirectResponse
@@ -114,6 +121,8 @@ class PacienteController extends Controller
         $datos = $request->validate([
             'nombres' => ['required', 'string', 'max:150'],
             'apellidos' => ['required', 'string', 'max:150'],
+            'aseguradora_id' => ['nullable', 'exists:aseguradoras,id'],
+            'numero_afiliado' => ['nullable', 'string', 'max:60'],
             'tipo_documento' => ['required', 'in:CI,DNI,PASAPORTE,CE'],
             'numero_documento' => ['required', 'string', 'max:20', 'unique:pacientes,numero_documento'.($ignorar ? ",{$ignorar}" : '')],
             'fecha_nacimiento' => ['nullable', 'date', 'before_or_equal:today'],
@@ -136,6 +145,8 @@ class PacienteController extends Controller
             'numero_documento' => 'número de documento',
             'fecha_nacimiento' => 'fecha de nacimiento',
             'grupo_sanguineo' => 'grupo sanguíneo',
+            'aseguradora_id' => 'obra social',
+            'numero_afiliado' => 'número de afiliado',
         ]);
 
         $datos['activo'] = $request->boolean('activo');

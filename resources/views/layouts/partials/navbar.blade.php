@@ -19,6 +19,19 @@
             <span class="fw-bold">{{ $ajustes->nombre ?? 'OdontoSuite' }}</span>
         </a>
 
+        {{-- Búsqueda global --}}
+        <div class="flex-fill d-none d-lg-block px-3" style="max-width: 28rem;">
+            <form action="{{ route('admin.buscar') }}" method="GET" class="position-relative" autocomplete="off">
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input type="search" name="q" value="{{ request('q') }}" class="form-control"
+                           placeholder="Barra de búsqueda..." data-os-buscador
+                           aria-label="Buscar en el sistema">
+                </div>
+                <div class="dropdown-menu w-100 mt-1 d-none" data-os-resultados style="max-height: 24rem; overflow-y: auto;"></div>
+            </form>
+        </div>
+
         <div class="navbar-nav flex-row order-md-last align-items-center">
             <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema">
                 <i class="ti ti-moon fs-3"></i>
@@ -83,6 +96,11 @@
                             <i class="ti ti-settings me-2"></i>Ajustes de la clínica
                         </a>
                     @endcan
+                    @can('ajustes.reservas')
+                        <a href="{{ route('admin.reservas.edit') }}" class="dropdown-item">
+                            <i class="ti ti-qrcode me-2"></i>Turnos online
+                        </a>
+                    @endcan
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -123,3 +141,71 @@
         </div>
     </div>
 </header>
+
+
+@once
+    @push('scripts')
+        <script>
+        (() => {
+            const campo = document.querySelector('[data-os-buscador]');
+            const panel = document.querySelector('[data-os-resultados]');
+            if (!campo || !panel) return;
+
+            const endpoint = @json(route('admin.buscar.sugerencias'));
+            let temporizador;
+
+            function cerrar() {
+                panel.classList.add('d-none');
+                panel.innerHTML = '';
+            }
+
+            function pintar(grupos) {
+                if (!grupos.length) {
+                    panel.innerHTML = '<div class="dropdown-item-text text-secondary py-3">Sin coincidencias.</div>';
+                    panel.classList.remove('d-none');
+                    return;
+                }
+
+                panel.innerHTML = grupos.map((grupo) => `
+                    <div class="dropdown-header"><i class="${grupo.icono} me-1"></i>${grupo.titulo}</div>
+                    ${grupo.items.map((item) => `
+                        <a class="dropdown-item" href="${item.url}">
+                            <div class="text-truncate">${item.titulo}</div>
+                            <div class="small text-secondary text-truncate">${item.detalle}</div>
+                        </a>
+                    `).join('')}
+                `).join('<div class="dropdown-divider"></div>');
+
+                panel.classList.remove('d-none');
+            }
+
+            campo.addEventListener('input', () => {
+                clearTimeout(temporizador);
+                const termino = campo.value.trim();
+
+                if (termino.length < 2) { cerrar(); return; }
+
+                temporizador = setTimeout(async () => {
+                    try {
+                        const url = new URL(endpoint, window.location.origin);
+                        url.searchParams.set('q', termino);
+                        const respuesta = await fetch(url, { headers: { Accept: 'application/json' } });
+                        if (!respuesta.ok) throw new Error('sin respuesta');
+                        pintar((await respuesta.json()).grupos ?? []);
+                    } catch {
+                        cerrar();
+                    }
+                }, 250);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!panel.contains(e.target) && e.target !== campo) cerrar();
+            });
+
+            campo.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') cerrar();
+            });
+        })();
+        </script>
+    @endpush
+@endonce

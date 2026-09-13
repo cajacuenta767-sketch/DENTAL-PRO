@@ -43,19 +43,31 @@ class Odontograma extends Model
     /** Caras registrables por pieza. */
     public const CARAS = ['vestibular', 'lingual', 'mesial', 'distal', 'oclusal'];
 
-    /** Hallazgos disponibles con su color de representación. */
+    /**
+     * Hallazgos disponibles. La capa separa lo diagnosticado (evaluación,
+     * en rojos y naranjas) de lo ya resuelto (ejecución, en azules y verdes),
+     * que es lo que permite filtrar el mapa por etapa del tratamiento.
+     */
     public const ESTADOS = [
-        'sano' => ['etiqueta' => 'Sano', 'color' => '#ffffff'],
-        'caries' => ['etiqueta' => 'Caries', 'color' => '#d63939'],
-        'obturado' => ['etiqueta' => 'Obturado', 'color' => '#206bc4'],
-        'corona' => ['etiqueta' => 'Corona', 'color' => '#f59f00'],
-        'endodoncia' => ['etiqueta' => 'Endodoncia', 'color' => '#ae3ec9'],
-        'ausente' => ['etiqueta' => 'Ausente', 'color' => '#868e96'],
-        'implante' => ['etiqueta' => 'Implante', 'color' => '#0ca678'],
-        'fractura' => ['etiqueta' => 'Fractura', 'color' => '#f76707'],
-        'sellante' => ['etiqueta' => 'Sellante', 'color' => '#4dabf7'],
-        'extraccion' => ['etiqueta' => 'Indicado extracción', 'color' => '#e03131'],
+        'sano' => ['etiqueta' => 'Sano', 'color' => '#ffffff', 'capa' => 'ninguna'],
+        'caries' => ['etiqueta' => 'Caries', 'color' => '#d63939', 'capa' => 'evaluacion'],
+        'fractura' => ['etiqueta' => 'Fractura', 'color' => '#f76707', 'capa' => 'evaluacion'],
+        'extraccion' => ['etiqueta' => 'Indicado extracción', 'color' => '#e03131', 'capa' => 'evaluacion'],
+        'movilidad' => ['etiqueta' => 'Movilidad', 'color' => '#f59f00', 'capa' => 'evaluacion'],
+        'obturado' => ['etiqueta' => 'Obturado', 'color' => '#206bc4', 'capa' => 'ejecucion'],
+        'corona' => ['etiqueta' => 'Corona', 'color' => '#7048e8', 'capa' => 'ejecucion'],
+        'endodoncia' => ['etiqueta' => 'Endodoncia', 'color' => '#ae3ec9', 'capa' => 'ejecucion'],
+        'sellante' => ['etiqueta' => 'Sellante', 'color' => '#4dabf7', 'capa' => 'ejecucion'],
+        'implante' => ['etiqueta' => 'Implante', 'color' => '#0ca678', 'capa' => 'ejecucion'],
+        'protesis' => ['etiqueta' => 'Prótesis', 'color' => '#12b886', 'capa' => 'ejecucion'],
+        'ausente' => ['etiqueta' => 'Ausente', 'color' => '#868e96', 'capa' => 'ejecucion'],
     ];
+
+    /** Hallazgos de una capa concreta: evaluacion o ejecucion. */
+    public static function estadosDeCapa(string $capa): array
+    {
+        return array_filter(self::ESTADOS, fn ($e) => $e['capa'] === $capa);
+    }
 
     public function paciente(): BelongsTo
     {
@@ -75,6 +87,26 @@ class Odontograma extends Model
     public static function cuadrantes(string $tipo): array
     {
         return $tipo === 'INFANTIL' ? self::PIEZAS_INFANTIL : self::PIEZAS_ADULTO;
+    }
+
+    /** Cuenta las piezas afectadas separadas por capa. */
+    public function resumenPorCapa(): array
+    {
+        $conteo = ['evaluacion' => 0, 'ejecucion' => 0];
+
+        foreach ($this->piezas ?? [] as $pieza) {
+            $hallazgos = collect($pieza['caras'] ?? [])->push($pieza['estado'] ?? 'sano');
+
+            foreach (['evaluacion', 'ejecucion'] as $capa) {
+                $claves = array_keys(self::estadosDeCapa($capa));
+
+                if ($hallazgos->intersect($claves)->isNotEmpty()) {
+                    $conteo[$capa]++;
+                }
+            }
+        }
+
+        return $conteo;
     }
 
     /** Número de piezas con algún hallazgo distinto de sano. */

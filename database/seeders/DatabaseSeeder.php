@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
             CatalogoSeeder::class,
             EquipoSeeder::class,
             DemoClinicaSeeder::class,
+            AseguradoraSeeder::class,
+            InventarioSeeder::class,
+            ClinicaAvanzadaSeeder::class,
         ]);
 
         $this->command->newLine();
