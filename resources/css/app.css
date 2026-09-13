@@ -1,0 +1,211 @@
+@import '@tabler/core/dist/css/tabler.min.css';
+@import '@tabler/core/dist/css/tabler-flags.min.css';
+@import '@tabler/core/dist/css/tabler-vendors.min.css';
+@import '@tabler/icons-webfont/dist/tabler-icons.min.css';
+
+/* ---------------------------------------------------------------
+   OdontoSuite · capa propia sobre Tabler
+   --------------------------------------------------------------- */
+
+:root {
+    --os-brand: #0d9488;
+    --os-brand-dark: #0f766e;
+    --os-brand-soft: rgba(13, 148, 136, 0.12);
+}
+
+body {
+    font-feature-settings: 'cv03', 'cv04', 'cv11';
+}
+
+/* Marca ------------------------------------------------------- */
+
+.os-brand-text {
+    color: var(--os-brand);
+}
+
+.btn-brand {
+    --tblr-btn-bg: var(--os-brand);
+    --tblr-btn-border-color: var(--os-brand);
+    --tblr-btn-hover-bg: var(--os-brand-dark);
+    --tblr-btn-hover-border-color: var(--os-brand-dark);
+    --tblr-btn-active-bg: var(--os-brand-dark);
+    --tblr-btn-color: #fff;
+    --tblr-btn-hover-color: #fff;
+    --tblr-btn-active-color: #fff;
+}
+
+.bg-brand {
+    background-color: var(--os-brand) !important;
+    color: #fff !important;
+}
+
+.text-brand {
+    color: var(--os-brand) !important;
+}
+
+/* Tarjetas de indicador del panel ------------------------------ */
+
+.os-kpi {
+    border-left: 3px solid var(--tblr-primary);
+}
+
+.os-kpi .os-kpi-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--tblr-border-radius);
+    font-size: 1.35rem;
+}
+
+/* Landing pública --------------------------------------------- */
+
+.os-hero {
+    background: radial-gradient(circle at 15% 20%, #115e59 0%, #042f2e 55%, #021a19 100%);
+    color: #e6fffb;
+    position: relative;
+    overflow: hidden;
+}
+
+.os-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 46px 46px;
+    pointer-events: none;
+}
+
+.os-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.os-hero .os-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    color: #5eead4;
+}
+
+.os-hero h1 {
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+}
+
+.os-mockup {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 1rem;
+    backdrop-filter: blur(8px);
+}
+
+.os-module-card {
+    height: 100%;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.os-module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 2rem rgba(15, 118, 110, 0.18);
+}
+
+.os-module-card .os-module-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: var(--os-brand-soft);
+    color: var(--os-brand);
+    font-size: 1.4rem;
+}
+
+/* Odontograma -------------------------------------------------- */
+
+.odontograma {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.odontograma-arcada {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.odontograma-cuadrante {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.pieza {
+    width: 46px;
+    text-align: center;
+    user-select: none;
+}
+
+.pieza-numero {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--tblr-secondary);
+    margin-bottom: 0.15rem;
+}
+
+.pieza-svg {
+    cursor: pointer;
+}
+
+.pieza-cara {
+    fill: #fff;
+    stroke: #adb5bd;
+    stroke-width: 1;
+    transition: fill 0.12s ease;
+}
+
+.pieza-cara:hover {
+    stroke: var(--os-brand);
+    stroke-width: 2;
+}
+
+.pieza.pieza-ausente .pieza-svg {
+    opacity: 0.35;
+}
+
+.odontograma-leyenda .leyenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0.75rem 0.5rem 0;
+    font-size: 0.8125rem;
+}
+
+.odontograma-leyenda .leyenda-muestra {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 0.2rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    display: inline-block;
+}
+
+/* Impresión ---------------------------------------------------- */
+
+@media print {
+    .navbar,
+    .page-header .btn,
+    .no-print {
+        display: none !important;
+    }
+}
