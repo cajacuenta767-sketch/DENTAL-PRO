@@ -17,6 +17,14 @@ Registramos tu cita en {{ $clinica->nombre }}. Estos son los datos:
 **Código de cita:** {{ $cita->token }}
 @endcomponent
 
+@if (! in_array($cita->estado, ['CONFIRMADA', 'CANCELADA'], true))
+Por favor confírmanos tu asistencia con un clic:
+
+<x-mail::button :url="$cita->url_confirmacion">
+Confirmar asistencia
+</x-mail::button>
+@endif
+
 Presenta el código **{{ $cita->token }}** en recepción el día de tu atención.
 
 @if ($clinica->direccion)
