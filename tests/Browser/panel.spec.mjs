@@ -5,6 +5,8 @@ const PAGINAS = [
     '/admin/home', '/admin/pacientes', '/admin/citas', '/admin/agenda', '/admin/pagos', '/admin/presupuestos',
     '/admin/facturacion', '/admin/inventario', '/admin/reportes', '/admin/auditoria', '/admin/lista-espera',
     '/admin/estudios', '/admin/documentos', '/admin/roles', '/admin/usuarios', '/admin/ajustes',
+    '/admin/agenda/semana', '/admin/agenda/mes', '/admin/caja', '/admin/sucursales', '/admin/respaldos', '/perfil',
+    '/admin/pacientes/3/periodontograma', '/admin/pacientes/3/periodontograma/nuevo', '/admin/caja/arqueo',
 ];
 
 test.describe('Panel administrativo', () => {
@@ -22,6 +24,9 @@ test.describe('Panel administrativo', () => {
         expect(errores).toEqual([]);
     });
 
+    test.describe('sin sesión', () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
     test('el registro público lleva al portal y no al panel', async ({ page }) => {
         await page.goto('/registro');
         const correo = `ui-${Date.now()}@pruebas.test`;
@@ -34,5 +39,6 @@ test.describe('Panel administrativo', () => {
 
         const admin = await page.goto('/admin/home');
         expect(admin?.status()).toBe(403);
+    });
     });
 });

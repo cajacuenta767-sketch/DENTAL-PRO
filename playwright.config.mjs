@@ -7,11 +7,13 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
     testDir: './tests/Browser',
+    globalSetup: './tests/Browser/preparar.mjs',
     timeout: 60_000,
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
     use: {
         baseURL: process.env.APP_URL_UI ?? 'http://127.0.0.1:8765',
+        storageState: 'test-results/sesion-admin.json',
         locale: 'es-ES',
         viewport: { width: 1400, height: 1000 },
         screenshot: 'only-on-failure',

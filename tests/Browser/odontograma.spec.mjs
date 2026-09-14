@@ -49,6 +49,6 @@ test.describe('Odontograma en arcada', () => {
         await page.waitForURL('**/admin/pacientes/3/odontograma');
         await page.waitForSelector('[data-arcada][data-montada] svg');
         expect(await relleno(page, '[data-arcada][data-montada] [data-pieza="11"] [data-cara="oclusal"]')).toBe(COLORES.caries);
-        await expect(page.getByText('Urgentes: piezas 11')).toBeVisible();
+        await expect(page.getByText('Urgentes: piezas 11').first()).toBeVisible();
     });
 });

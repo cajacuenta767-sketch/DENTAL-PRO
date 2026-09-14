@@ -4,18 +4,24 @@ export const CUENTAS = {
     admin: { email: 'admin@admin.com', password: process.env.UI_ADMIN_PASSWORD ?? 'ClaveNueva2026' },
 };
 
+/** Archivo con las cookies de la sesión de administrador (lo crea preparar.mjs). */
+export const RUTA_SESION = 'test-results/sesion-admin.json';
+
 /**
- * Inicia sesión como administrador. Las cuentas de demostración piden
- * definir una contraseña nueva en el primer acceso: la prueba lo resuelve.
+ * Inicia sesión como administrador rellenando el formulario. Las cuentas de
+ * demostración piden definir una contraseña nueva en el primer acceso: se
+ * resuelve aquí. Solo se usa en la preparación global; las pruebas reciben
+ * la sesión ya iniciada mediante `storageState`.
  */
-export async function entrarComoAdmin(page) {
+export async function iniciarSesionAdmin(page) {
     await page.goto('/login');
     await page.fill('#email', CUENTAS.admin.email);
     await page.fill('#password', CUENTAS.admin.password);
-    await page.click('button[type=submit]');
+    await Promise.all([page.waitForLoadState('networkidle'), page.click('button[type=submit]')]);
 
     // Primera vez: la clave temporal admin123 exige cambio.
     if (page.url().includes('/login')) {
+        await page.fill('#email', CUENTAS.admin.email);
         await page.fill('#password', 'admin123');
         await page.click('button[type=submit]');
         await page.waitForURL('**/password/obligatoria');
@@ -25,6 +31,12 @@ export async function entrarComoAdmin(page) {
         await page.click('form button[type=submit]');
     }
 
+    await page.waitForURL('**/admin/home');
+}
+
+/** Comprueba que la sesión compartida sigue válida entrando al panel. */
+export async function entrarComoAdmin(page) {
+    await page.goto('/admin/home');
     await page.waitForURL('**/admin/home');
 }
 
