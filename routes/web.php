@@ -222,6 +222,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:ajustes.ver')->name('ajustes.edit');
     Route::put('ajustes', [AjusteController::class, 'update'])
         ->middleware('permission:ajustes.editar')->name('ajustes.update');
+    Route::post('ajustes/mensajeria/probar', [\App\Http\Controllers\Admin\MensajeriaController::class, 'probar'])
+        ->middleware(['permission:ajustes.editar', 'throttle:5,1'])->name('ajustes.mensajeria.probar');
 
     Route::resource('roles', RolController::class)->except('show')
         ->middlewareFor(['index'], 'permission:roles.ver')
