@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Auditoria;
+use App\Models\Sucursal;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,6 +16,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AjusteSeeder::class,
+            SucursalSeeder::class,
             RolPermisoSeeder::class,
             UsuarioSeeder::class,
             CatalogoSeeder::class,
@@ -23,6 +26,8 @@ class DatabaseSeeder extends Seeder
             InventarioSeeder::class,
             ClinicaAvanzadaSeeder::class,
         ]);
+
+        $this->etiquetarConSedePrincipal();
 
         Auditoria::$activa = true;
 
@@ -37,5 +42,22 @@ class DatabaseSeeder extends Seeder
                 ['DOCTOR', 'sofia.arancibia@clinica.com', 'doctor123'],
             ]
         );
+    }
+
+    /**
+     * Los datos de demostración nacen sin sede; se etiquetan con la principal
+     * para que el selector del navbar y los filtros por sede sean coherentes.
+     */
+    private function etiquetarConSedePrincipal(): void
+    {
+        $principal = Sucursal::principal();
+
+        if (! $principal) {
+            return;
+        }
+
+        foreach (['horarios', 'citas', 'pagos', 'insumos', 'lista_espera'] as $tabla) {
+            DB::table($tabla)->whereNull('sucursal_id')->update(['sucursal_id' => $principal->id]);
+        }
     }
 }

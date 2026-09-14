@@ -11,7 +11,9 @@ use App\Models\Doctor;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\PresupuestoDetalle;
+use App\Models\Sucursal;
 use App\Models\Tratamiento;
+use App\Support\SucursalActiva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,8 +27,11 @@ class PagoController extends Controller
 {
     public function index(Request $request): View
     {
+        $sede = $this->sedeFiltrada($request);
+
         $consulta = Pago::query()
-            ->with(['paciente', 'doctor', 'cajero'])
+            ->with(['paciente', 'doctor', 'cajero', 'sucursal'])
+            ->when($sede, fn ($q) => $q->where('sucursal_id', $sede))
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $t = '%'.$request->buscar.'%';
                 $q->where(fn ($s) => $s->where('codigo_recibo', 'ilike', $t)
@@ -40,7 +45,7 @@ class PagoController extends Controller
 
         return view('admin.pagos.index', [
             'pagos' => (clone $consulta)->orderByDesc('fecha_pago')->paginate(15)->withQueryString(),
-            'totales' => $this->totalesCaja(),
+            'totales' => $this->totalesCaja($sede),
         ]);
     }
 
@@ -58,6 +63,7 @@ class PagoController extends Controller
                 'paciente_id' => $cita?->paciente_id ?? $request->query('paciente_id'),
                 'doctor_id' => $cita?->doctor_id,
                 'cita_id' => $cita?->id,
+                'sucursal_id' => $cita?->sucursal_id ?? SucursalActiva::id(),
             ]),
             'cita' => $cita,
             'pacientes' => Paciente::activos()->orderBy('apellidos')->get(),
@@ -83,6 +89,7 @@ class PagoController extends Controller
                 'doctor_id' => $datos['doctor_id'] ?? null,
                 'cita_id' => $datos['cita_id'] ?? null,
                 'usuario_id' => $request->user()->id,
+                'sucursal_id' => $datos['sucursal_id'] ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
                 'notas' => $datos['notas'] ?? null,
@@ -142,6 +149,7 @@ class PagoController extends Controller
                 'paciente_id' => $datos['paciente_id'],
                 'doctor_id' => $datos['doctor_id'] ?? null,
                 'cita_id' => $datos['cita_id'] ?? null,
+                'sucursal_id' => $datos['sucursal_id'] ?? $pago->sucursal_id ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
                 'notas' => $datos['notas'] ?? null,
@@ -245,6 +253,7 @@ class PagoController extends Controller
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'metodo_pago' => ['required', 'in:'.implode(',', Pago::METODOS)],
             'monto_pagado' => ['required', 'numeric', 'min:0'],
             'fecha_pago' => ['required', 'date'],
@@ -256,6 +265,7 @@ class PagoController extends Controller
             'detalles.*.precio_unitario' => ['required', 'numeric', 'min:0'],
         ], [], [
             'paciente_id' => 'paciente',
+            'sucursal_id' => 'sede',
             'metodo_pago' => 'método de pago',
             'monto_pagado' => 'monto pagado',
             'fecha_pago' => 'fecha del pago',
@@ -287,10 +297,11 @@ class PagoController extends Controller
         }
     }
 
-    /** Indicadores de la cabecera de caja. */
-    private function totalesCaja(): array
+    /** Indicadores de la cabecera de caja, acotados a la sede si hay una activa. */
+    private function totalesCaja(?int $sede = null): array
     {
-        $vigentes = Pago::query()->vigentes();
+        $vigentes = Pago::query()->vigentes()
+            ->when($sede, fn ($q) => $q->where('sucursal_id', $sede));
 
         return [
             'recaudado' => (float) (clone $vigentes)->sum('monto_pagado'),
@@ -298,5 +309,17 @@ class PagoController extends Controller
             'digital' => (float) (clone $vigentes)->whereIn('metodo_pago', ['TARJETA', 'QR', 'TRANSFERENCIA'])->sum('monto_pagado'),
             'saldos' => (float) (clone $vigentes)->sum('monto_saldo'),
         ];
+    }
+
+    /** Sin sede elegida se usa la activa; con una sola sede, la principal. */
+    private function sedePorDefecto(): ?int
+    {
+        return SucursalActiva::id() ?? (Sucursal::activas()->count() === 1 ? Sucursal::principal()?->id : null);
+    }
+
+    /** La sede activa manda; si se ven todas, aplica el filtro elegido en el listado. */
+    private function sedeFiltrada(Request $request): ?int
+    {
+        return SucursalActiva::id() ?? ($request->filled('sucursal_id') ? (int) $request->sucursal_id : null);
     }
 }

@@ -20,11 +20,12 @@ class UsuarioController extends Controller
     public function index(Request $request): View
     {
         $usuarios = Usuario::query()
-            ->with('roles')
+            ->with(['roles', 'sucursal'])
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $t = '%'.$request->buscar.'%';
                 $q->where(fn ($s) => $s->where('nombre', 'ilike', $t)->orWhere('email', 'ilike', $t));
             })
+            ->when($request->filled('sucursal_id'), fn ($q) => $q->where('sucursal_id', $request->sucursal_id))
             ->when($request->filled('rol'), fn ($q) => $q->role($request->rol))
             ->orderBy('nombre')
             ->paginate(15)
@@ -42,6 +43,7 @@ class UsuarioController extends Controller
             'usuario' => new Usuario(['estado' => 'activo']),
             'roles' => $this->rolesAlAlcance($request->user()),
             'asignados' => [],
+            'puedeAsignarSede' => $this->puedeAsignarSede($request->user()),
         ]);
     }
 
@@ -74,6 +76,7 @@ class UsuarioController extends Controller
             'usuario' => $usuario,
             'roles' => $this->rolesAlAlcance($request->user()),
             'asignados' => $usuario->roles->pluck('name')->all(),
+            'puedeAsignarSede' => $this->puedeAsignarSede($request->user()),
         ]);
     }
 
@@ -129,10 +132,19 @@ class UsuarioController extends Controller
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'.($usuario ? ",{$usuario->id}" : '')],
             'telefono' => ['nullable', 'string', 'max:50'],
             'estado' => ['required', 'in:activo,inactivo'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
             'roles' => ['array'],
             'roles.*' => ['exists:roles,name'],
         ]);
+
+        // Ligar una cuenta a una sede es decisión de quien administra las sedes;
+        // el resto no toca ese dato (vacío = ve todas las sedes).
+        if ($this->puedeAsignarSede($request->user())) {
+            $datos['sucursal_id'] = filled($datos['sucursal_id'] ?? null) ? (int) $datos['sucursal_id'] : null;
+        } else {
+            unset($datos['sucursal_id']);
+        }
 
         $alcance = $this->rolesAlAlcance($request->user())->pluck('name');
         $fuera = collect($datos['roles'] ?? [])->reject(fn ($r) => $alcance->contains($r));
@@ -144,6 +156,11 @@ class UsuarioController extends Controller
         }
 
         return $datos;
+    }
+
+    private function puedeAsignarSede(Usuario $actor): bool
+    {
+        return $this->esSuperAdministrador($actor) || $actor->can('sucursales.editar');
     }
 
     /** No se administra a alguien con más privilegios que uno mismo. */

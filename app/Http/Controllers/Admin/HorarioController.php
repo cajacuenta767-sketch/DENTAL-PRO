@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\Horario;
+use App\Models\Sucursal;
+use App\Support\SucursalActiva;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -17,6 +19,7 @@ class HorarioController extends Controller
         $horarios = Horario::query()
             ->with('doctor.especialidad')
             ->when($request->filled('doctor_id'), fn ($q) => $q->where('doctor_id', $request->doctor_id))
+            ->when($this->sedeFiltrada($request), fn ($q, $sede) => $q->where('sucursal_id', $sede))
             ->when($request->filled('dia_semana'), fn ($q) => $q->where('dia_semana', $request->dia_semana))
             ->orderBy('doctor_id')
             ->orderByRaw($this->ordenPorDia())
@@ -28,6 +31,7 @@ class HorarioController extends Controller
             'horarios' => $horarios,
             'doctores' => Doctor::activos()->orderBy('apellidos')->get(),
             'dias' => config('odontosuite.dias_semana'),
+            'sedes' => Sucursal::orderBy('nombre')->get()->keyBy('id'),
         ]);
     }
 
@@ -38,6 +42,7 @@ class HorarioController extends Controller
                 'activo' => true,
                 'turno' => 'MAÑANA',
                 'doctor_id' => $request->query('doctor_id'),
+                'sucursal_id' => SucursalActiva::id(),
             ]),
             'doctores' => Doctor::activos()->with('especialidad')->orderBy('apellidos')->get(),
             'dias' => config('odontosuite.dias_semana'),
@@ -86,6 +91,7 @@ class HorarioController extends Controller
     {
         $datos = $request->validate([
             'doctor_id' => ['required', 'exists:doctores,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'dia_semana' => ['required', 'in:'.implode(',', Horario::DIAS)],
             'turno' => ['required', 'in:'.implode(',', Horario::TURNOS)],
             'hora_inicio' => ['required', 'date_format:H:i'],
@@ -93,14 +99,28 @@ class HorarioController extends Controller
             'activo' => ['nullable', 'boolean'],
         ], [], [
             'doctor_id' => 'doctor',
+            'sucursal_id' => 'sede',
             'dia_semana' => 'día de la semana',
             'hora_inicio' => 'hora de inicio',
             'hora_fin' => 'hora de fin',
         ]);
 
         $datos['activo'] = $request->boolean('activo');
+        $datos['sucursal_id'] = $datos['sucursal_id'] ?? $this->sedePorDefecto();
 
         return $datos;
+    }
+
+    /** Sin sede elegida se usa la activa; con una sola sede, la principal. */
+    private function sedePorDefecto(): ?int
+    {
+        return SucursalActiva::id() ?? (Sucursal::activas()->count() === 1 ? Sucursal::principal()?->id : null);
+    }
+
+    /** La sede activa manda; si se ven todas, aplica el filtro elegido en el listado. */
+    private function sedeFiltrada(Request $request): ?int
+    {
+        return SucursalActiva::id() ?? ($request->filled('sucursal_id') ? (int) $request->sucursal_id : null);
     }
 
     /**

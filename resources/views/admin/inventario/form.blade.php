@@ -36,6 +36,17 @@
                         </div>
                     </div>
 
+                    @if (($sucursales ?? collect())->count() > 1)
+                    <x-campo nombre="sucursal_id" etiqueta="Sede" ayuda="Vacío = insumo común a todas las sedes.">
+                        <select id="sucursal_id" name="sucursal_id" class="form-select">
+                            <option value="">— Todas las sedes —</option>
+                            @foreach ($sucursales as $sede)
+                                <option value="{{ $sede->id }}" @selected(old('sucursal_id', $insumo->sucursal_id) == $sede->id)>{{ $sede->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </x-campo>
+                    @endif
+
                     <x-campo nombre="descripcion" etiqueta="Descripción">
                         <input type="text" id="descripcion" name="descripcion" class="form-control"
                                value="{{ old('descripcion', $insumo->descripcion) }}">

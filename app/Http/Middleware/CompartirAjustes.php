@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\Ajuste;
 use App\Models\Cita;
+use App\Models\Sucursal;
+use App\Support\SucursalActiva;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Pone a disposición de todas las vistas la configuración de la clínica y,
  * para el personal con acceso a la agenda, las citas del día que alimentan
  * la campana de notificaciones del navbar. Un doctor solo ve las suyas.
+ * También comparte la sede activa y las sedes disponibles para el selector.
  */
 class CompartirAjustes
 {
@@ -44,6 +47,10 @@ class CompartirAjustes
 
         View::share('agendaHoy', $agendaHoy);
         View::share('citasHoy', $citasHoy);
+
+        // Sede con la que se trabaja y sedes elegibles; los invitados no ven ninguna.
+        View::share('sucursalActiva', $usuario ? SucursalActiva::modelo() : null);
+        View::share('sucursales', $usuario ? Sucursal::activas()->orderBy('nombre')->get() : collect());
 
         return $next($request);
     }

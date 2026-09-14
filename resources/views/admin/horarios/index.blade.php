@@ -16,7 +16,7 @@
     <div class="card-header"><h3 class="card-title">Turnos registrados</h3></div>
     <div class="card-body border-bottom py-3">
         <form method="GET" class="row g-2">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <select name="doctor_id" class="form-select">
                     <option value="">— Todos los doctores —</option>
                     @foreach ($doctores as $doctor)
@@ -26,7 +26,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-4">
+            @if (($sucursales ?? collect())->count() > 1 && ! $sucursalActiva)
+                <div class="col-md-3">
+                    <select name="sucursal_id" class="form-select">
+                        <option value="">— Todas las sedes —</option>
+                        @foreach ($sucursales as $sede)
+                            <option value="{{ $sede->id }}" @selected(request('sucursal_id') == $sede->id)>{{ $sede->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+            <div class="col-md-3">
                 <select name="dia_semana" class="form-select">
                     <option value="">— Todos los días —</option>
                     @foreach ($dias as $clave => $etiqueta)
@@ -46,6 +56,9 @@
                 <tr>
                     <th>Doctor</th>
                     <th>Especialidad</th>
+                    @if ($sedes->count() > 1)
+                        <th>Sede</th>
+                    @endif
                     <th>Día</th>
                     <th>Turno</th>
                     <th>Horario</th>
@@ -62,6 +75,15 @@
                                 {{ $horario->doctor->especialidad->nombre }}
                             </span>
                         </td>
+                        @if ($sedes->count() > 1)
+                            <td>
+                                @if ($sede = $sedes->get($horario->sucursal_id))
+                                    <span class="badge" style="background-color: {{ $sede->color }}20; color: {{ $sede->color }}">{{ $sede->nombre }}</span>
+                                @else
+                                    <span class="text-secondary small">Cualquier sede</span>
+                                @endif
+                            </td>
+                        @endif
                         <td>{{ config("odontosuite.dias_semana.{$horario->dia_semana}", $horario->dia_semana) }}</td>
                         <td><span class="badge bg-azure-lt">{{ $horario->turno }}</span></td>
                         <td><i class="ti ti-clock me-1 text-secondary"></i>{{ $horario->rango }}</td>
@@ -89,7 +111,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="{{ $sedes->count() > 1 ? 8 : 7 }}">
                             <x-vacio icono="ti ti-clock-off" titulo="Sin horarios"
                                      texto="Define la disponibilidad semanal de cada doctor para habilitar la agenda." />
                         </td>
