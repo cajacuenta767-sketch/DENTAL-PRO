@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\EstudioImagen;
 use App\Models\Paciente;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -160,6 +161,101 @@ class EstudioImagenController extends Controller
             $estudio->archivo,
             $estudio->nombre_original ?: basename($estudio->archivo)
         );
+    }
+
+    /** Compara dos estudios (imágenes) del mismo paciente lado a lado. */
+    public function comparar(Request $request): View
+    {
+        $a = EstudioImagen::find($request->integer('a'));
+        $b = EstudioImagen::find($request->integer('b'));
+
+        abort_if(! $a || ! $b, 404, 'Debes elegir dos estudios para comparar.');
+        abort_if($a->paciente_id !== $b->paciente_id, 404, 'Los estudios deben pertenecer al mismo paciente.');
+        abort_unless($a->es_visualizable && $b->es_visualizable, 404, 'Solo se pueden comparar imágenes.');
+
+        $paciente = $a->paciente;
+
+        // Candidatos para los selectores: todas las imágenes del paciente.
+        $estudios = $paciente->estudios()
+            ->orderByDesc('fecha_estudio')->orderByDesc('id')
+            ->get()
+            ->filter(fn (EstudioImagen $e) => $e->es_visualizable)
+            ->values();
+
+        return view('admin.estudios.comparar', [
+            'paciente' => $paciente,
+            'a' => $a,
+            'b' => $b,
+            'estudios' => $estudios,
+        ]);
+    }
+
+    /** Tipos de anotación que dibuja el visor sobre la imagen. */
+    public const TIPOS_ANOTACION = ['lapiz', 'flecha', 'circulo', 'texto'];
+
+    /**
+     * Guarda las anotaciones dibujadas en el visor. Las coordenadas llegan
+     * relativas a la imagen (0-1) para que escalen con cualquier zoom.
+     */
+    public function anotaciones(Request $request, EstudioImagen $estudio): JsonResponse
+    {
+        $coordenada = ['nullable', 'numeric', 'between:-1,2'];
+
+        $datos = $request->validate([
+            'anotaciones' => ['present', 'array', 'max:500'],
+            'anotaciones.*.tipo' => ['required', 'string', 'in:'.implode(',', self::TIPOS_ANOTACION)],
+            'anotaciones.*.color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'anotaciones.*.grosor' => ['required', 'numeric', 'between:1,40'],
+            'anotaciones.*.puntos' => ['nullable', 'array', 'max:3000'],
+            'anotaciones.*.puntos.*' => ['array', 'size:2'],
+            'anotaciones.*.puntos.*.*' => ['numeric', 'between:-1,2'],
+            'anotaciones.*.desde' => ['nullable', 'array'],
+            'anotaciones.*.desde.x' => $coordenada,
+            'anotaciones.*.desde.y' => $coordenada,
+            'anotaciones.*.hasta' => ['nullable', 'array'],
+            'anotaciones.*.hasta.x' => $coordenada,
+            'anotaciones.*.hasta.y' => $coordenada,
+            'anotaciones.*.centro' => ['nullable', 'array'],
+            'anotaciones.*.centro.x' => $coordenada,
+            'anotaciones.*.centro.y' => $coordenada,
+            'anotaciones.*.radio' => ['nullable', 'numeric', 'between:0,2'],
+            'anotaciones.*.texto' => ['nullable', 'string', 'max:200'],
+            'anotaciones.*.x' => $coordenada,
+            'anotaciones.*.y' => $coordenada,
+        ], [], ['anotaciones' => 'anotaciones']);
+
+        $limpias = [];
+
+        foreach ($datos['anotaciones'] as $a) {
+            $item = [
+                'tipo' => $a['tipo'],
+                'color' => strtolower($a['color']),
+                'grosor' => (float) $a['grosor'],
+            ];
+
+            $item += match ($a['tipo']) {
+                'lapiz' => ['puntos' => array_map(fn ($p) => [(float) $p[0], (float) $p[1]], $a['puntos'] ?? [])],
+                'flecha' => [
+                    'desde' => ['x' => (float) ($a['desde']['x'] ?? 0), 'y' => (float) ($a['desde']['y'] ?? 0)],
+                    'hasta' => ['x' => (float) ($a['hasta']['x'] ?? 0), 'y' => (float) ($a['hasta']['y'] ?? 0)],
+                ],
+                'circulo' => [
+                    'centro' => ['x' => (float) ($a['centro']['x'] ?? 0), 'y' => (float) ($a['centro']['y'] ?? 0)],
+                    'radio' => (float) ($a['radio'] ?? 0),
+                ],
+                'texto' => [
+                    'texto' => trim((string) ($a['texto'] ?? '')),
+                    'x' => (float) ($a['x'] ?? 0),
+                    'y' => (float) ($a['y'] ?? 0),
+                ],
+            };
+
+            $limpias[] = $item;
+        }
+
+        $estudio->update(['anotaciones' => $limpias]);
+
+        return response()->json(['ok' => true, 'total' => count($limpias)]);
     }
 
     private function validar(Request $request, bool $archivoObligatorio = false): array

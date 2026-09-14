@@ -48,9 +48,32 @@
         </x-vacio>
     </div></div>
 @else
+    @php($visualizables = $estudios->filter->es_visualizable)
+    @if ($visualizables->count() >= 2)
+        <div class="card mb-3" data-comparar-barra>
+            <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+                <i class="ti ti-git-compare text-secondary"></i>
+                <span class="small text-secondary">
+                    Marca dos imágenes para compararlas lado a lado.
+                    <span class="fw-medium" data-comparar-contador>0 de 2 seleccionadas</span>
+                </span>
+                <a class="btn btn-sm btn-primary ms-auto disabled" aria-disabled="true" data-comparar-enlace
+                   data-base="{{ route('admin.estudios.comparar') }}">
+                    <i class="ti ti-git-compare me-1"></i>Comparar
+                </a>
+            </div>
+        </div>
+    @endif
+
     <div class="row row-cards">
         @foreach ($estudios as $estudio)
             <div class="col-md-6 col-xl-4">
+                @if ($estudio->es_visualizable && $visualizables->count() >= 2)
+                    <label class="form-check mb-1 small">
+                        <input type="checkbox" class="form-check-input" value="{{ $estudio->id }}" data-comparar-check>
+                        <span class="form-check-label">Seleccionar para comparar</span>
+                    </label>
+                @endif
                 <x-tarjeta-estudio :estudio="$estudio" />
             </div>
         @endforeach
@@ -59,3 +82,30 @@
 
 @include('componentes.visor-estudio')
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const enlace = document.querySelector('[data-comparar-enlace]');
+    const contador = document.querySelector('[data-comparar-contador]');
+    const casillas = Array.from(document.querySelectorAll('[data-comparar-check]'));
+    if (!enlace || casillas.length === 0) return;
+
+    function refrescar() {
+        const marcadas = casillas.filter((c) => c.checked);
+        const listo = marcadas.length === 2;
+
+        // Solo se comparan dos estudios: al marcar el segundo se bloquea el resto.
+        casillas.forEach((c) => { c.disabled = listo && !c.checked; });
+
+        contador.textContent = `${marcadas.length} de 2 seleccionadas`;
+        enlace.classList.toggle('disabled', !listo);
+        enlace.setAttribute('aria-disabled', String(!listo));
+        enlace.href = listo ? `${enlace.dataset.base}?a=${marcadas[0].value}&b=${marcadas[1].value}` : '#';
+    }
+
+    casillas.forEach((c) => c.addEventListener('change', refrescar));
+    refrescar();
+})();
+</script>
+@endpush

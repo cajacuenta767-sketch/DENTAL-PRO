@@ -8,7 +8,10 @@
      data-estudio-archivo="{{ $estudio->nombre_original }}"
      data-estudio-url="{{ $estudio->url }}"
      data-estudio-descarga="{{ route('admin.estudios.descargar', $estudio) }}"
-     data-estudio-hallazgos="{{ $estudio->hallazgos }}">
+     data-estudio-hallazgos="{{ $estudio->hallazgos }}"
+     data-estudio-visualizable="{{ $estudio->es_visualizable ? '1' : '0' }}"
+     data-estudio-anotaciones-url="{{ route('admin.estudios.anotaciones', $estudio) }}"
+     data-anotaciones="{{ json_encode($estudio->anotaciones ?: []) }}">
 
     <div class="ratio ratio-16x9 bg-dark rounded-top overflow-hidden">
         @if ($estudio->es_visualizable)
@@ -29,7 +32,13 @@
                     @if ($estudio->doctor) · {{ $estudio->doctor->nombre_profesional }} @endif
                 </div>
             </div>
-            <span class="badge bg-azure-lt">{{ $estudio->tipo_legible }}</span>
+            <div class="d-flex flex-column align-items-end gap-1">
+                <span class="badge bg-azure-lt">{{ $estudio->tipo_legible }}</span>
+                <span class="badge bg-orange-lt {{ $estudio->anotaciones ? '' : 'd-none' }}" data-estudio-badge-anotado
+                      title="Este estudio tiene anotaciones dibujadas">
+                    <i class="ti ti-pencil me-1"></i>Anotado
+                </span>
+            </div>
         </div>
 
         @if ($estudio->piezas_referidas)

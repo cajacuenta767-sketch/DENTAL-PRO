@@ -16,12 +16,30 @@ class OdontogramaController extends Controller
 {
     public function index(Paciente $paciente): View
     {
+        $odontogramas = $paciente->odontogramas()
+            ->with(['doctor', 'cita.tratamiento'])
+            ->orderByDesc('fecha')->orderByDesc('id')
+            ->paginate(10);
+
+        // Para cada odontograma de la página, el inmediatamente anterior de la
+        // misma dentición: sirve para desplegar la comparación visual.
+        $historico = $paciente->odontogramas()
+            ->orderByDesc('fecha')->orderByDesc('id')
+            ->get(['id', 'tipo', 'fecha', 'piezas']);
+
+        $anteriores = [];
+
+        foreach ($odontogramas as $odontograma) {
+            $anteriores[$odontograma->id] = $historico->first(fn (Odontograma $otro) => $otro->tipo === $odontograma->tipo
+                && $otro->id !== $odontograma->id
+                && ($otro->fecha->lt($odontograma->fecha)
+                    || ($otro->fecha->eq($odontograma->fecha) && $otro->id < $odontograma->id)));
+        }
+
         return view('admin.odontogramas.index', [
             'paciente' => $paciente,
-            'odontogramas' => $paciente->odontogramas()
-                ->with(['doctor', 'cita.tratamiento'])
-                ->orderByDesc('fecha')->orderByDesc('id')
-                ->paginate(10),
+            'odontogramas' => $odontogramas,
+            'anteriores' => $anteriores,
         ]);
     }
 
