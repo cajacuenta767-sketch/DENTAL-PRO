@@ -36,6 +36,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
 use App\Http\Controllers\ConfirmacionCitaController;
+use App\Http\Controllers\LicenciaController;
 use App\Http\Controllers\PagoOnlineController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\Portal\PortalController;
@@ -497,4 +498,18 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:facturacion.anular')->name('facturacion.anular');
     Route::get('facturacion/{documento}/pdf', [FacturacionController::class, 'pdf'])
         ->middleware('permission:facturacion.ver')->name('facturacion.pdf');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Licencia CONTROL (pantalla estándar; se abre aunque el sistema esté bloqueado)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('licencia', [LicenciaController::class, 'mostrar'])->name('licencia.mostrar');
+
+Route::middleware(['auth', 'throttle:10,1'])->group(function () {
+    Route::post('licencia/clave', [LicenciaController::class, 'clave'])->name('licencia.clave');
+    Route::post('licencia/reactivar', [LicenciaController::class, 'reactivar'])->name('licencia.reactivar');
+    Route::post('licencia/emergencia', [LicenciaController::class, 'emergencia'])->name('licencia.emergencia');
 });

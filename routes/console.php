@@ -16,3 +16,6 @@ Schedule::command('queue:prune-failed --hours=168')->daily();
 
 // Copia de seguridad diaria (base de datos + archivos privados) a las 02:00.
 Schedule::command('sistema:respaldar')->dailyAt('02:00')->withoutOverlapping();
+
+// Latido diario a CONTROL: renueva el token de licencia (7 días de gracia sin red).
+Schedule::command('licencia:latido')->daily()->withoutOverlapping();

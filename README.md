@@ -507,3 +507,45 @@ curl -s "https://tu-dominio/api/v1/citas?fecha=2026-09-16" \
 
 La referencia completa, con parámetros, ejemplos `curl` y respuestas, está en
 [docs/api.md](docs/api.md).
+
+## Licencia (CONTROL)
+
+DENTAL-PRO se licencia desde **CONTROL**, el panel central de la agencia. Cada
+instalación se activa con una clave `CTL-XXXX-XXXX-XXXX-XXXX` atada a un equipo o
+dominio y recibe un token firmado (Ed25519) que se verifica **sin internet** con
+la clave pública embebida; el token se renueva con un latido diario y vale 7 días
+sin red.
+
+1. Obtén la clave pública una sola vez:
+   `curl -s https://control.tuagencia.com/api/v1/licencias/clave-publica` →
+   copia `clave_publica` en `CONTROL_CLAVE_PUBLICA`.
+2. Variables (`.env`): `CONTROL_ACTIVO=true` (en desarrollo y pruebas `false`:
+   no se exige licencia), `CONTROL_URL`, `CONTROL_CLAVE_PUBLICA`, opcionalmente
+   `CONTROL_LICENCIA` y `CONTROL_HUELLA`, y `APP_VERSION` (versión que se informa
+   a CONTROL).
+3. Registra la clave: desde la pantalla **`/licencia`** (en el primer arranque
+   cualquier usuario autenticado puede hacerlo; después solo quien tiene
+   `ajustes.editar` o es SUPER ADMINISTRADOR) o con
+   `php artisan licencia:activar CTL-XXXX-XXXX-XXXX-XXXX`. Queda en
+   `storage/app/control/licencia.json` junto con el último token válido.
+
+La pantalla `/licencia` (también enlazada desde Ajustes → *Licencia del sistema*)
+muestra estado, clave, plan, vencimiento, soporte, "funciona sin internet hasta",
+equipo (huella), versión instalada y aviso de versión nueva, con los botones
+**Reactivar / verificar ahora**, **Código de emergencia (72 h)** e ingreso o
+cambio de clave. Estados: `activa` entra; `mora` (vencida, en gracia) entra con
+aviso; `suspendida`, `vencida` y `revocada` bloquean el panel, el portal, la
+reserva pública y la API (`402 {ok:false, error, codigo}`); `login`, `/` y
+`/licencia` siempre se pueden abrir.
+
+- **Sin internet o CONTROL caído**: el sistema sigue hasta `expira_en` del token.
+  Si se agota, un vendedor o admin emite desde CONTROL un **código de emergencia**
+  para la huella del equipo, válido 72 h, que se pega en `/licencia` y se acepta
+  sin red.
+- **Escritorio / instalador**: fija `CONTROL_HUELLA` con el identificador del
+  equipo (si la app corre en `localhost` se usa un hash del nombre del equipo) y
+  ejecuta `php artisan licencia:activar {clave}`; el latido diario es
+  `php artisan licencia:latido` (ya programado en el scheduler).
+
+Detalle completo en [docs/licencia.md](docs/licencia.md). Pruebas:
+`DB_PASSWORD=postgres php artisan test --filter=LicenciaTest`.

@@ -186,6 +186,34 @@
                     </button>
                 </div>
             </div>
+
+            @can('ajustes.editar')
+                @inject('licenciaControl', 'App\Services\Control\Licencia')
+                @php
+                    $lic = $licenciaControl->resumen();
+                    $licTono = ! $lic['activo'] ? 'secondary' : (! $lic['valido'] ? 'danger' : ($lic['estado'] === 'mora' ? 'warning' : 'success'));
+                    $licTexto = ! $lic['activo'] ? 'No exigida' : (! $lic['valido'] ? 'No válida' : ($lic['estado'] === 'mora' ? 'En gracia' : 'Activa'));
+                @endphp
+                <div class="card mt-3">
+                    <div class="card-header"><h3 class="card-title"><i class="ti ti-license me-2"></i>Licencia del sistema</h3></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary">Estado</span>
+                            <span class="badge bg-{{ $licTono }}-lt">{{ $licTexto }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary">Vence</span>
+                            <span>{{ $lic['vence_en'] ? \Illuminate\Support\Carbon::parse($lic['vence_en'])->format('d/m/Y') : ($lic['valido'] ? 'Nunca' : '—') }}</span>
+                        </div>
+                        @if ($lic['desactualizada'])
+                            <div class="text-warning small mb-2"><i class="ti ti-download me-1"></i>Hay una versión nueva ({{ $lic['version_actual'] }}).</div>
+                        @endif
+                        <a href="{{ route('licencia.mostrar') }}" class="btn btn-outline-primary w-100">
+                            <i class="ti ti-key me-1"></i>Ver licencia
+                        </a>
+                    </div>
+                </div>
+            @endcan
         </div>
     </div>
 </form>

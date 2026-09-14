@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Versión instalada; se informa a CONTROL en cada activación y latido.
+    'version' => env('APP_VERSION', '2.0.0'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -3,7 +3,9 @@
 use App\Http\Middleware\CompartirAjustes;
 use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\SoloPacientes;
+use App\Http\Middleware\VerificarLicencia;
 use App\Http\Middleware\VerificarUsuarioActivo;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,7 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
             CompartirAjustes::class,
             VerificarUsuarioActivo::class,
             ExigirCambioPassword::class,
+            VerificarLicencia::class,
         ]);
+
+        // La licencia CONTROL también protege la API (responde 402 en JSON) y
+        // se evalúa antes de la autenticación: un sistema bloqueado muestra
+        // la pantalla /licencia (o el 402) en lugar del login.
+        $middleware->api(append: [VerificarLicencia::class]);
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, VerificarLicencia::class);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
