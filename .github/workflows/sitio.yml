@@ -1,0 +1,54 @@
+# Publica la web de producto (carpeta `sitio/`) en GitHub Pages.
+# Requisito único: en Settings → Pages → Source elegir "GitHub Actions".
+name: Sitio web (GitHub Pages)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+      - claude/pensive-cannon-pt8c62
+    paths:
+      - 'sitio/**'
+      - '.github/workflows/sitio.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-sitio
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    name: Publicar sitio/ en GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Comprobar que el sitio está completo
+        run: |
+          set -e
+          for f in sitio/index.html sitio/estilos.css sitio/app.js sitio/config.js sitio/favicon.svg sitio/robots.txt sitio/sitemap.xml; do
+            test -f "$f" || { echo "Falta $f"; exit 1; }
+          done
+          echo "Capturas: $(ls sitio/img | wc -l)"
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir la carpeta sitio/
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: sitio
+
+      - name: Desplegar
+        id: despliegue
+        uses: actions/deploy-pages@v4
