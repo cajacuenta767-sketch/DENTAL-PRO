@@ -18,7 +18,7 @@ class ListaEspera extends Model
     protected $table = 'lista_espera';
 
     protected $fillable = [
-        'paciente_id', 'doctor_id', 'especialidad_id', 'tratamiento_id', 'cita_id', 'usuario_id',
+        'paciente_id', 'doctor_id', 'especialidad_id', 'tratamiento_id', 'cita_id', 'usuario_id', 'sucursal_id',
         'fecha_desde', 'fecha_hasta', 'preferencia_turno', 'prioridad', 'estado', 'notas',
     ];
 

@@ -10,11 +10,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class Usuario extends Authenticatable implements MustVerifyEmail
 {
-    use Auditable, HasFactory, HasRoles, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $table = 'usuarios';
 
@@ -29,6 +30,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
         'proveedor_id',
         'debe_cambiar_password',
         'dos_factores',
+        'sucursal_id',
     ];
 
     protected $hidden = [
@@ -47,6 +49,11 @@ class Usuario extends Authenticatable implements MustVerifyEmail
             'codigo_2fa_expira_en' => 'datetime',
             'ultimo_acceso_en' => 'datetime',
         ];
+    }
+
+    public function sucursal(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
     public function doctor(): HasOne

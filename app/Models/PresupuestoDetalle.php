@@ -15,7 +15,7 @@ class PresupuestoDetalle extends Model
     protected $fillable = [
         'presupuesto_id', 'tratamiento_id', 'cita_id', 'pago_id', 'pieza_dental', 'cara',
         'descripcion', 'cantidad', 'precio_unitario', 'subtotal',
-        'estado', 'fecha_ejecucion', 'orden',
+        'estado', 'fecha_ejecucion', 'orden', 'sesion',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class PresupuestoDetalle extends Model
             'subtotal' => 'decimal:2',
             'fecha_ejecucion' => 'date',
             'orden' => 'integer',
+            'sesion' => 'integer',
         ];
     }
 

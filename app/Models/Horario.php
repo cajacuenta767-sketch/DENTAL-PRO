@@ -14,7 +14,7 @@ class Horario extends Model
     protected $table = 'horarios';
 
     protected $fillable = [
-        'doctor_id', 'dia_semana', 'turno', 'hora_inicio', 'hora_fin', 'activo',
+        'doctor_id', 'sucursal_id', 'dia_semana', 'turno', 'hora_inicio', 'hora_fin', 'activo',
     ];
 
     protected function casts(): array

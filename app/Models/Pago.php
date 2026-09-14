@@ -17,7 +17,7 @@ class Pago extends Model
     protected $table = 'pagos';
 
     protected $fillable = [
-        'codigo_recibo', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id', 'presupuesto_id',
+        'codigo_recibo', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id', 'presupuesto_id', 'sucursal_id',
         'monto_total', 'monto_pagado', 'monto_saldo',
         'metodo_pago', 'estado', 'notas', 'fecha_pago',
     ];
@@ -66,6 +66,16 @@ class Pago extends Model
     public function detalles(): HasMany
     {
         return $this->hasMany(PagoDetalle::class, 'pago_id');
+    }
+
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+
+    public function pagosOnline(): HasMany
+    {
+        return $this->hasMany(PagoOnline::class, 'pago_id');
     }
 
     public function presupuesto(): BelongsTo

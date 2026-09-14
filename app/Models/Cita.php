@@ -20,7 +20,8 @@ class Cita extends Model
     protected $fillable = [
         'token', 'paciente_id', 'doctor_id', 'tratamiento_id',
         'fecha', 'hora', 'estado', 'origen', 'motivo', 'observacion',
-        'recordatorio_enviado_en',
+        'recordatorio_enviado_en', 'sucursal_id', 'serie_id', 'confirmacion_token',
+        'confirmada_en', 'confirmada_por', 'recordatorio_canal',
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class Cita extends Model
         return [
             'fecha' => 'date',
             'recordatorio_enviado_en' => 'datetime',
+            'confirmada_en' => 'datetime',
         ];
     }
 
@@ -46,7 +48,13 @@ class Cita extends Model
     {
         static::creating(function (self $cita) {
             $cita->token ??= strtoupper(Str::random(12));
+            $cita->confirmacion_token ??= Str::random(48);
         });
+    }
+
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
     public function paciente(): BelongsTo
@@ -118,6 +126,17 @@ class Cita extends Model
     public function scopeVigentes($query)
     {
         return $query->whereNotIn('estado', ['CANCELADA']);
+    }
+
+    /** Enlace público firmado con el que el paciente confirma su asistencia. */
+    public function getUrlConfirmacionAttribute(): string
+    {
+        return \Illuminate\Support\Facades\URL::signedRoute('citas.confirmar-publica', ['token' => $this->confirmacion_token ?: $this->token]);
+    }
+
+    public function scopeDeSucursal($query, ?int $sucursalId)
+    {
+        return $query->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId));
     }
 
     public function scopeDelPaciente($query, Paciente|int $paciente)

@@ -21,6 +21,7 @@ class DocumentoFiscal extends Model
         'receptor_nombre', 'receptor_documento', 'receptor_direccion', 'receptor_email',
         'subtotal', 'descuento', 'iva', 'total', 'tasa_iva',
         'estado', 'sello_recepcion', 'contenido', 'motivo_anulacion', 'fecha_emision',
+        'proveedor', 'estado_transmision', 'respuesta_proveedor', 'transmitido_en',
     ];
 
     protected function casts(): array
@@ -34,6 +35,8 @@ class DocumentoFiscal extends Model
             'tasa_iva' => 'decimal:2',
             'contenido' => 'array',
             'fecha_emision' => 'datetime',
+            'respuesta_proveedor' => 'array',
+            'transmitido_en' => 'datetime',
         ];
     }
 

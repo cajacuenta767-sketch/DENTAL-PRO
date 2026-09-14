@@ -19,7 +19,7 @@ class Doctor extends Model
         'usuario_id', 'especialidad_id', 'nombres', 'apellidos',
         'tipo_documento', 'numero_documento', 'fecha_nacimiento', 'genero',
         'telefono', 'email', 'direccion', 'colegiatura',
-        'descripcion', 'observaciones', 'fotografia', 'activo',
+        'descripcion', 'observaciones', 'fotografia', 'activo', 'porcentaje_comision',
     ];
 
     protected function casts(): array
@@ -27,6 +27,7 @@ class Doctor extends Model
         return [
             'fecha_nacimiento' => 'date',
             'activo' => 'boolean',
+            'porcentaje_comision' => 'decimal:2',
         ];
     }
 

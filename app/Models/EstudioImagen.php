@@ -18,7 +18,7 @@ class EstudioImagen extends Model
     protected $fillable = [
         'paciente_id', 'doctor_id', 'cita_id', 'usuario_id', 'tipo', 'titulo',
         'archivo', 'nombre_original', 'mime', 'tamano',
-        'piezas_referidas', 'fecha_estudio', 'hallazgos', 'observaciones',
+        'piezas_referidas', 'fecha_estudio', 'hallazgos', 'observaciones', 'anotaciones',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class EstudioImagen extends Model
         return [
             'fecha_estudio' => 'date',
             'tamano' => 'integer',
+            'anotaciones' => 'array',
         ];
     }
 

@@ -77,6 +77,11 @@ class Paciente extends Model
         return $this->hasMany(Pago::class, 'paciente_id');
     }
 
+    public function periodontogramas(): HasMany
+    {
+        return $this->hasMany(Periodontograma::class, 'paciente_id');
+    }
+
     public function listaEspera(): HasMany
     {
         return $this->hasMany(ListaEspera::class, 'paciente_id');

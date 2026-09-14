@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AjusteController;
 use App\Http\Controllers\Admin\AseguradoraController;
 use App\Http\Controllers\Admin\AuditoriaController;
 use App\Http\Controllers\Admin\BusquedaController;
+use App\Http\Controllers\Admin\CajaController;
 use App\Http\Controllers\Admin\CitaController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DocumentoClinicoController;
@@ -19,10 +20,13 @@ use App\Http\Controllers\Admin\ListaEsperaController;
 use App\Http\Controllers\Admin\OdontogramaController;
 use App\Http\Controllers\Admin\PacienteController;
 use App\Http\Controllers\Admin\PagoController;
+use App\Http\Controllers\Admin\PeriodontogramaController;
 use App\Http\Controllers\Admin\PresupuestoController;
 use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\ReservaOnlineController;
+use App\Http\Controllers\Admin\RespaldoController;
 use App\Http\Controllers\Admin\RolController;
+use App\Http\Controllers\Admin\SucursalController;
 use App\Http\Controllers\Admin\TratamientoController;
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\LoginController;
@@ -31,6 +35,10 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\PagoOnlineController;
+use App\Http\Controllers\Portal\PortalPagoController;
+use App\Http\Controllers\Portal\PortalReservaController;
+use App\Http\Controllers\ConfirmacionCitaController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PublicoController;
 use App\Http\Controllers\ReservaPublicaController;
@@ -59,6 +67,20 @@ Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
     Route::get('confirmacion/{codigo}', [ReservaPublicaController::class, 'confirmacion'])
         ->middleware('throttle:20,1')->name('confirmacion');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Confirmación de cita por enlace (correo / WhatsApp / SMS) y pasarela de pago
+|--------------------------------------------------------------------------
+*/
+
+Route::get('citas/confirmar/{token}', [ConfirmacionCitaController::class, 'confirmar'])
+    ->middleware(['signed', 'throttle:20,1'])->name('citas.confirmar-publica');
+
+Route::post('pagos-online/webhook/{proveedor}', [PagoOnlineController::class, 'webhook'])
+    ->middleware('throttle:60,1')->name('pagos-online.webhook');
+Route::get('pagos-online/retorno/{pagoOnline}/{resultado}', [PagoOnlineController::class, 'retorno'])
+    ->middleware(['signed', 'throttle:30,1'])->name('pagos-online.retorno');
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +128,10 @@ Route::middleware('auth')->group(function () {
     Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::put('perfil/password', [PerfilController::class, 'password'])->name('perfil.password');
     Route::put('perfil/dos-factores', [PerfilController::class, 'dosFactores'])->name('perfil.2fa');
+    Route::post('perfil/tokens', [PerfilController::class, 'crearToken'])
+        ->middleware('permission:api.usar')->name('perfil.tokens.crear');
+    Route::delete('perfil/tokens/{tokenId}', [PerfilController::class, 'revocarToken'])
+        ->middleware('permission:api.usar')->name('perfil.tokens.revocar');
 
     // Contraseña temporal: hay que definir una propia antes de seguir.
     Route::get('password/obligatoria', [PerfilController::class, 'cambioObligatorio'])->name('password.obligatoria');
@@ -130,6 +156,20 @@ Route::middleware(['auth', 'verified', 'paciente'])->prefix('portal')->name('por
     Route::get('presupuestos/{presupuesto}/pdf', [PortalController::class, 'presupuestoPdf'])->name('presupuestos.pdf');
     Route::get('pagos', [PortalController::class, 'pagos'])->name('pagos');
     Route::get('pagos/{pago}/recibo', [PortalController::class, 'reciboPdf'])->name('pagos.recibo');
+
+    // Reserva de citas desde el portal (paciente ya identificado).
+    Route::get('reservar', [PortalReservaController::class, 'formulario'])->name('reservar');
+    Route::get('reservar/opciones', [PortalReservaController::class, 'opciones'])->name('reservar.opciones');
+    Route::get('reservar/horas', [PortalReservaController::class, 'horas'])->name('reservar.horas');
+    Route::post('reservar', [PortalReservaController::class, 'reservar'])->middleware('throttle:10,1')->name('reservar.guardar');
+
+    // Pago en línea de saldos pendientes.
+    Route::post('pagos/{pago}/pagar', [PortalPagoController::class, 'iniciar'])->middleware('throttle:10,1')->name('pagos.pagar');
+    Route::get('pagos/online/{pagoOnline}', [PortalPagoController::class, 'estado'])->name('pagos.online');
+
+    // Firma del consentimiento informado desde casa.
+    Route::get('documentos/{documento}/firmar', [PortalController::class, 'firmar'])->name('documentos.firmar');
+    Route::post('documentos/{documento}/firmar', [PortalController::class, 'guardarFirma'])->middleware('throttle:10,1')->name('documentos.firmar.guardar');
 });
 
 /*
@@ -145,6 +185,37 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('auditoria', [AuditoriaController::class, 'index'])
         ->middleware('permission:auditoria.ver')->name('auditoria.index');
+
+    // --- Sucursales -----------------------------------------------------
+    Route::post('sucursal/cambiar', [SucursalController::class, 'cambiar'])->name('sucursal.cambiar');
+    Route::resource('sucursales', SucursalController::class)->except('show')
+        ->parameters(['sucursales' => 'sucursal'])
+        ->middlewareFor(['index'], 'permission:sucursales.ver')
+        ->middlewareFor(['create', 'store'], 'permission:sucursales.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:sucursales.editar')
+        ->middlewareFor(['destroy'], 'permission:sucursales.eliminar');
+
+    // --- Respaldos ------------------------------------------------------
+    Route::get('respaldos', [RespaldoController::class, 'index'])
+        ->middleware('permission:respaldos.ver')->name('respaldos.index');
+    Route::post('respaldos', [RespaldoController::class, 'crear'])
+        ->middleware('permission:respaldos.crear')->name('respaldos.crear');
+    Route::get('respaldos/{archivo}/descargar', [RespaldoController::class, 'descargar'])
+        ->middleware('permission:respaldos.descargar')->name('respaldos.descargar');
+    Route::delete('respaldos/{archivo}', [RespaldoController::class, 'eliminar'])
+        ->middleware('permission:respaldos.crear')->name('respaldos.eliminar');
+
+    // --- Caja diaria ------------------------------------------------------
+    Route::get('caja', [CajaController::class, 'index'])
+        ->middleware('permission:caja.ver')->name('caja.index');
+    Route::get('caja/arqueo', [CajaController::class, 'arqueo'])
+        ->middleware('permission:caja.cerrar')->name('caja.arqueo');
+    Route::post('caja/cerrar', [CajaController::class, 'cerrar'])
+        ->middleware('permission:caja.cerrar')->name('caja.cerrar');
+    Route::get('caja/{cierre}', [CajaController::class, 'show'])
+        ->middleware('permission:caja.ver')->name('caja.show');
+    Route::get('caja/{cierre}/pdf', [CajaController::class, 'pdf'])
+        ->middleware('permission:caja.ver')->name('caja.pdf');
 
     // --- Configuración -------------------------------------------------
     Route::get('ajustes', [AjusteController::class, 'edit'])
@@ -192,6 +263,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middlewareFor(['edit', 'update'], 'permission:horarios.editar')
         ->middlewareFor(['destroy'], 'permission:horarios.eliminar');
 
+    Route::get('pacientes/buscar', [PacienteController::class, 'buscar'])
+        ->middleware('permission:pacientes.ver')->name('pacientes.buscar');
     Route::get('pacientes/{paciente}/foto', [PacienteController::class, 'foto'])
         ->middleware('permission:pacientes.ver')->name('pacientes.foto');
 
@@ -215,8 +288,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('citas/horas-disponibles/consultar', [CitaController::class, 'horasDisponibles'])
         ->middleware('permission:citas.ver')->name('citas.horas');
 
+    Route::patch('citas/{cita}/reprogramar', [CitaController::class, 'reprogramar'])
+        ->middleware('permission:citas.editar')->name('citas.reprogramar');
+
     Route::get('agenda', [AgendaController::class, 'index'])
         ->middleware('permission:agenda.ver')->name('agenda.index');
+    Route::get('agenda/semana', [AgendaController::class, 'semana'])
+        ->middleware('permission:agenda.ver')->name('agenda.semana');
+    Route::get('agenda/mes', [AgendaController::class, 'mes'])
+        ->middleware('permission:agenda.ver')->name('agenda.mes');
     Route::get('agenda/doctor/{doctor}', [AgendaController::class, 'porDoctor'])
         ->middleware('permission:agenda.ver')->name('agenda.doctor');
 
@@ -260,6 +340,22 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('odontogramas/{odontograma}', [OdontogramaController::class, 'destroy'])
         ->middleware('permission:odontogramas.eliminar')->name('odontogramas.destroy');
 
+    // --- Periodontograma --------------------------------------------------
+    Route::get('pacientes/{paciente}/periodontograma', [PeriodontogramaController::class, 'index'])
+        ->middleware('permission:periodontogramas.ver')->name('periodontogramas.index');
+    Route::get('pacientes/{paciente}/periodontograma/nuevo', [PeriodontogramaController::class, 'create'])
+        ->middleware('permission:periodontogramas.crear')->name('periodontogramas.create');
+    Route::post('pacientes/{paciente}/periodontograma', [PeriodontogramaController::class, 'store'])
+        ->middleware('permission:periodontogramas.crear')->name('periodontogramas.store');
+    Route::get('periodontogramas/{periodontograma}/editar', [PeriodontogramaController::class, 'edit'])
+        ->middleware('permission:periodontogramas.editar')->name('periodontogramas.edit');
+    Route::put('periodontogramas/{periodontograma}', [PeriodontogramaController::class, 'update'])
+        ->middleware('permission:periodontogramas.editar')->name('periodontogramas.update');
+    Route::delete('periodontogramas/{periodontograma}', [PeriodontogramaController::class, 'destroy'])
+        ->middleware('permission:periodontogramas.eliminar')->name('periodontogramas.destroy');
+    Route::get('periodontogramas/{periodontograma}/pdf', [PeriodontogramaController::class, 'pdf'])
+        ->middleware('permission:periodontogramas.ver')->name('periodontogramas.pdf');
+
     // --- Caja y pagos ---------------------------------------------------
     Route::resource('pagos', PagoController::class)
         ->middlewareFor(['index', 'show'], 'permission:pagos.ver')
@@ -279,11 +375,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:reportes.ver')->name('reportes.index');
     Route::get('reportes/exportar/{seccion}', [ReporteController::class, 'exportar'])
         ->middleware('permission:reportes.exportar')
-        ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos'])
+        ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos', 'comisiones'])
         ->name('reportes.exportar');
     Route::get('reportes/exportar/{seccion}/csv', [ReporteController::class, 'exportarCsv'])
         ->middleware('permission:reportes.exportar')
-        ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos'])
+        ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos', 'comisiones'])
         ->name('reportes.csv');
 
     // --- Búsqueda global (solo para quien puede leer algún módulo buscable) --
@@ -322,6 +418,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:imagenologia.editar')->name('estudios.update');
     Route::delete('estudios/{estudio}', [EstudioImagenController::class, 'destroy'])
         ->middleware('permission:imagenologia.eliminar')->name('estudios.destroy');
+    Route::get('estudios/comparar', [EstudioImagenController::class, 'comparar'])
+        ->middleware('permission:imagenologia.ver')->name('estudios.comparar');
+    Route::put('estudios/{estudio}/anotaciones', [EstudioImagenController::class, 'anotaciones'])
+        ->middleware('permission:imagenologia.editar')->name('estudios.anotaciones');
     Route::get('estudios/{estudio}/ver', [EstudioImagenController::class, 'ver'])
         ->middleware('permission:imagenologia.ver')->name('estudios.ver');
     Route::get('estudios/{estudio}/descargar', [EstudioImagenController::class, 'descargar'])
@@ -358,6 +458,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:presupuestos.aprobar')->name('presupuestos.estado');
     Route::patch('presupuesto-detalles/{detalle}/ejecutar', [PresupuestoController::class, 'ejecutarDetalle'])
         ->middleware('permission:presupuestos.ejecutar')->name('presupuestos.ejecutar');
+    Route::patch('presupuestos/{presupuesto}/sesiones', [PresupuestoController::class, 'sesiones'])
+        ->middleware('permission:presupuestos.editar')->name('presupuestos.sesiones');
+    Route::get('presupuestos/{presupuesto}/agendar-sesion/{sesion}', [PresupuestoController::class, 'agendarSesion'])
+        ->middleware('permission:citas.crear')->name('presupuestos.agendar-sesion');
     Route::post('presupuestos/{presupuesto}/facturar', [PresupuestoController::class, 'facturar'])
         ->middleware('permission:pagos.crear')->name('presupuestos.facturar');
     Route::get('presupuestos/{presupuesto}/pdf', [PresupuestoController::class, 'pdf'])
@@ -384,6 +488,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:facturacion.emitir')->name('facturacion.store');
     Route::get('facturacion/{documento}', [FacturacionController::class, 'show'])
         ->middleware('permission:facturacion.ver')->name('facturacion.show');
+    Route::post('facturacion/{documento}/transmitir', [FacturacionController::class, 'transmitir'])
+        ->middleware('permission:facturacion.emitir')->name('facturacion.transmitir');
     Route::patch('facturacion/{documento}/anular', [FacturacionController::class, 'anular'])
         ->middleware('permission:facturacion.anular')->name('facturacion.anular');
     Route::get('facturacion/{documento}/pdf', [FacturacionController::class, 'pdf'])
