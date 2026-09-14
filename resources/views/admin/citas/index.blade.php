@@ -121,7 +121,12 @@
                             </div>
                         </td>
                         <td>
-                            <div>{{ $cita->fecha->format('d/m/Y') }}</div>
+                            <div>
+                                {{ $cita->fecha->format('d/m/Y') }}
+                                @if ($cita->serie_id)
+                                    <i class="ti ti-repeat text-azure ms-1" title="Forma parte de una serie de citas recurrentes"></i>
+                                @endif
+                            </div>
                             <div class="text-secondary small">{{ substr($cita->hora, 0, 5) }}</div>
                         </td>
                         <td class="text-center">

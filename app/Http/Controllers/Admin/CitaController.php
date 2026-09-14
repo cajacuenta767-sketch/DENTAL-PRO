@@ -4,17 +4,21 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\CitaConfirmacionMail;
+use App\Models\Auditoria;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\ListaEspera;
 use App\Models\Paciente;
 use App\Models\Tratamiento;
 use App\Services\AgendaService;
+use App\Support\SucursalActiva;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -76,8 +80,23 @@ class CitaController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $datos = $this->validar($request);
+        $datos['sucursal_id'] = SucursalActiva::id();
 
-        $cita = DB::transaction(function () use ($request, $datos) {
+        $serie = $request->validate([
+            'repetir' => ['nullable', 'in:semanal,quincenal,mensual'],
+            'repeticiones' => ['nullable', 'integer', 'min:1', 'max:52'],
+        ]);
+
+        $repetir = $serie['repetir'] ?? null;
+        $repeticiones = $repetir ? (int) ($serie['repeticiones'] ?? 0) : 0;
+        $omitidas = [];
+        $creadas = 0;
+
+        $cita = DB::transaction(function () use ($request, $datos, $repetir, $repeticiones, &$omitidas, &$creadas) {
+            if ($repeticiones > 0) {
+                $datos['serie_id'] = (string) Str::uuid();
+            }
+
             $cita = Cita::create($datos);
 
             // Si vino desde la lista de espera, cierra esa entrada.
@@ -87,21 +106,84 @@ class CitaController extends Controller
                     ->update(['estado' => 'AGENDADO', 'cita_id' => $cita->id]);
             }
 
+            if ($repeticiones > 0) {
+                [$creadas, $omitidas] = $this->crearSerie($cita, $datos, $repetir, $repeticiones);
+            }
+
             return $cita;
         });
 
-        $aviso = $this->notificarPaciente($cita);
+        $avisos = array_filter([
+            $this->notificarPaciente($cita),
+            $omitidas === [] ? null : sprintf(
+                'No se pudieron crear %d %s: %s.',
+                count($omitidas), count($omitidas) === 1 ? 'cita' : 'citas', implode(', ', $omitidas)
+            ),
+        ]);
+
+        $exito = "Cita registrada con el código {$cita->token}.";
+
+        if ($creadas > 0) {
+            $exito .= " Se agendaron {$creadas} citas más de la serie.";
+        }
 
         return redirect()->route('admin.citas.show', $cita)
-            ->with('exito', "Cita registrada con el código {$cita->token}.")
-            ->with('aviso', $aviso);
+            ->with('exito', $exito)
+            ->with('aviso', $avisos === [] ? null : implode(' ', $avisos));
+    }
+
+    /**
+     * Genera las citas siguientes de una serie recurrente a la misma hora.
+     * Las que no caben en el turno o chocan con otra cita se omiten y se
+     * devuelven para avisar a recepción.
+     *
+     * @return array{0: int, 1: array<int, string>}
+     */
+    private function crearSerie(Cita $original, array $datos, string $repetir, int $repeticiones): array
+    {
+        $doctor = $original->doctor;
+        $duracion = $original->duracion_minutos;
+        $base = CarbonImmutable::parse($datos['fecha']);
+        $creadas = 0;
+        $omitidas = [];
+
+        for ($i = 1; $i <= $repeticiones; $i++) {
+            $fecha = match ($repetir) {
+                'semanal' => $base->addWeeks($i),
+                'quincenal' => $base->addWeeks(2 * $i),
+                'mensual' => $base->addMonthsNoOverflow($i),
+            };
+
+            $fechaTexto = $fecha->toDateString();
+
+            if (! $this->agenda->horaValida($doctor, $fechaTexto, $datos['hora'], $duracion)) {
+                $omitidas[] = $fecha->format('d/m').' (fuera de horario)';
+
+                continue;
+            }
+
+            if ($this->agenda->conflicto($doctor, $fechaTexto, $datos['hora'], $duracion)) {
+                $omitidas[] = $fecha->format('d/m').' (cupo ocupado)';
+
+                continue;
+            }
+
+            Cita::create(array_merge($datos, ['fecha' => $fechaTexto]));
+            $creadas++;
+        }
+
+        return [$creadas, $omitidas];
     }
 
     public function show(Cita $cita): View
     {
         $cita->load(['paciente', 'doctor.especialidad', 'tratamiento', 'historial', 'odontograma', 'pagos.detalles']);
 
-        return view('admin.citas.show', compact('cita'));
+        $serie = $cita->serie_id
+            ? Cita::where('serie_id', $cita->serie_id)->orderBy('fecha')->orderBy('hora')->get()
+            : collect();
+
+        return view('admin.citas.show', compact('cita', 'serie'));
     }
 
     public function edit(Cita $cita): View
@@ -163,6 +245,59 @@ class CitaController extends Controller
         $cita->update($datos);
 
         return back()->with('exito', "La cita {$cita->token} pasó a {$cita->estado_legible}.");
+    }
+
+    /**
+     * Mueve la cita a otro día y hora desde la agenda semanal (arrastrar y
+     * soltar). Responde JSON: 200 con la nueva posición o 422 con el motivo.
+     */
+    public function reprogramar(Request $request, Cita $cita): JsonResponse
+    {
+        $datos = $request->validate([
+            'fecha' => ['required', 'date'],
+            'hora' => ['required', 'date_format:H:i'],
+        ]);
+
+        if (in_array($cita->estado, ['COMPLETADA', 'CANCELADA'], true)) {
+            return response()->json([
+                'message' => "Una cita {$cita->estado_legible} no se puede reprogramar.",
+            ], 422);
+        }
+
+        $fecha = CarbonImmutable::parse($datos['fecha'])->toDateString();
+        $duracion = $cita->duracion_minutos;
+
+        if (! $this->agenda->horaValida($cita->doctor, $fecha, $datos['hora'], $duracion)) {
+            return response()->json([
+                'message' => "El doctor no atiende ese día a esa hora o la cita ({$duracion} min) no cabe en su turno.",
+            ], 422);
+        }
+
+        $conflicto = $this->agenda->conflicto($cita->doctor, $fecha, $datos['hora'], $duracion, $cita->id);
+
+        if ($conflicto) {
+            return response()->json([
+                'message' => "Ese horario se cruza con la cita {$conflicto->token} (".substr((string) $conflicto->hora, 0, 5).', '.$conflicto->duracion_minutos.' min).',
+            ], 422);
+        }
+
+        $anterior = $cita->fecha_hora;
+        $nuevo = CarbonImmutable::parse($fecha)->format('d/m/Y').' '.$datos['hora'];
+        $nota = "Reprogramada de {$anterior} a {$nuevo} por {$request->user()->nombre}";
+
+        $cita->fecha = $fecha;
+        $cita->hora = $datos['hora'];
+        $cita->observacion = mb_substr(trim(($cita->observacion ? $cita->observacion."\n" : '').$nota), 0, 1000);
+        $cita->save();
+
+        Auditoria::registrar('ACTUALIZAR', $cita, $nota, ['de' => $anterior, 'a' => $nuevo]);
+
+        return response()->json([
+            'ok' => true,
+            'fecha' => $fecha,
+            'hora' => $datos['hora'],
+            'fecha_hora' => $cita->fresh()->fecha_hora,
+        ]);
     }
 
     public function reenviarCorreo(Cita $cita): RedirectResponse

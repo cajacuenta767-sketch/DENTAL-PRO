@@ -8,6 +8,11 @@
 
 @section('acciones')
     <div class="btn-list">
+        <div class="btn-group">
+            <a href="{{ route('admin.agenda.index', ['doctor_id' => $doctor?->id, 'fecha' => $fecha]) }}" class="btn btn-primary">Día</a>
+            <a href="{{ route('admin.agenda.semana', ['doctor_id' => $doctor?->id, 'fecha' => $fecha]) }}" class="btn btn-outline-primary">Semana</a>
+            <a href="{{ route('admin.agenda.mes', ['doctor_id' => $doctor?->id, 'fecha' => $fecha]) }}" class="btn btn-outline-primary">Mes</a>
+        </div>
         @can('pacientes.crear')
             <a href="{{ route('admin.pacientes.create') }}" class="btn btn-outline-secondary">
                 <i class="ti ti-user-plus me-1"></i>Nuevo paciente
