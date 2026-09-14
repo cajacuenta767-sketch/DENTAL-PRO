@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class Cita extends Model
@@ -131,7 +132,7 @@ class Cita extends Model
     /** Enlace público firmado con el que el paciente confirma su asistencia. */
     public function getUrlConfirmacionAttribute(): string
     {
-        return \Illuminate\Support\Facades\URL::signedRoute('citas.confirmar-publica', ['token' => $this->confirmacion_token ?: $this->token]);
+        return URL::signedRoute('citas.confirmar-publica', ['token' => $this->confirmacion_token ?: $this->token]);
     }
 
     public function scopeDeSucursal($query, ?int $sucursalId)

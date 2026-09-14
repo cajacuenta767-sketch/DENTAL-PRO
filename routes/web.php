@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\ListaEsperaController;
+use App\Http\Controllers\Admin\MensajeriaController;
 use App\Http\Controllers\Admin\OdontogramaController;
 use App\Http\Controllers\Admin\PacienteController;
 use App\Http\Controllers\Admin\PagoController;
@@ -34,12 +35,12 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
-use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\ConfirmacionCitaController;
 use App\Http\Controllers\PagoOnlineController;
+use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Portal\PortalPagoController;
 use App\Http\Controllers\Portal\PortalReservaController;
-use App\Http\Controllers\ConfirmacionCitaController;
-use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PublicoController;
 use App\Http\Controllers\ReservaPublicaController;
 use Illuminate\Support\Facades\Route;
@@ -222,7 +223,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:ajustes.ver')->name('ajustes.edit');
     Route::put('ajustes', [AjusteController::class, 'update'])
         ->middleware('permission:ajustes.editar')->name('ajustes.update');
-    Route::post('ajustes/mensajeria/probar', [\App\Http\Controllers\Admin\MensajeriaController::class, 'probar'])
+    Route::post('ajustes/mensajeria/probar', [MensajeriaController::class, 'probar'])
         ->middleware(['permission:ajustes.editar', 'throttle:5,1'])->name('ajustes.mensajeria.probar');
 
     Route::resource('roles', RolController::class)->except('show')

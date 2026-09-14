@@ -163,7 +163,7 @@ return new class extends Migration
                     DB::statement("CREATE INDEX IF NOT EXISTS {$tabla}_{$columna}_trgm ON {$tabla} USING gin ({$columna} gin_trgm_ops)");
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Sin permisos para crear la extensión: las búsquedas siguen funcionando, solo sin índice.
             report($e);
         }
