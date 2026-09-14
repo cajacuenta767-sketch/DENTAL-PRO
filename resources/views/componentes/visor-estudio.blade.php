@@ -69,6 +69,16 @@
                         <img data-visor-imagen alt="Estudio radiográfico" style="max-width: 100%; display: block;">
                         <canvas data-anot-canvas style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                     </div>
+                    {{-- Los PDF se incrustan; los demás documentos (Word, Excel, DICOM…) solo se descargan. --}}
+                    <iframe data-visor-pdf title="Documento PDF" class="d-none w-100 h-100 border-0 bg-white"></iframe>
+                    <div data-visor-documento class="d-none text-center text-white p-4">
+                        <i class="ti ti-file fs-1 d-block mb-2" data-visor-documento-icono></i>
+                        <div class="fw-medium mb-1" data-visor-documento-nombre></div>
+                        <div class="text-white-50 small mb-3">Este tipo de archivo no se previsualiza en el navegador.</div>
+                        <a class="btn btn-primary" data-visor-documento-descarga target="_blank" rel="noopener">
+                            <i class="ti ti-download me-1"></i>Descargar
+                        </a>
+                    </div>
                 </div>
 
                 <div class="mt-3 d-none" data-visor-hallazgos-caja>
@@ -96,6 +106,8 @@
     const imagen = modal.querySelector('[data-visor-imagen]');
     const lienzo = modal.querySelector('[data-visor-lienzo]');
     const marco = modal.querySelector('[data-visor-marco]');
+    const visorPdf = modal.querySelector('[data-visor-pdf]');
+    const visorDocumento = modal.querySelector('[data-visor-documento]');
     const nivel = modal.querySelector('[data-visor-nivel]');
     const canvas = modal.querySelector('[data-anot-canvas]');
     const ctx = canvas.getContext('2d');
@@ -346,12 +358,24 @@
             estado('');
             elegirModo('mover');
 
-            // Los PDF no se dibujan: se ocultan las herramientas.
+            // Solo las imágenes se dibujan y amplían: PDF va incrustado, el resto se descarga.
             const esImagen = d.estudioVisualizable !== '0';
+            const esPdf = !esImagen && d.estudioPdf === '1';
             herramientas?.classList.toggle('d-none', !esImagen);
             canvas.classList.toggle('d-none', !esImagen);
+            lienzo.classList.toggle('d-none', !esImagen);
+            modal.querySelectorAll('[data-visor-zoom], [data-visor-nivel], [data-anot-mostrar]').forEach((b) => b.closest('label, button, span')?.classList.toggle('d-none', !esImagen));
+            visorPdf.classList.toggle('d-none', !esPdf);
+            visorPdf.src = esPdf ? d.estudioUrl : 'about:blank';
+            visorDocumento.classList.toggle('d-none', esImagen || esPdf);
+            if (!esImagen && !esPdf) {
+                const iconos = { documento: 'ti-file-text', hoja: 'ti-file-spreadsheet', dicom: 'ti-radioactive', imagen: 'ti-photo' };
+                visorDocumento.querySelector('[data-visor-documento-icono]').className = `ti ${iconos[d.estudioFamilia] ?? 'ti-file'} fs-1 d-block mb-2`;
+                visorDocumento.querySelector('[data-visor-documento-nombre]').textContent = d.estudioArchivo;
+                visorDocumento.querySelector('[data-visor-documento-descarga]').href = d.estudioDescarga;
+            }
 
-            imagen.src = d.estudioUrl;
+            imagen.src = esImagen ? d.estudioUrl : '';
             escala = 1;
             aplicar();
             marco.scrollTo(0, 0);

@@ -7,9 +7,11 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\EstudioImagen;
 use App\Models\Paciente;
+use App\Rules\ArchivoClinico;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +19,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EstudioImagenController extends Controller
 {
+    /** Tamaño máximo por archivo (30 MB): las tomografías y los DICOM pesan más que una foto. */
+    public const TAMANO_MAXIMO_KB = 30720;
+
     /** Bandeja general de estudios de toda la clínica. */
     public function index(Request $request): View
     {
@@ -82,19 +87,28 @@ class EstudioImagenController extends Controller
     {
         $datos = $this->validar($request, archivoObligatorio: true);
 
-        $archivo = $request->file('archivo');
+        // Se admiten varios archivos a la vez: cada uno queda como un estudio con los mismos datos.
+        $archivos = $request->file('archivos') ?: [$request->file('archivo')];
+        $archivos = array_values(array_filter($archivos));
+        $total = count($archivos);
 
-        $estudio = EstudioImagen::create($datos + [
-            'usuario_id' => $request->user()->id,
-            'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
-            'nombre_original' => $archivo->getClientOriginalName(),
-            // MIME detectado del contenido real, no del que declara el navegador.
-            'mime' => $archivo->getMimeType(),
-            'tamano' => $archivo->getSize(),
-        ]);
+        DB::transaction(function () use ($archivos, $datos, $request, $total) {
+            foreach ($archivos as $indice => $archivo) {
+                // array_merge: el título numerado debe imponerse al del formulario cuando hay varios archivos.
+                EstudioImagen::create(array_merge($datos, [
+                    'titulo' => $total > 1 ? sprintf('%s (%d/%d)', $datos['titulo'], $indice + 1, $total) : $datos['titulo'],
+                    'usuario_id' => $request->user()->id,
+                    'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
+                    'nombre_original' => $archivo->getClientOriginalName(),
+                    // MIME detectado del contenido real, no del que declara el navegador.
+                    'mime' => $archivo->getMimeType(),
+                    'tamano' => $archivo->getSize(),
+                ]));
+            }
+        });
 
-        return redirect()->route('admin.estudios.paciente', $estudio->paciente_id)
-            ->with('exito', 'El estudio fue cargado.');
+        return redirect()->route('admin.estudios.paciente', $datos['paciente_id'])
+            ->with('exito', $total > 1 ? "Se cargaron $total archivos." : 'El estudio fue cargado.');
     }
 
     public function edit(EstudioImagen $estudio): View
@@ -270,15 +284,24 @@ class EstudioImagenController extends Controller
             'piezas_referidas' => ['nullable', 'string', 'max:255'],
             'hallazgos' => ['nullable', 'string', 'max:2000'],
             'observaciones' => ['nullable', 'string', 'max:2000'],
-            'archivo' => [$archivoObligatorio ? 'required' : 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:20480'],
-        ], [], [
+            'archivo' => [
+                $archivoObligatorio ? 'required_without:archivos' : 'nullable',
+                'file', 'max:'.self::TAMANO_MAXIMO_KB, new ArchivoClinico,
+            ],
+            'archivos' => [$archivoObligatorio ? 'required_without:archivo' : 'nullable', 'array', 'max:20'],
+            'archivos.*' => ['file', 'max:'.self::TAMANO_MAXIMO_KB, new ArchivoClinico],
+        ], [
+            'archivo.required_without' => 'Debe adjuntar al menos un archivo.',
+            'archivos.required_without' => 'Debe adjuntar al menos un archivo.',
+            'archivos.max' => 'Puede subir hasta 20 archivos por vez.',
+        ], [
             'paciente_id' => 'paciente',
             'fecha_estudio' => 'fecha del estudio',
             'piezas_referidas' => 'piezas referidas',
         ]);
 
-        // El archivo subido se procesa aparte: nunca se guarda su ruta temporal.
-        unset($datos['archivo']);
+        // Los archivos subidos se procesan aparte: nunca se guarda su ruta temporal.
+        unset($datos['archivo'], $datos['archivos']);
 
         return $datos;
     }

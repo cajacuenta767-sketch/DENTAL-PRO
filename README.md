@@ -33,7 +33,7 @@ de reportes con exportación a PDF y CSV, auditoría de cambios y doble factor.
 | **Caja y Pagos** | Recibos con detalle, 4 métodos de cobro, saldos, anulación y PDF |
 | **Reportes** | 4 secciones (financiero, productividad, padrón, rentabilidad) con PDF y CSV |
 | **Aseguradoras** | Obras sociales y convenios con cobertura y tope anual |
-| **Imagenología** | Panorámicas y fotos clínicas con visor de zoom y descarga del original |
+| **Imagenología** | Radiografías, fotos clínicas, informes y resultados (imagen, PDF, Word/Excel, DICOM), carga múltiple, visor con zoom, anotaciones, comparación y descarga del original |
 | **Recetas y Certificados** | 6 tipos de documento con folio correlativo, vigencia, PDF y firma del paciente en pantalla para consentimientos |
 | **Presupuestos** | Plan de tratamiento por pieza, flujo evaluación → ejecución, cobertura y cobro |
 | **Inventario** | Insumos con kardex, entradas, salidas, mermas, valorización y alertas |

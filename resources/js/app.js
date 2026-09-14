@@ -1,11 +1,14 @@
 import './bootstrap';
 
-import '@tabler/core/dist/js/tabler.min.js';
+import * as tabler from '@tabler/core/dist/js/tabler.min.js';
 import ApexCharts from 'apexcharts';
 import TomSelect from 'tom-select';
 import 'tom-select/dist/css/tom-select.bootstrap5.css';
 import './odontograma';
 
+// Tabler empaqueta Bootstrap en formato UMD: al importarlo como módulo no deja el global
+// `bootstrap` que usan los visores (modales abiertos por script). Se expone aquí.
+window.bootstrap = window.bootstrap ?? tabler.default ?? tabler;
 window.ApexCharts = ApexCharts;
 window.TomSelect = TomSelect;
 

@@ -39,6 +39,8 @@ class EstudioImagen extends Model
         'CEFALOMETRICA' => 'Cefalométrica',
         'FOTO_INTRAORAL' => 'Fotografía intraoral',
         'FOTO_EXTRAORAL' => 'Fotografía extraoral',
+        'INFORME' => 'Informe / resultado de laboratorio',
+        'DOCUMENTO' => 'Documento externo',
         'OTRO' => 'Otro estudio',
     ];
 
@@ -76,10 +78,48 @@ class EstudioImagen extends Model
         return filled($this->archivo) && Storage::disk(self::DISCO)->exists($this->archivo);
     }
 
-    /** ¿El navegador puede mostrarlo en el visor o solo se descarga? */
+    /** ¿El navegador puede mostrarlo en el visor (con zoom y anotaciones) o solo se descarga? */
     public function getEsVisualizableAttribute(): bool
     {
-        return str_starts_with((string) $this->mime, 'image/');
+        return str_starts_with((string) $this->mime, 'image/')
+            && ! in_array($this->extension, ['tif', 'tiff', 'heic'], true);
+    }
+
+    public function getEsPdfAttribute(): bool
+    {
+        return $this->mime === 'application/pdf' || $this->extension === 'pdf';
+    }
+
+    /** Extensión del archivo original en minúsculas (sin punto). */
+    public function getExtensionAttribute(): string
+    {
+        return strtolower(pathinfo((string) ($this->nombre_original ?: $this->archivo), PATHINFO_EXTENSION));
+    }
+
+    /** Familia del archivo para iconos y filtros: imagen, pdf, documento, hoja, dicom u otro. */
+    public function getFamiliaAttribute(): string
+    {
+        return match (true) {
+            str_starts_with((string) $this->mime, 'image/') => 'imagen',
+            $this->es_pdf => 'pdf',
+            in_array($this->extension, ['doc', 'docx', 'odt', 'rtf', 'txt'], true) => 'documento',
+            in_array($this->extension, ['xls', 'xlsx'], true) => 'hoja',
+            in_array($this->extension, ['dcm', 'dicom'], true) => 'dicom',
+            default => 'otro',
+        };
+    }
+
+    /** Icono Tabler según la familia del archivo. */
+    public function getIconoAttribute(): string
+    {
+        return match ($this->familia) {
+            'imagen' => 'ti-photo',
+            'pdf' => 'ti-file-type-pdf',
+            'documento' => 'ti-file-text',
+            'hoja' => 'ti-file-spreadsheet',
+            'dicom' => 'ti-radioactive',
+            default => 'ti-file',
+        };
     }
 
     public function getTamanoLegibleAttribute(): string

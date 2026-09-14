@@ -7,6 +7,7 @@ const PAGINAS = [
     '/admin/estudios', '/admin/documentos', '/admin/roles', '/admin/usuarios', '/admin/ajustes',
     '/admin/agenda/semana', '/admin/agenda/mes', '/admin/caja', '/admin/sucursales', '/admin/respaldos', '/perfil',
     '/admin/pacientes/3/periodontograma', '/admin/pacientes/3/periodontograma/nuevo', '/admin/caja/arqueo',
+    '/admin/estudios/nuevo', '/admin/pacientes/3/panoramicas',
 ];
 
 test.describe('Panel administrativo', () => {
@@ -22,6 +23,17 @@ test.describe('Panel administrativo', () => {
         }
 
         expect(errores).toEqual([]);
+    });
+
+    test('la galería de imagenología abre el visor al pulsar una tarjeta', async ({ page }) => {
+        await entrarComoAdmin(page);
+        await page.goto('/admin/estudios');
+        const tarjeta = page.locator('[data-estudio][data-estudio-visualizable="1"]').first();
+        await expect(tarjeta).toBeVisible();
+        await tarjeta.locator('.card-body').click();
+        await expect(page.locator('#visor-estudio')).toHaveClass(/show/);
+        await expect(page.locator('#visor-estudio [data-visor-lienzo]')).toBeVisible();
+        await expect(page.locator('#visor-estudio [data-anot-herramientas]')).toBeVisible();
     });
 
     test.describe('sin sesión', () => {
