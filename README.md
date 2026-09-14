@@ -47,7 +47,7 @@ de reportes con exportación a PDF y CSV, auditoría de cambios y doble factor.
 
 ## Requisitos
 
-- PHP **8.2+** con las extensiones `pdo_pgsql`, `mbstring`, `gd`, `zip` e `intl`
+- PHP **8.4+** con las extensiones `pdo_pgsql`, `mbstring`, `gd`, `zip` e `intl`
 - Composer 2
 - PostgreSQL **14+**
 - Node.js 20+ y npm (solo para recompilar los estilos)

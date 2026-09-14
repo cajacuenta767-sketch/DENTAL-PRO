@@ -35,7 +35,7 @@ RUN composer install \
 # ---------------------------------------------------------------
 # Etapa 3: imagen de ejecución
 # ---------------------------------------------------------------
-FROM php:8.3-cli-alpine AS app
+FROM php:8.4-cli-alpine AS app
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
