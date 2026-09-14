@@ -681,6 +681,141 @@ body[data-export] .card { border-radius: 0; box-shadow: none; }
         crd('Stock bajo mínimo', list([['Resina compuesta A2', 'Mín. 10 · quedan <b style="color:#d63939">4</b>', pill('Pedir', RD), RD], ['Anestesia lidocaína 2 %', 'Mín. 50 · quedan <b style="color:#d63939">18</b>', pill('Pedir', RD), RD], ['Guantes nitrilo M', 'Mín. 500 · quedan <b style="color:#f59f00">520</b>', pill('OK', WA), WA]])) +
         crd('Últimos movimientos', list([['Salida · Resina A2', 'Cita 14/09 · Dra. Arancibia', '<b>−2</b>'], ['Entrada · Guantes M', 'Compra Dental Ltda.', '<b>+500</b>'], ['Merma · Anestesia', 'Vencimiento lote L-231', '<b>−6</b>']]))),
     },
+    {
+      chip: 'Módulo · Doctores',
+      h: `Tu equipo médico <em>con su disponibilidad real.</em>`,
+      p: 'Ficha profesional, colegiatura, especialidad y turnos semanales con detección de solapamientos.',
+      laptop: shell(b, 'Doctores', ph('Clínica', 'Doctores', `<span class="btn o sm">Horarios</span> <span class="btn sm">＋ Nuevo Doctor</span>`) +
+        kpis([['Doctores activos', '10', '8 especialidades', AZ, 'steth'], ['Turnos semanales', '48', '46 activos', IN, 'clock'], ['Citas esta semana', '132', '18 por doctor', PR, 'cal'], ['Ocupación media', '78 %', 'de los cupos', OK, 'check']]) +
+        `<div class="cols" style="grid-template-columns:1.6fr 1fr">${crd('Equipo médico', tbl(['Doctor', 'Especialidad', 'Colegiatura', 'Turnos', 'Estado'], [
+          ['<b>Dra. Sofía Arancibia</b><small>sofia.arancibia@clinica.com</small>', pill('Odontología general', TE), 'COP 14.522', 'Lun–Vie · 08:00–13:00', pill('Activa', OK)],
+          ['<b>Dr. Andrés Villalba</b><small>andres.villalba@clinica.com</small>', pill('Endodoncia', PU), 'COP 18.907', 'Lun, Mié, Vie · 14:00–19:00', pill('Activo', OK)],
+          ['<b>Dra. Camila Restrepo</b><small>camila.restrepo@clinica.com</small>', pill('Ortodoncia', AZ), 'COP 21.310', 'Mar, Jue · 08:00–17:00', pill('Activa', OK)],
+          ['<b>Dr. Julián Herrera</b><small>julian.herrera@clinica.com</small>', pill('Implantología', IN), 'COP 16.044', 'Lun–Jue · 09:00–14:00', pill('Activo', OK)],
+          ['<b>Dra. Paula Méndez</b><small>paula.mendez@clinica.com</small>', pill('Odontopediatría', WA), 'COP 23.118', 'Sáb · 08:00–12:00', pill('Vacaciones', WA)],
+        ]), '10 doctores')}${crd('Horario semanal · Dra. Arancibia', `<div class="b" style="display:grid;gap:.45cqw;font-size:1.1cqw">${[['Lunes', '08:00 – 13:00', OK], ['Martes', '08:00 – 13:00', OK], ['Miércoles', '08:00 – 13:00 · 15:00 – 18:00', OK], ['Jueves', '08:00 – 13:00', OK], ['Viernes', '08:00 – 12:00', OK], ['Sábado', 'Sin atención', '#9fb0ae']].map(([d, t, c]) => `<div style="display:flex;justify-content:space-between;gap:.6cqw;padding:.4cqw 0;border-bottom:.1cqw solid var(--ui-line)"><b>${d}</b><span style="color:${c === OK ? 'var(--ui-ink)' : c}">${t}</span></div>`).join('')}<div style="margin-top:.5cqw">${pill('Sin solapamientos', OK)}</div></div>`)}</div>`),
+      phone: pshell(b, 'Más', `<div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em;text-transform:uppercase">Horarios</div><div style="font-size:1.6cqw;font-weight:800">Nuevo turno</div></div>
+        <div><div class="lbl">Doctor</div><div class="inp">Dra. Sofía Arancibia</div></div>
+        <div><div class="lbl">Día</div><div class="cupos">${['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((d, i) => `<span class="${i === 2 ? 'on' : ''}">${d}</span>`).join('')}</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5cqw"><div><div class="lbl">Desde</div><div class="inp">15:00</div></div><div><div class="lbl">Hasta</div><div class="inp">18:00</div></div></div>
+        <div><div class="lbl">Intervalo de cita</div><div class="inp">40 minutos</div></div>
+        <div style="display:flex;gap:.5cqw;align-items:center;font-size:1cqw;color:var(--ui-muted)"><span style="color:#2fb344;font-size:1.3cqw">✔</span> No se solapa con el turno de 08:00 – 13:00</div>
+        <span class="btn brand">Guardar horario</span>`),
+    },
+    {
+      chip: 'Módulo · Roles y Permisos',
+      h: `Cada usuario ve <em>solo lo que le corresponde.</em>`,
+      p: '5 roles predefinidos y 82 permisos por acción, editables desde la interfaz. Usuarios activos o inactivos.',
+      laptop: shell(b, 'Home', ph('Configuración', 'Roles y permisos · Recepción', `<span class="btn o sm">Cancelar</span> <span class="btn brand sm">Guardar rol</span>`) +
+        `<div class="cols" style="grid-template-columns:1fr 2.1fr">${crd('Roles', list([['<b>Super Administrador</b>', '82 permisos · 1 usuario', pill('Sistema', PU)], ['<b>Administrador</b>', '74 permisos · 2 usuarios', ''], ['<b>Recepción</b>', '31 permisos · 3 usuarios', pill('Editando', PR)], ['<b>Doctor</b>', '26 permisos · 10 usuarios', ''], ['<b>Paciente</b>', '4 permisos · 214 usuarios', '']]))}
+        ${crd('Permisos por módulo', `<table class="tbl"><thead><tr><th>Módulo</th>${['Ver', 'Crear', 'Editar', 'Eliminar', 'Confirmar', 'Atender'].map(a => `<th style="text-align:center">${a}</th>`).join('')}</tr></thead><tbody>${[['Pacientes', [1, 1, 1, 0, -1, -1]], ['Citas', [1, 1, 1, 0, 1, 0]], ['Mi Agenda', [1, -1, -1, -1, -1, -1]], ['Historia Clínica', [1, 0, 0, 0, -1, -1]], ['Caja y Pagos', [1, 1, 0, 0, -1, -1]], ['Reportes', [0, -1, -1, -1, -1, -1]], ['Ajustes', [0, -1, 0, -1, -1, -1]]].map(([m, v]) => `<tr><td><b>${m}</b></td>${v.map(x => `<td style="text-align:center">${x < 0 ? '<span style="color:#c9d3d1">—</span>' : `<span style="display:inline-grid;place-items:center;width:1.5cqw;height:1.5cqw;border-radius:.35cqw;border:.12cqw solid ${x ? '#0d9488' : '#cfdad8'};background:${x ? '#0d9488' : '#fff'};color:#fff;font-size:1cqw">${x ? '✔' : ''}</span>`}</td>`).join('')}</tr>`).join('')}</tbody></table>`, '31 de 82 activos')}</div>`),
+      phone: pshell(b, 'Más', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Usuarios</div>${pill('16 activos', OK)}</div>
+        <div class="inp ph-txt">🔍 Buscar por nombre o correo…</div>` +
+        crd('Equipo', list([['<b>Administrador General</b>', 'admin@clinica.com', pill('Super Admin', PU)], ['<b>Marcela Quiroga</b>', 'secretaria@clinica.com', pill('Recepción', PR)], ['<b>Dra. Sofía Arancibia</b>', 'sofia.arancibia@clinica.com', pill('Doctor', AZ)], ['<b>Dr. Andrés Villalba</b>', 'andres.villalba@clinica.com', pill('Doctor', AZ)], ['<b>Carlos Peña</b>', 'carlos.pena@clinica.com', pill('Inactivo', RD)]])) +
+        `<span class="btn">＋ Nuevo usuario</span>`),
+    },
+    {
+      chip: 'Módulo · Imagenología',
+      h: `Radiografías y fotos clínicas <em>junto a la historia.</em>`,
+      p: 'Panorámicas, periapicales y fotos intraorales por paciente, con visor de zoom y descarga del original.',
+      laptop: shell(b, 'Pacientes', ph('Historia clínica · Valentina Ríos', 'Imagenología', `<span class="btn o sm">Filtrar por tipo</span> <span class="btn brand sm">＋ Subir estudio</span>`) +
+        `<div class="tabs">${['Datos', 'Historia clínica', 'Odontograma', 'Imagenología', 'Recetas y certificados', 'Presupuestos', 'Pagos'].map((t, i) => `<span class="${i === 3 ? 'on' : ''}">${t}</span>`).join('')}</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1cqw">${[['Panorámica', '12/09/2026', 'radial-gradient(ellipse at 50% 30%, #e8e8e8 0%, #9a9a9a 30%, #2b2b2b 70%, #111 100%)'], ['Periapical 16', '12/09/2026', 'radial-gradient(circle at 45% 55%, #f0f0f0 0%, #8f8f8f 35%, #1c1c1c 80%)'], ['Foto intraoral', '28/08/2026', 'linear-gradient(160deg, #f5c8c0 0%, #d98a80 45%, #f7f3ee 46%, #e9e2da 70%, #c96e63 100%)'], ['Bitewing der.', '02/07/2026', 'radial-gradient(ellipse at 50% 50%, #dcdcdc 0%, #7a7a7a 40%, #151515 85%)'], ['Foto sonrisa', '02/07/2026', 'linear-gradient(180deg, #f2d9cf 0%, #e6b4a6 40%, #fbfaf7 41%, #efe9e2 65%, #d59185 100%)'], ['Periapical 46', '28/08/2026', 'radial-gradient(circle at 55% 45%, #ededed 0%, #858585 38%, #191919 82%)'], ['Cefalometría', '15/05/2026', 'radial-gradient(ellipse at 40% 50%, #e0e0e0 0%, #8c8c8c 35%, #202020 75%, #0e0e0e 100%)'], ['Foto oclusal', '15/05/2026', 'linear-gradient(200deg, #f3cdc4 0%, #dc9184 50%, #f6f1ea 51%, #e5ded6 100%)']].map(([t, d, bg]) => `<div class="crd"><div style="aspect-ratio:4/3;background:${bg};position:relative"><span class="pill" style="--c:#fff;position:absolute;left:.5cqw;top:.5cqw;background:rgba(0,0,0,.45);color:#fff">🔍 Zoom</span></div><div style="padding:.6cqw .8cqw;font-size:1.1cqw"><b>${t}</b><div style="color:var(--ui-muted);font-size:.95cqw">${d} · Dra. S. Arancibia</div></div></div>`).join('')}</div>`),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.5cqw;font-weight:800">Panorámica</div>${pill('12/09/2026', PR)}</div>
+        <div style="aspect-ratio:4/3;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 30%, #e8e8e8 0%, #9a9a9a 30%, #2b2b2b 70%, #111 100%);position:relative;overflow:hidden"><div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:2.2cqw 2.2cqw"></div><span style="position:absolute;right:.6cqw;bottom:.6cqw;display:flex;gap:.4cqw"><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">−</span><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">2.5×</span><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">＋</span></span></div>
+        <div style="font-size:1.05cqw;color:var(--ui-muted)">Valentina Ríos · Dra. S. Arancibia · 4,2 MB · JPG</div>
+        <div><div class="lbl">Observaciones</div><div class="inp" style="height:auto;padding:.6cqw .8cqw;white-space:normal;font-size:1.05cqw">Lesión periapical en 46 compatible con necrosis pulpar. Se indica endodoncia.</div></div>
+        <span class="btn">Descargar original</span>
+        <span class="btn o">Adjuntar a la consulta</span>`),
+    },
+    {
+      chip: 'Módulo · Recetas',
+      h: `Documentos clínicos <em>con folio y firma en PDF.</em>`,
+      p: '6 tipos de documento con numeración correlativa, vigencia y descarga firmada desde la ficha del paciente.',
+      laptop: shell(b, 'Pacientes', ph('Documentos clínicos', 'Recetas y certificados', `<span class="btn o sm">Ver vencidos</span> <span class="btn brand sm">＋ Nuevo documento</span>`) +
+        kpis([['Emitidos este mes', '64', '6 tipos', PR, 'receipt'], ['Recetas', '38', 'con vigencia 30 días', TE, 'check'], ['Certificados', '19', 'incapacidad y asistencia', IN, 'receipt'], ['Por vencer', '5', 'en los próximos 7 días', WA, 'alert']]) +
+        crd('Últimos documentos', tbl(['Folio', 'Tipo', 'Paciente', 'Doctor', 'Emitido', 'Vigente hasta', 'PDF'], [
+          ['<b>REC-2026-000214</b>', pill('Receta', TE), 'Valentina Ríos', 'Dra. S. Arancibia', '14/09/2026', '14/10/2026', pill('Firmado', OK)],
+          ['<b>CER-2026-000071</b>', pill('Certificado de asistencia', IN), 'Mateo Ospina', 'Dr. A. Villalba', '14/09/2026', '—', pill('Firmado', OK)],
+          ['<b>INC-2026-000018</b>', pill('Incapacidad', RD), 'Samuel Torres', 'Dr. J. Herrera', '13/09/2026', '16/09/2026', pill('Firmado', OK)],
+          ['<b>ORD-2026-000133</b>', pill('Orden de estudio', AZ), 'Laura Cárdenas', 'Dra. C. Restrepo', '13/09/2026', '13/11/2026', pill('Firmado', OK)],
+          ['<b>CON-2026-000090</b>', pill('Consentimiento', PU), 'Isabella Mora', 'Dra. S. Arancibia', '12/09/2026', '—', pill('Pendiente firma', WA)],
+        ]), '64 registros')),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em">RECETA</div><div style="font-size:1.5cqw;font-weight:800">REC-2026-000214</div></div>${pill('Vigente', OK)}</div>
+        <div class="crd" style="padding:1cqw;font-size:1.05cqw;display:grid;gap:.5cqw"><div style="display:flex;align-items:center;gap:.6cqw"><span class="mark" style="width:2cqw;height:2cqw;border-radius:.5cqw;background:#0d9488;display:grid;place-items:center">${tooth()}</span><b>${b}</b></div><div><b>Paciente:</b> Valentina Ríos · 29 años</div><div><b>Diagnóstico:</b> Pulpitis irreversible 46</div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw"><b>Rp.</b><br>Ibuprofeno 400 mg · 1 c/8 h · 5 días<br>Amoxicilina 500 mg · 1 c/8 h · 7 días</div><div style="color:var(--ui-muted)">Vigente hasta 14/10/2026</div><div style="text-align:right;font-family:Sora;font-style:italic;color:#0f766e">Dra. S. Arancibia</div></div>
+        <span class="btn brand">Descargar PDF firmado</span>
+        <span class="btn o">Enviar por WhatsApp</span>`),
+    },
+    {
+      chip: 'Módulo · Facturación',
+      h: `Factura electrónica <em>con serie y correlativo.</em>`,
+      p: 'Documentos tributarios con IVA, número de control, código de generación y anulación, emitidos desde el recibo.',
+      laptop: shell(b, 'Facturación', ph('Administración Financiera', 'Facturación electrónica', `<span class="btn o sm">Exportar</span> <span class="btn brand sm">＋ Emitir documento</span>`) +
+        kpis([['Emitidos este mes', '58', 'serie F001', PR, 'receipt'], ['Base imponible', '$ 15.504.200', 'sin IVA', OK, 'coin'], ['IVA 19 %', '$ 2.945.800', 'recaudado', IN, 'cash'], ['Anulados', '2', 'con nota de crédito', RD, 'alert']]) +
+        crd('Documentos tributarios', tbl(['Documento', 'Cliente', 'Recibo', 'Fecha', 'Neto', 'IVA', 'Total', 'Estado'], [
+          ['<b>F001-00000318</b><small>Factura</small>', 'Valentina Ríos<small>CC 1.023.456.789</small>', 'REC-000318', '14/09/2026', '$ 268.908', '$ 51.092', '$ 320.000', pill('Emitida', OK)],
+          ['<b>F001-00000317</b><small>Factura</small>', 'Mateo Ospina<small>CC 80.123.456</small>', 'REC-000315', '13/09/2026', '$ 798.319', '$ 151.681', '$ 950.000', pill('Emitida', OK)],
+          ['<b>B001-00000094</b><small>Boleta</small>', 'Laura Cárdenas<small>Consumidor final</small>', 'REC-000316', '13/09/2026', '$ 151.261', '$ 28.739', '$ 180.000', pill('Emitida', OK)],
+          ['<b>F001-00000312</b><small>Factura</small>', 'Sanitas EPS<small>NIT 800.251.440-6</small>', 'REC-000301', '10/09/2026', '$ 2.352.941', '$ 447.059', '$ 2.800.000', pill('Emitida', OK)],
+          ['<b>F001-00000309</b><small>Factura</small>', 'Isabella Mora<small>CC 52.789.012</small>', 'REC-000298', '09/09/2026', '$ 378.151', '$ 71.849', '$ 450.000', pill('Anulada', RD)],
+        ]), '58 registros')),
+      phone: pshell(b, 'Caja', `<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em">FACTURA</div><div style="font-size:1.5cqw;font-weight:800">F001-00000318</div></div>${pill('Emitida', OK)}</div>
+        <div class="crd" style="padding:1cqw;font-size:1.05cqw;display:grid;gap:.45cqw"><div><b>Cliente:</b> Valentina Ríos</div><div><b>Recibo origen:</b> REC-000318</div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw;display:flex;justify-content:space-between"><span>Obturación con resina</span><b>$ 220.000</b></div><div style="display:flex;justify-content:space-between"><span>Profilaxis</span><b>$ 100.000</b></div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw;display:flex;justify-content:space-between;color:var(--ui-muted)"><span>Neto</span><span>$ 268.908</span></div><div style="display:flex;justify-content:space-between;color:var(--ui-muted)"><span>IVA 19 %</span><span>$ 51.092</span></div><div style="display:flex;justify-content:space-between;font-size:1.4cqw"><b>Total</b><b>$ 320.000</b></div></div>
+        <div style="font-size:.9cqw;color:var(--ui-muted);font-family:monospace">Control DTE-01-F0010000-000000000000318 · Sello 8A3F…E21C</div>
+        <span class="btn brand">Descargar PDF</span>
+        <span class="btn o" style="border-color:#d63939;color:#d63939">Anular con nota de crédito</span>`),
+    },
+    {
+      chip: 'Módulo · Inventario',
+      h: `El stock solo cambia <em>por movimientos.</em>`,
+      p: 'Insumos con kardex: entradas, salidas, ajustes y mermas dejan su saldo, y ninguna salida deja el stock en negativo.',
+      laptop: shell(b, 'Inventario', ph('Inventario', 'Kardex · Resina compuesta A2', `<span class="btn o sm">Ajuste</span> <span class="btn sm">＋ Entrada</span> <span class="btn o sm" style="border-color:#d63939;color:#d63939">− Salida</span>`) +
+        kpis([['Stock actual', '4 jeringas', 'mínimo 10', RD, 'box'], ['Costo promedio', '$ 68.500', 'por jeringa', PR, 'coin'], ['Valorizado', '$ 274.000', 'a costo promedio', OK, 'cash'], ['Consumo mensual', '18', 'últimos 30 días', IN, 'alert']]) +
+        crd('Movimientos', tbl(['Fecha', 'Tipo', 'Detalle', 'Cantidad', 'Saldo', 'Responsable'], [
+          ['14/09/2026 11:20', pill('Salida', RD), 'Cita · Valentina Ríos · obturación 16', '−2', '<b>4</b>', 'Dra. S. Arancibia'],
+          ['12/09/2026 09:05', pill('Salida', RD), 'Cita · Mateo Ospina · obturación 25', '−1', '<b>6</b>', 'Dr. A. Villalba'],
+          ['08/09/2026 16:40', pill('Merma', WA), 'Vencimiento lote L-231', '−3', '<b>7</b>', 'Marcela Quiroga'],
+          ['01/09/2026 10:00', pill('Entrada', OK), 'Compra Dental Ltda. · factura 4471', '+10', '<b>10</b>', 'Marcela Quiroga'],
+          ['28/08/2026 08:30', pill('Ajuste', AZ), 'Conteo físico de cierre de mes', '−1', '<b>0</b>', 'Administrador General'],
+        ]), 'saldo resultante por línea')),
+      phone: pshell(b, 'Más', `<div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em;text-transform:uppercase">Inventario</div><div style="font-size:1.6cqw;font-weight:800">Registrar salida</div></div>
+        <div><div class="lbl">Insumo</div><div class="inp">Resina compuesta A2 · stock 4</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5cqw"><div><div class="lbl">Cantidad</div><div class="inp">6</div></div><div><div class="lbl">Motivo</div><div class="inp">Consumo en cita</div></div></div>
+        <div style="background:#fdecec;border:.12cqw solid #f1b5b5;border-radius:.6cqw;padding:.7cqw .8cqw;font-size:1.05cqw;color:#a12323"><b>Salida rechazada.</b> Dejaría el stock en −2. Disponible: 4 jeringas.</div>
+        <div><div class="lbl">Cantidad</div><div class="inp" style="border-color:#0d9488">2</div></div>
+        <span class="btn brand">Confirmar salida</span>` +
+        crd('Alertas de stock', list([['Resina compuesta A2', 'quedan 4 · mín. 10', pill('Pedir', RD), RD], ['Anestesia lidocaína 2 %', 'quedan 18 · mín. 50', pill('Pedir', RD), RD]]))),
+    },
+    {
+      chip: 'Módulo · Catálogos',
+      h: `Catálogos que alimentan <em>la agenda y la caja.</em>`,
+      p: 'Tratamientos con precio y duración, especialidades con color, y obras sociales con cobertura y tope anual.',
+      laptop: shell(b, 'Tratamientos', ph('Catálogos', 'Tratamientos', `<span class="btn o sm">Especialidades</span> <span class="btn o sm">Aseguradoras</span> <span class="btn sm">＋ Nuevo Tratamiento</span>`) +
+        `<div class="cols" style="grid-template-columns:1.7fr 1fr">${crd('Catálogo de tratamientos', tbl(['Tratamiento', 'Especialidad', 'Duración', 'Precio', 'Estado'], [
+          ['<b>Limpieza dental</b>', pill('Odontología general', TE), '40 min', '$ 100.000', pill('Activo', OK)],
+          ['<b>Obturación con resina</b>', pill('Odontología general', TE), '40 min', '$ 220.000', pill('Activo', OK)],
+          ['<b>Endodoncia molar</b>', pill('Endodoncia', PU), '80 min', '$ 650.000', pill('Activo', OK)],
+          ['<b>Control ortodoncia</b>', pill('Ortodoncia', AZ), '30 min', '$ 180.000', pill('Activo', OK)],
+          ['<b>Implante unitario</b>', pill('Implantología', IN), '120 min', '$ 2.800.000', pill('Activo', OK)],
+          ['<b>Blanqueamiento</b>', pill('Estética dental', WA), '60 min', '$ 450.000', pill('Activo', OK)],
+          ['<b>Corona de zirconio</b>', pill('Rehabilitación', '#f76707'), '60 min', '$ 1.400.000', pill('Inactivo', '#9fb0ae')],
+        ]), '30 tratamientos')}${crd('Aseguradoras', list([['<b>Sanitas EPS</b>', 'Cubre 30 % · tope anual $ 3.000.000', pill('Activa', OK)], ['<b>Sura</b>', 'Cubre 40 % · tope anual $ 2.500.000', pill('Activa', OK)], ['<b>Colsanitas</b>', 'Cubre 25 % · sin tope', pill('Activa', OK)], ['<b>Compensar</b>', 'Cubre 20 % · tope anual $ 1.800.000', pill('Activa', OK)], ['<b>Nueva EPS</b>', 'Cubre 15 % · tope anual $ 1.200.000', pill('Suspendida', WA)]]), '6 convenios')}</div>`),
+      phone: pshell(b, 'Más', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Especialidades</div>${pill('8', PR)}</div>` +
+        crd('Catálogo', list([['<b>Odontología general</b>', '9 tratamientos · 3 doctores', '', TE], ['<b>Endodoncia</b>', '4 tratamientos · 1 doctor', '', PU], ['<b>Ortodoncia</b>', '5 tratamientos · 2 doctores', '', AZ], ['<b>Implantología</b>', '3 tratamientos · 1 doctor', '', IN], ['<b>Estética dental</b>', '4 tratamientos · 2 doctores', '', WA], ['<b>Odontopediatría</b>', '3 tratamientos · 1 doctor', '', OK], ['<b>Periodoncia</b>', '2 tratamientos · 1 doctor', '', RD]])) +
+        `<span class="btn">＋ Nueva especialidad</span>`),
+    },
+    {
+      chip: 'Módulo · Ajustes',
+      h: `Configura tu clínica <em>y encuentra todo.</em>`,
+      p: 'Datos, divisa, logotipo, intervalo de cita y recordatorios, más un buscador global de pacientes, citas, recibos y presupuestos.',
+      laptop: shell(b, 'Home', ph('Configuración', 'Ajustes de la clínica', `<span class="btn o sm">Turnos online</span> <span class="btn brand sm">Guardar cambios</span>`) +
+        `<div class="tabs">${['Datos generales', 'Agenda y recordatorios', 'Facturación', 'Turnos online', 'Apariencia'].map((t, i) => `<span class="${i === 0 ? 'on' : ''}">${t}</span>`).join('')}</div>
+        <div class="cols" style="grid-template-columns:1.6fr 1fr">${crd('Datos de la clínica', `<div class="b" style="display:grid;grid-template-columns:1fr 1fr;gap:.8cqw 1cqw"><div><div class="lbl">Nombre</div><div class="inp">${b}</div></div><div><div class="lbl">Divisa</div><div class="inp">COP · Peso colombiano</div></div><div><div class="lbl">Teléfono / WhatsApp</div><div class="inp">+591 78680723</div></div><div><div class="lbl">Correo</div><div class="inp">contacto@clinica.com</div></div><div style="grid-column:1/-1"><div class="lbl">Dirección</div><div class="inp">Av. Principal 123 · Piso 2 · Consultorio 204</div></div><div><div class="lbl">Intervalo de cita</div><div class="inp">40 minutos</div></div><div><div class="lbl">Recordatorio</div><div class="inp">24 horas antes · correo</div></div></div>`)}
+        ${crd('Logotipo', `<div class="b" style="display:flex;flex-direction:column;gap:.8cqw;align-items:center"><div style="width:100%;aspect-ratio:16/9;border:.15cqw dashed #cfdad8;border-radius:.8cqw;display:grid;place-items:center;background:#fff"><span style="display:inline-flex;align-items:center;gap:.6cqw"><span class="mark" style="width:3cqw;height:3cqw;border-radius:.8cqw;background:#0d9488;display:grid;place-items:center">${tooth()}</span><b style="font-family:Sora;font-size:1.8cqw">${b}</b></span></div><div style="font-size:1cqw;color:var(--ui-muted);text-align:center">PNG o SVG · se usa en el panel, correos y PDF</div><span class="btn o sm">Cambiar logotipo</span></div>`)}</div>`),
+      phone: pshell(b, 'Inicio', `<div class="inp" style="border-color:#0d9488;font-weight:700">🔍 ríos</div>` +
+        crd('Resultados', list([['<b>Valentina Ríos Peñaloza</b>', 'Paciente · CC 1.023.456.789', pill('Paciente', TE)], ['<b>Cita 14/09 · 09:00</b>', 'Valentina Ríos · Limpieza dental', pill('Cita', AZ)], ['<b>REC-000318</b>', 'Recibo · $ 320.000 · pagado', pill('Recibo', OK)], ['<b>PRE-000142</b>', 'Presupuesto · plan de 4 piezas', pill('Presupuesto', PU)], ['<b>Dr. Camilo Ríos</b>', 'Doctor · Periodoncia', pill('Doctor', IN)]])) +
+        `<div style="font-size:.95cqw;color:var(--ui-muted);text-align:center">5 resultados en pacientes, citas, recibos, presupuestos y doctores</div>`),
+    },
   ];
 
   /* ---------------- Render ---------------- */
