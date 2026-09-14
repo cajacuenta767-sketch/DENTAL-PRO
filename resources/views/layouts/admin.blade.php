@@ -11,6 +11,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>@yield('titulo', 'Panel') · {{ $ajustes->nombre ?? 'OdontoSuite' }}</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ asset('iconos/apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         // Restaura el tema guardado antes de pintar para evitar parpadeo.

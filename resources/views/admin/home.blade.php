@@ -24,9 +24,7 @@
 <div class="row row-cards mb-3">
     <div class="col-sm-6 col-xl-3">
         <x-kpi titulo="Citas de Hoy" :valor="$kpis['citasHoy']" icono="ti ti-calendar-event" color="primary"
-               :pie="'<span class=\'text-warning\'>'.$kpis['citasHoyPendientes'].' pend.</span> ·
-                     <span class=\'text-azure\'>'.$kpis['citasHoyConfirmadas'].' conf.</span> ·
-                     <span class=\'text-success\'>'.$kpis['citasHoyAtendidas'].' aten.</span>'" />
+               :pie="$kpis['citasHoyPendientes'].' pend. · '.$kpis['citasHoyConfirmadas'].' conf. · '.$kpis['citasHoyAtendidas'].' aten.'" />
     </div>
     <div class="col-sm-6 col-xl-3">
         <x-kpi titulo="Pacientes Registrados" :valor="$kpis['pacientes']" icono="ti ti-users" color="success"

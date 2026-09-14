@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="marca">#0D9488</color>
+    <color name="marca_oscura">#0F766E</color>
+    <color name="marca_clara">#5EEAD4</color>
+    <color name="blanco_suave">#CCFFFFFF</color>
+    <color name="exito">#15803D</color>
+    <color name="error">#B91C1C</color>
+    <color name="ic_launcher_background">#0D9488</color>
+</resources>

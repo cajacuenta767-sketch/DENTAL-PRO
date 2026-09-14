@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">DENTAL-PRO</string>
+
+    <!-- Pantalla principal -->
+    <string name="reintentar">Reintentar</string>
+    <string name="cambiar_servidor">Cambiar servidor</string>
+    <string name="error_conexion_titulo">Sin conexión con el servidor</string>
+    <string name="error_conexion_texto">No se pudo cargar DENTAL-PRO desde %1$s. Comprueba tu conexión a internet o, si el servidor está en la clínica, que estés conectado a la misma red.</string>
+    <string name="sin_app_para_enlace">No hay ninguna aplicación para abrir este enlace.</string>
+    <string name="sin_app_para_archivos">No hay ninguna aplicación para seleccionar archivos.</string>
+    <string name="camara_denegada">Sin permiso de cámara: solo podrás elegir archivos existentes.</string>
+    <string name="selector_titulo">Elegir archivo o tomar foto</string>
+    <string name="descarga_descripcion">Descarga de DENTAL-PRO</string>
+    <string name="descarga_iniciada">Descargando %1$s en la carpeta Descargas…</string>
+    <string name="descarga_error">No se pudo iniciar la descarga.</string>
+    <string name="descarga_sin_permiso">Sin permiso de almacenamiento no es posible guardar la descarga.</string>
+
+    <!-- Menú -->
+    <string name="menu_recargar">Recargar</string>
+    <string name="menu_inicio">Ir al inicio</string>
+    <string name="menu_navegador">Abrir en el navegador</string>
+    <string name="menu_ajustes">Servidor…</string>
+
+    <!-- Ajustes -->
+    <string name="ajustes_titulo">Servidor</string>
+    <string name="ajustes_intro">Escribe la dirección del servidor donde está instalado DENTAL-PRO.</string>
+    <string name="ajustes_intro_primera_vez">Bienvenido. Para empezar, indica la dirección del servidor de tu clínica: la que usas en el navegador o la que muestra el instalador de escritorio.</string>
+    <string name="ajustes_direccion">Dirección del servidor</string>
+    <string name="ajustes_direccion_ayuda">Ejemplos: https://clinica.midominio.com o http://192.168.1.10:8181</string>
+    <string name="ajustes_direccion_invalida">Escribe una dirección válida, por ejemplo https://clinica.midominio.com</string>
+    <string name="ajustes_probar">Probar conexión</string>
+    <string name="ajustes_guardar">Guardar y abrir</string>
+    <string name="ajustes_probando">Conectando con %1$s…</string>
+    <string name="ajustes_nota_http">Las direcciones de red local (IP, localhost o *.local) se abren por http:// y los dominios por https://. Puedes escribir el esquema explícitamente si tu instalación es distinta.</string>
+    <string name="ajustes_version">DENTAL-PRO %1$s · WebView %2$s</string>
+    <string name="desconocido">desconocido</string>
+</resources>

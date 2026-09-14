@@ -158,3 +158,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => alerta.classList.add('d-none'), 6000);
     });
 });
+
+/**
+ * PWA: registra el service worker (public/sw.js) para que el sistema pueda
+ * instalarse desde el navegador y muestre una página propia sin conexión.
+ * Sólo en contextos seguros (https o localhost), que es donde el navegador
+ * permite service workers.
+ */
+if ('serviceWorker' in navigator
+    && (window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+            /* sin service worker la aplicación funciona igual */
+        });
+    });
+}
