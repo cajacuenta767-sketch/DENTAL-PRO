@@ -94,14 +94,7 @@
                     </x-campo>
 
                     <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
-                        <select id="paciente_id" name="paciente_id" class="form-select" required>
-                            <option value="">— Selecciona —</option>
-                            @foreach ($pacientes as $paciente)
-                                <option value="{{ $paciente->id }}" @selected(old('paciente_id', $documento->paciente_id) == $paciente->id)>
-                                    {{ $paciente->nombre_completo }} · {{ $paciente->numero_documento }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-selector-paciente nombre="paciente_id" :seleccionado="$documento->paciente_id" requerido />
                     </x-campo>
 
                     <x-campo nombre="doctor_id" etiqueta="Doctor que firma" requerido>

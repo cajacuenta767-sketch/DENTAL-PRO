@@ -1,6 +1,33 @@
 @php
+    // Módulos visibles para este usuario, agrupados según config('odontosuite.modulos')[*]['grupo'].
+    $usuario = auth()->user();
+
     $modulos = collect(config('odontosuite.modulos'))
-        ->reject(fn ($m) => ($m['oculto_en_menu'] ?? false) || blank($m['ruta'] ?? null));
+        ->reject(fn ($m) => ($m['oculto_en_menu'] ?? false) || blank($m['ruta'] ?? null))
+        ->filter(fn ($m, $clave) => $usuario?->can("{$clave}.ver"))
+        ->map(function ($m) {
+            $m['patron'] = $m['ruta'] === 'admin.home' ? 'admin.home' : Str::beforeLast($m['ruta'], '.').'.*';
+            $m['activo'] = request()->routeIs($m['patron']);
+
+            return $m;
+        });
+
+    $gruposMenu = [
+        'General' => 'ti ti-layout-dashboard',
+        'Clínica' => 'ti ti-stethoscope',
+        'Catálogos' => 'ti ti-list-details',
+        'Finanzas' => 'ti ti-coins',
+        'Operación' => 'ti ti-packages',
+        'Configuración' => 'ti ti-settings',
+    ];
+
+    $menuAgrupado = $modulos
+        ->groupBy(fn ($m) => $m['grupo'] ?? 'General', preserveKeys: true)
+        ->sortBy(function ($items, $grupo) use ($gruposMenu) {
+            $posicion = array_search($grupo, array_keys($gruposMenu), true);
+
+            return $posicion === false ? 99 : $posicion;
+        });
 @endphp
 
 <header class="navbar navbar-expand-md d-print-none sticky-top">
@@ -35,13 +62,48 @@
         @endcanany
 
         <div class="navbar-nav flex-row order-md-last align-items-center">
-            <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema">
-                <i class="ti ti-moon fs-3"></i>
+            {{-- Selector de sede (sucursal activa) --}}
+            @if (auth()->user()?->sucursal_id && $sucursalActiva)
+                <span class="nav-link px-2 text-secondary d-none d-md-flex align-items-center" title="Tu cuenta está ligada a esta sede">
+                    <i class="ti ti-building-hospital fs-3 me-1" style="color: {{ $sucursalActiva->color }}"></i>
+                    <span class="d-none d-lg-inline small">{{ $sucursalActiva->nombre }}</span>
+                </span>
+            @elseif (($sucursales ?? collect())->count() > 1 && \App\Support\SucursalActiva::puedeCambiar())
+                <div class="nav-item dropdown me-1">
+                    <a href="#" class="nav-link px-2 d-flex align-items-center" data-bs-toggle="dropdown" title="Cambiar de sede" aria-label="Cambiar de sede">
+                        <i class="ti ti-building-hospital fs-3 me-1" @if ($sucursalActiva) style="color: {{ $sucursalActiva->color }}" @endif></i>
+                        <span class="d-none d-lg-inline small">{{ $sucursalActiva?->nombre ?? 'Todas las sedes' }}</span>
+                        <i class="ti ti-chevron-down ms-1 d-none d-lg-inline"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <span class="dropdown-header">Sede de trabajo</span>
+                        <form method="POST" action="{{ route('admin.sucursal.cambiar') }}">
+                            @csrf
+                            <button type="submit" name="sucursal_id" value="" class="dropdown-item {{ $sucursalActiva ? '' : 'active' }}">
+                                <i class="ti ti-buildings me-2"></i>Todas las sedes
+                            </button>
+                        </form>
+                        @foreach ($sucursales as $sede)
+                            <form method="POST" action="{{ route('admin.sucursal.cambiar') }}">
+                                @csrf
+                                <button type="submit" name="sucursal_id" value="{{ $sede->id }}"
+                                        class="dropdown-item {{ $sucursalActiva?->id === $sede->id ? 'active' : '' }}">
+                                    <span class="badge me-2" style="background-color: {{ $sede->color }}"></span>{{ $sede->nombre }}
+                                </button>
+                            </form>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema" aria-label="Cambiar tema claro u oscuro" role="button">
+                <i class="ti ti-moon fs-3" aria-hidden="true"></i>
             </a>
 
             <div class="nav-item dropdown d-none d-md-flex me-2">
-                <a href="#" class="nav-link px-2" data-bs-toggle="dropdown" title="Citas de hoy">
-                    <i class="ti ti-bell fs-3"></i>
+                <a href="#" class="nav-link px-2" data-bs-toggle="dropdown" title="Citas de hoy" role="button"
+                   aria-label="Citas de hoy{{ $citasHoy > 0 ? " ({$citasHoy})" : '' }}" aria-expanded="false">
+                    <i class="ti ti-bell fs-3" aria-hidden="true"></i>
                     @if ($citasHoy > 0)
                         <span class="badge bg-red badge-notification badge-blink"></span>
                     @endif
@@ -120,25 +182,57 @@
     <div class="collapse navbar-collapse" id="menu-principal">
         <div class="navbar">
             <div class="container-xl">
+                <nav aria-label="Módulos del sistema">
                 <ul class="navbar-nav">
-                    @foreach ($modulos as $clave => $modulo)
-                        @can("{$clave}.ver")
-                            @php
-                                $patron = $modulo['ruta'] === 'admin.home'
-                                    ? 'admin.home'
-                                    : Str::beforeLast($modulo['ruta'], '.').'.*';
-                            @endphp
-                            <li class="nav-item {{ request()->routeIs($patron) ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route($modulo['ruta']) }}">
+                    @foreach ($menuAgrupado as $grupo => $items)
+                        @php
+                            $grupoActivo = $items->contains('activo', true);
+                            $idGrupo = 'menu-grupo-'.Str::slug($grupo);
+                        @endphp
+
+                        @if ($grupo === 'General' || $items->count() === 1)
+                            {{-- Home (y grupos de un solo módulo) como enlace directo --}}
+                            @foreach ($items as $clave => $modulo)
+                                @can("{$clave}.ver")
+                                    <li class="nav-item {{ $modulo['activo'] ? 'active' : '' }}">
+                                        <a class="nav-link" href="{{ route($modulo['ruta']) }}" @if ($modulo['activo']) aria-current="page" @endif>
+                                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                                <i class="{{ $modulo['icono'] }}" aria-hidden="true"></i>
+                                            </span>
+                                            <span class="nav-link-title">{{ $modulo['etiqueta'] }}</span>
+                                        </a>
+                                    </li>
+                                @endcan
+                            @endforeach
+                        @else
+                            <li class="nav-item dropdown {{ $grupoActivo ? 'active' : '' }}">
+                                <a class="nav-link dropdown-toggle" href="#{{ $idGrupo }}" data-bs-toggle="dropdown"
+                                   data-bs-auto-close="outside" role="button" aria-expanded="false"
+                                   aria-label="Abrir menú de {{ $grupo }}">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <i class="{{ $modulo['icono'] }}"></i>
+                                        <i class="{{ $gruposMenu[$grupo] ?? 'ti ti-apps' }}" aria-hidden="true"></i>
                                     </span>
-                                    <span class="nav-link-title">{{ $modulo['etiqueta'] }}</span>
+                                    <span class="nav-link-title">{{ $grupo }}</span>
                                 </a>
+                                <div class="dropdown-menu" id="{{ $idGrupo }}">
+                                    <div class="dropdown-menu-columns">
+                                        <div class="dropdown-menu-column">
+                                            @foreach ($items as $clave => $modulo)
+                                                @can("{$clave}.ver")
+                                                    <a class="dropdown-item {{ $modulo['activo'] ? 'active' : '' }}"
+                                                       href="{{ route($modulo['ruta']) }}" @if ($modulo['activo']) aria-current="page" @endif>
+                                                        <i class="{{ $modulo['icono'] }} me-2" aria-hidden="true"></i>{{ $modulo['etiqueta'] }}
+                                                    </a>
+                                                @endcan
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </li>
-                        @endcan
+                        @endif
                     @endforeach
                 </ul>
+                </nav>
             </div>
         </div>
     </div>

@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="application-name" content="{{ $ajustes->nombre ?? 'OdontoSuite' }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>@yield('titulo', 'Portal del paciente') · {{ $ajustes->nombre ?? 'OdontoSuite' }}</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -26,6 +31,7 @@
         ['ruta' => 'portal.pagos', 'patron' => 'portal.pagos*', 'icono' => 'ti ti-cash', 'etiqueta' => 'Mis pagos'],
     ];
 @endphp
+<a href="#contenido-principal" class="os-saltar">Saltar al contenido</a>
 <div class="page">
     <header class="navbar navbar-expand-md d-print-none sticky-top">
         <div class="container-xl">
@@ -45,8 +51,8 @@
             </a>
 
             <div class="navbar-nav flex-row order-md-last align-items-center">
-                <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema">
-                    <i class="ti ti-moon fs-3"></i>
+                <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema" aria-label="Cambiar tema claro u oscuro" role="button">
+                    <i class="ti ti-moon fs-3" aria-hidden="true"></i>
                 </a>
 
                 <div class="nav-item dropdown">
@@ -76,7 +82,7 @@
                 </div>
             </div>
 
-            <div class="collapse navbar-collapse" id="menu-portal">
+            <nav class="collapse navbar-collapse" id="menu-portal" aria-label="Menú del portal">
                 <ul class="navbar-nav">
                     @foreach ($menuPortal as $item)
                         <li class="nav-item {{ request()->routeIs($item['patron']) ? 'active' : '' }}">
@@ -87,7 +93,7 @@
                         </li>
                     @endforeach
                 </ul>
-            </div>
+            </nav>
         </div>
     </header>
 
@@ -108,12 +114,12 @@
             </div>
         </div>
 
-        <div class="page-body">
+        <main class="page-body" id="contenido-principal" tabindex="-1">
             <div class="container-xl">
                 @include('componentes.alertas')
                 @yield('contenido')
             </div>
-        </div>
+        </main>
 
         <footer class="footer footer-transparent d-print-none">
             <div class="container-xl">

@@ -14,14 +14,7 @@
                 <div class="card-header"><h3 class="card-title"><i class="ti ti-hourglass me-2"></i>Solicitud de turno</h3></div>
                 <div class="card-body">
                     <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
-                        <select id="paciente_id" name="paciente_id" class="form-select" required>
-                            <option value="">— Selecciona un paciente —</option>
-                            @foreach ($pacientes as $paciente)
-                                <option value="{{ $paciente->id }}" @selected(old('paciente_id', $entrada->paciente_id) == $paciente->id)>
-                                    {{ $paciente->apellidos }}, {{ $paciente->nombres }} · {{ $paciente->numero_documento }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-selector-paciente nombre="paciente_id" :seleccionado="$entrada->paciente_id" requerido />
                     </x-campo>
 
                     <div class="row">
@@ -51,6 +44,17 @@
                             </x-campo>
                         </div>
                     </div>
+
+                    @if (($sucursales ?? collect())->count() > 1)
+                    <x-campo nombre="sucursal_id" etiqueta="Sede" ayuda="Sede donde el paciente espera turno.">
+                        <select id="sucursal_id" name="sucursal_id" class="form-select">
+                            <option value="">— Cualquier sede —</option>
+                            @foreach ($sucursales as $sede)
+                                <option value="{{ $sede->id }}" @selected(old('sucursal_id', $entrada->sucursal_id) == $sede->id)>{{ $sede->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </x-campo>
+                    @endif
 
                     <x-campo nombre="tratamiento_id" etiqueta="Tratamiento solicitado">
                         <select id="tratamiento_id" name="tratamiento_id" class="form-select">

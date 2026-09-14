@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="application-name" content="{{ $ajustes->nombre ?? 'OdontoSuite' }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>@yield('titulo', 'Panel') · {{ $ajustes->nombre ?? 'OdontoSuite' }}</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,6 +22,7 @@
     @stack('head')
 </head>
 <body class="layout-fluid">
+<a href="#contenido-principal" class="os-saltar">Saltar al contenido</a>
 <div class="page">
     @include('layouts.partials.navbar')
 
@@ -42,12 +48,12 @@
             </div>
         </div>
 
-        <div class="page-body">
+        <main class="page-body" id="contenido-principal" tabindex="-1">
             <div class="container-xl">
                 @include('componentes.alertas')
                 @yield('contenido')
             </div>
-        </div>
+        </main>
 
         @include('layouts.partials.footer')
     </div>

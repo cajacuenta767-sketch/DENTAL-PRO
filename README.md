@@ -251,7 +251,69 @@ altera el documento ya emitido. La numeración es correlativa por tipo y serie.
 
 `horas_recordatorio` en **Ajustes** define con cuánta anticipación se avisa al
 paciente. El comando `citas:recordar` corre cada hora desde el programador y
-marca cada cita avisada para no repetir el envío.
+marca cada cita avisada para no repetir el envío. Se puede forzar la ventana y
+el canal a mano: `php artisan citas:recordar --horas=48 --canal=whatsapp`.
+
+### Recordatorios por WhatsApp y SMS
+
+El canal del recordatorio se elige en **Ajustes → Recordatorios y portal**:
+solo correo (por defecto), solo WhatsApp, solo SMS o correo y WhatsApp a la
+vez. El correo y el mensaje corto incluyen un enlace firmado para que el
+paciente confirme su asistencia con un clic. Los envíos los hace
+`App\Services\MensajeriaService`, que normaliza el teléfono del paciente a
+formato internacional (a los números de 8 dígitos les antepone
+`MENSAJERIA_PREFIJO_PAIS`, `591` por defecto) y nunca lanza excepciones: cada
+canal devuelve un resultado con éxito o error que queda en el log.
+
+El proveedor se define en el servidor con `MENSAJERIA_PROVEEDOR`:
+
+| Proveedor | Variables | Qué envía |
+|-----------|-----------|-----------|
+| `log` (por defecto) | ninguna | Escribe el mensaje en `storage/logs` y responde éxito. Es el modo de desarrollo y pruebas. |
+| `twilio` | `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_DESDE_SMS`, `TWILIO_DESDE_WHATSAPP` | SMS y WhatsApp por la API REST de Twilio. `TWILIO_DESDE_WHATSAPP` es el número habilitado en WhatsApp (por ejemplo el del *sandbox*, `+14155238886`). |
+| `meta` | `META_WHATSAPP_TOKEN`, `META_WHATSAPP_PHONE_ID` | Solo WhatsApp, por la WhatsApp Cloud API de Meta (`graph.facebook.com/v20.0`). No envía SMS: si el canal es `sms` el resultado es "no soportado". |
+
+Con WhatsApp Cloud API, los mensajes de texto libre solo llegan dentro de la
+ventana de 24 horas posterior al último mensaje del paciente; fuera de ella
+Meta exige plantillas aprobadas. Twilio no tiene esa limitación para SMS.
+
+Desde la misma pantalla de Ajustes se puede enviar un **mensaje de prueba** a
+un número para comprobar credenciales y prefijo antes de activar el canal.
+
+### Copias de seguridad
+
+El módulo **Respaldos** (grupo Configuración) genera un ZIP con el volcado de
+PostgreSQL en formato *custom* (`base.dump`, `pg_dump -Fc`), la carpeta
+`privado/` con los archivos de `storage/app/private` (estudios, fotografías y
+firmas) y un `manifiesto.json` (fecha, versión y tablas). Los archivos se
+guardan en `storage/app/respaldos` (disco `respaldos`) con el nombre
+`respaldo-AAAAMMDD-HHMMSS.zip`.
+
+- **Automático**: el programador ejecuta `sistema:respaldar` todos los días a
+  las 02:00 (`routes/console.php`); necesita `php artisan schedule:run` en el
+  cron del servidor.
+- **Manual**: botón *Crear ahora* en el panel o `php artisan sistema:respaldar`.
+- **Retención**: sólo se conservan los últimos `RESPALDOS_CONSERVAR` (14 por
+  defecto); los más antiguos se eliminan al crear uno nuevo.
+
+`pg_dump` y `pg_restore` deben estar instalados en el servidor donde corre la
+aplicación (paquete `postgresql-client`; en imágenes Alpine,
+`postgresql16-client` o el `postgresql-client` que ya instala el `Dockerfile`).
+Si no están en el `PATH`, indica su carpeta en `RESPALDOS_RUTA_PG`
+(por ejemplo `/usr/lib/postgresql/16/bin`).
+
+Para **restaurar** una copia (reemplaza TODOS los datos actuales):
+
+```bash
+php artisan sistema:restaurar respaldo-20260101-020000.zip
+# sin confirmación interactiva (scripts):
+php artisan sistema:restaurar respaldo-20260101-020000.zip --forzar
+php artisan optimize:clear
+```
+
+El comando ejecuta `pg_restore --clean --if-exists` sobre la conexión
+configurada y copia `privado/` de vuelta a `storage/app/private`. Por seguridad
+la restauración sólo está disponible desde la consola, no desde el panel.
 
 ### Roles y permisos
 
@@ -270,7 +332,7 @@ php artisan db:seed --class=RolPermisoSeeder
 
 ```
 app/
-├── Console/Commands/         citas:recordar
+├── Console/Commands/         citas:recordar, sistema:respaldar, sistema:restaurar
 ├── Http/
 │   ├── Controllers/Admin/    25 controladores del panel
 │   ├── Controllers/Auth/     login con doble factor, registro, recuperación, Socialite
@@ -281,7 +343,8 @@ app/
 └── Services/
     ├── AgendaService         cupos, duración por tratamiento y detección de cruces
     ├── InventarioService     único punto de cambio de existencias
-    └── QrService             códigos QR en SVG sin dependencias de imagen
+    ├── QrService             códigos QR en SVG sin dependencias de imagen
+    └── RespaldoService       copias de seguridad (pg_dump + archivos privados) y restauración
 lang/es/                      validación, autenticación y paginación en español
 resources/views/
 ├── admin/                    vistas del panel por módulo
@@ -305,3 +368,142 @@ Algunas consultas de reportes usan sintaxis propia de PostgreSQL
 ## Licencia
 
 MIT.
+
+## Transmisión de documentos fiscales
+
+Al emitir una factura o comprobante, OdontoSuite intenta transmitirlo al
+proveedor configurado en `FACTURACION_PROVEEDOR` y guarda en el documento el
+proveedor, el estado de transmisión (`NO_APLICA`, `PENDIENTE`, `ACEPTADO`,
+`RECHAZADO`), la respuesta cruda y el sello devuelto. Un documento rechazado
+se puede reintentar desde su ficha con **Reintentar transmisión**.
+
+```dotenv
+FACTURACION_PROVEEDOR=simulado   # simulado | http | ninguno
+FACTURACION_ENDPOINT=            # solo para http
+FACTURACION_TOKEN=               # solo para http (Bearer)
+```
+
+- `simulado` (por defecto) acepta todo y devuelve un sello aleatorio. Sirve
+  para desarrollo y para clínicas sin obligación de transmitir.
+- `ninguno` deja los documentos como `NO_APLICA`: solo se conservan localmente.
+- `http` es un **contrato genérico**: envía el documento como JSON (`POST` a
+  `FACTURACION_ENDPOINT` con `Authorization: Bearer FACTURACION_TOKEN`, 15 s de
+  espera) y espera una respuesta JSON con `aceptado`, `sello`, `codigo` y
+  `mensaje`. Una respuesta 2xx sin `aceptado` se toma como aceptada; un error
+  HTTP o de conexión deja el documento en `RECHAZADO` con el mensaje recibido.
+  Cualquier pasarela intermedia que hable ese contrato funciona sin tocar código.
+
+La integración con cada administración tributaria (Hacienda, SIN, SUNAT, DIAN,
+etc.) se implementa como **un driver más**: una clase que cumple
+`App\Services\FacturacionElectronica\ProveedorFiscal` (método
+`transmitir(DocumentoFiscal): RespuestaFiscal`) y que se registra en
+`App\Services\FacturacionElectronicaService::driver()`. Ahí van el firmado, el
+formato exigido por el organismo y la lectura de su respuesta; el resto del
+módulo (numeración, PDF, reintentos, auditoría) no cambia.
+
+---
+
+## Sucursales (multi-sede)
+
+Una clínica puede operar varias sedes. El módulo **Sucursales**
+(`Configuración → Sucursales`, permisos `sucursales.*`) mantiene el catálogo:
+nombre, código corto en mayúsculas, dirección, contacto, color y las marcas
+*principal* y *activa*. Solo puede haber una sede principal; marcar otra
+desmarca la anterior. No se elimina la única sede activa ni una con citas o
+cobros: en ese caso se desactiva.
+
+- **Sede activa.** Un usuario no ligado a una sede elige con cuál trabaja desde
+  el selector del navbar (junto a la campana); la elección vive en sesión
+  (`App\Support\SucursalActiva`). "Todas las sedes" (`null`) muestra todo.
+- **Usuario ligado a una sede.** En el formulario de usuarios, el campo
+  *Sucursal* (visible solo para super administradores o quien tenga
+  `sucursales.editar`) ata la cuenta a una sede: verá únicamente esa y no podrá
+  cambiarla.
+- **Etiquetado.** Horarios, citas, recibos, insumos y lista de espera llevan
+  `sucursal_id`. Al crear un registro se usa la sede del formulario, si no la
+  sede activa y, cuando existe una sola sede, la principal. Los formularios solo
+  muestran el campo cuando hay más de una sede activa; los listados de horarios,
+  caja e inventario muestran la columna y el filtro por sede, y los totales de
+  caja respetan la sede activa.
+- **Demo.** `SucursalSeeder` crea *Sede Central* (`CENTRAL`, principal) y
+  *Sede Sur* (`SUR`); `DatabaseSeeder` etiqueta con la principal los datos de
+  demostración que nacen sin sede.
+
+Pruebas: `DB_PASSWORD=postgres php artisan test --filter=SucursalTest`.
+
+## Portal del paciente: reservas, pagos en línea y firma
+
+### Reserva de citas desde el portal
+
+El paciente identificado reserva sin volver a escribir sus datos: elige
+especialidad, motivo de consulta, profesional, fecha y cupo (`/portal/reservar`,
+`PortalReservaController`). La lógica compartida con la reserva pública por
+token vive en el trait `App\Http\Controllers\Concerns\ReservaCitas` (catálogo
+reservable, cupos con anticipación mínima, ventana de días, creación de la cita
+`PENDIENTE` con origen `ONLINE` y correo de confirmación encolado). Se activa con
+`Ajuste::portal_reservas_activas`; apagado, el botón desaparece del portal y las
+rutas redirigen a *Mis citas* con un aviso.
+
+### Pagos en línea
+
+Con `Ajuste::pagos_online_activos` cada recibo con saldo muestra **Pagar en
+línea** en *Mis pagos*. `PortalPagoController@iniciar` abre un `PagoOnline`
+`PENDIENTE` por el saldo y envía al paciente a la pasarela; al confirmarse, el
+monto se abona al recibo (`monto_pagado`, `recalcular()`), se anota en `notas`
+y queda en la auditoría. La acreditación es idempotente: bloquea el recibo y el
+intento dentro de una transacción, y un segundo aviso no vuelve a sumar.
+
+`App\Services\PasarelaPagoService` elige el driver
+(`App\Services\Pasarela\ProveedorPago`) por `config('services.pasarela.proveedor')`:
+
+| Variable | Descripción |
+| --- | --- |
+| `PASARELA_PROVEEDOR` | `simulado` (por defecto; sin cobro real) o `stripe`. |
+| `STRIPE_SECRET` | Clave secreta de la API de Stripe (`sk_…`). |
+| `STRIPE_WEBHOOK_SECRET` | Secreto del endpoint de webhook (`whsec_…`). |
+
+- **simulado**: muestra una "pasarela" local con los botones *Pagar* y
+  *Cancelar*, que llevan a las rutas de retorno firmadas
+  (`pagos-online/retorno/{intento}/{exito|cancelado}`); el retorno con éxito
+  marca el intento como `PAGADO`.
+- **stripe**: crea una *Checkout Session* (`POST /v1/checkout/sessions`, monto en
+  centavos, `metadata.pago_online_id`). El retorno del navegador solo muestra el
+  estado; el cobro se confirma por webhook en `POST /pagos-online/webhook/stripe`
+  (`checkout.session.completed` → `PAGADO`, `…expired` → `CANCELADO`,
+  `…async_payment_failed` → `FALLIDO`). La cabecera `Stripe-Signature` se
+  verifica con HMAC SHA-256 sobre `t.payload` y tolerancia de 5 minutos.
+  Configura en Stripe la URL del webhook con tu `APP_URL`.
+
+### Firma del consentimiento desde el portal
+
+Los consentimientos informados emitidos y sin firma muestran **Firmar** en *Mis
+documentos*. La vista presenta el texto completo y el mismo pad de firma del
+panel; el PNG se valida igual que en el admin y se guarda en el disco privado
+(`DocumentoClinico::DISCO_FIRMAS`) con `firmado_en` y rastro de auditoría. Un
+documento ajeno responde 404 y uno ya firmado no se modifica.
+
+Pruebas: `DB_PASSWORD=postgres php artisan test --filter='PortalReservaTest|PagoOnlineTest|PortalFirmaTest'`.
+
+## API
+
+OdontoSuite expone una API REST (`/api/v1`) autenticada con tokens personales
+de Laravel Sanctum para integrar centrales telefónicas, chatbots, apps móviles
+o sistemas contables:
+
+- Los tokens se crean desde **Mi perfil → Tokens de API** (permiso `api.usar`,
+  incluido en SUPER ADMINISTRADOR y ADMINISTRADOR) y heredan los permisos del
+  usuario que los creó; se revocan desde la misma pantalla.
+- Endpoints: `yo`, `pacientes` (listar, buscar, crear, ver), `citas` (listar
+  con filtros, agendar con las mismas reglas de agenda del panel, ver, cambiar
+  estado), `agenda/horas`, `doctores`, `especialidades`, `tratamientos`,
+  `presupuestos` y `pagos` (solo lectura, con detalles).
+- Paginación estándar (`page`, `per_page` ≤ 100), errores en JSON y límite de
+  120 peticiones por minuto.
+
+```bash
+curl -s "https://tu-dominio/api/v1/citas?fecha=2026-09-16" \
+  -H "Authorization: Bearer $TOKEN" -H "Accept: application/json"
+```
+
+La referencia completa, con parámetros, ejemplos `curl` y respuestas, está en
+[docs/api.md](docs/api.md).

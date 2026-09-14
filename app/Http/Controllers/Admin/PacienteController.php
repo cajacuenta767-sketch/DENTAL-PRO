@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aseguradora;
 use App\Models\Paciente;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -112,6 +113,31 @@ class PacienteController extends Controller
 
         return redirect()->route('admin.pacientes.index')
             ->with('exito', "El paciente {$nombre} fue eliminado.");
+    }
+
+    /**
+     * Búsqueda ligera para los selectores de paciente (Tom Select): hasta 20
+     * pacientes activos que coincidan con ?q por nombre, documento o teléfono.
+     */
+    public function buscar(Request $request): JsonResponse
+    {
+        $termino = trim((string) $request->query('q', ''));
+
+        $pacientes = Paciente::query()
+            ->with('aseguradora:id,nombre,porcentaje_cobertura')
+            ->activos()
+            ->buscar($termino)
+            ->orderBy('apellidos')->orderBy('nombres')
+            ->limit(20)
+            ->get(['id', 'nombres', 'apellidos', 'numero_documento', 'telefono', 'aseguradora_id']);
+
+        return response()->json($pacientes->map(fn (Paciente $p) => [
+            'id' => $p->id,
+            'texto' => "{$p->apellidos}, {$p->nombres} · {$p->numero_documento}",
+            'telefono' => $p->telefono,
+            'cobertura' => (float) ($p->aseguradora?->porcentaje_cobertura ?? 0),
+            'aseguradora' => $p->aseguradora?->nombre ?? '',
+        ])->values());
     }
 
     /** Fotografía servida desde el disco privado solo a usuarios con permiso. */
