@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Ajuste extends Model
 {
+    use Auditable;
+
     protected $table = 'ajustes';
 
     protected $fillable = [

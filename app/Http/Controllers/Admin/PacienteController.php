@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class PacienteController extends Controller
 {
@@ -47,7 +48,7 @@ class PacienteController extends Controller
         $datos = $this->validar($request);
 
         if ($request->hasFile('foto')) {
-            $datos['fotografia'] = $request->file('foto')->store('pacientes', 'public');
+            $datos['fotografia'] = $request->file('foto')->store('pacientes', Paciente::DISCO_FOTOS);
         }
 
         $paciente = Paciente::create(collect($datos)->except('foto')->all());
@@ -88,9 +89,9 @@ class PacienteController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($paciente->fotografia) {
-                Storage::disk('public')->delete($paciente->fotografia);
+                Storage::disk(Paciente::DISCO_FOTOS)->delete($paciente->fotografia);
             }
-            $datos['fotografia'] = $request->file('foto')->store('pacientes', 'public');
+            $datos['fotografia'] = $request->file('foto')->store('pacientes', Paciente::DISCO_FOTOS);
         }
 
         $paciente->update(collect($datos)->except('foto')->all());
@@ -105,15 +106,22 @@ class PacienteController extends Controller
             return back()->with('error', 'No puedes eliminar un paciente con recibos emitidos. Desactívalo en su lugar.');
         }
 
-        if ($paciente->fotografia) {
-            Storage::disk('public')->delete($paciente->fotografia);
-        }
-
+        // Borrado lógico: la ficha y sus archivos se conservan para restaurarla.
         $nombre = $paciente->nombre_completo;
         $paciente->delete();
 
         return redirect()->route('admin.pacientes.index')
             ->with('exito', "El paciente {$nombre} fue eliminado.");
+    }
+
+    /** Fotografía servida desde el disco privado solo a usuarios con permiso. */
+    public function foto(Paciente $paciente): Response
+    {
+        abort_unless($paciente->fotografia && Storage::disk(Paciente::DISCO_FOTOS)->exists($paciente->fotografia), 404);
+
+        return Storage::disk(Paciente::DISCO_FOTOS)->response($paciente->fotografia, null, [
+            'Cache-Control' => 'private, max-age=300',
+        ]);
     }
 
     private function validar(Request $request, ?int $ignorar = null): array

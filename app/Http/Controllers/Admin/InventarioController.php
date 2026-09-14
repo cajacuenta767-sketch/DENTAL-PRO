@@ -8,6 +8,7 @@ use App\Models\MovimientoInventario;
 use App\Services\InventarioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InventarioController extends Controller
@@ -56,19 +57,25 @@ class InventarioController extends Controller
         $datos = $this->validar($request);
         $inicial = (float) ($datos['stock_actual'] ?? 0);
 
-        // El stock inicial entra como el primer movimiento del kardex.
+        // El stock inicial entra como el primer movimiento del kardex; ficha y
+        // movimiento se crean juntos o no se crea nada.
         $datos['stock_actual'] = 0;
-        $insumo = Insumo::create($datos);
 
-        if ($inicial > 0) {
-            $this->inventario->registrar($insumo, [
-                'tipo' => 'ENTRADA',
-                'cantidad' => $inicial,
-                'costo_unitario' => $insumo->costo_unitario,
-                'motivo' => 'Carga inicial de existencias',
-                'usuario_id' => $request->user()->id,
-            ]);
-        }
+        $insumo = DB::transaction(function () use ($datos, $inicial, $request) {
+            $insumo = Insumo::create($datos);
+
+            if ($inicial > 0) {
+                $this->inventario->registrar($insumo, [
+                    'tipo' => 'ENTRADA',
+                    'cantidad' => $inicial,
+                    'costo_unitario' => $insumo->costo_unitario,
+                    'motivo' => 'Carga inicial de existencias',
+                    'usuario_id' => $request->user()->id,
+                ]);
+            }
+
+            return $insumo;
+        });
 
         return redirect()->route('admin.inventario.show', $insumo)
             ->with('exito', 'El insumo fue registrado.');
@@ -123,7 +130,8 @@ class InventarioController extends Controller
     {
         $datos = $request->validate([
             'tipo' => ['required', 'in:'.implode(',', MovimientoInventario::TIPOS)],
-            'cantidad' => ['required', 'numeric', 'min:0'],
+            // Un ajuste puede fijar el saldo en cero; los demás necesitan cantidad.
+            'cantidad' => ['required', 'numeric', 'min:0', $request->tipo === 'AJUSTE' ? 'max:9999999' : 'gt:0'],
             'costo_unitario' => ['nullable', 'numeric', 'min:0'],
             'motivo' => ['nullable', 'string', 'max:255'],
             'referencia' => ['nullable', 'string', 'max:100'],

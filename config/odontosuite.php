@@ -90,7 +90,14 @@ return [
             'etiqueta' => 'Mi Agenda',
             'icono' => 'ti ti-calendar-user',
             'ruta' => 'admin.agenda.index',
-            'acciones' => ['ver'],
+            'acciones' => ['ver', 'todos'],
+            'grupo' => 'Clínica',
+        ],
+        'lista_espera' => [
+            'etiqueta' => 'Lista de espera',
+            'icono' => 'ti ti-hourglass-high',
+            'ruta' => 'admin.lista-espera.index',
+            'acciones' => ['ver', 'crear', 'editar', 'eliminar'],
             'grupo' => 'Clínica',
         ],
         'historiales' => [
@@ -165,6 +172,13 @@ return [
             'acciones' => ['ver', 'exportar'],
             'grupo' => 'Finanzas',
         ],
+        'auditoria' => [
+            'etiqueta' => 'Auditoría',
+            'icono' => 'ti ti-history',
+            'ruta' => 'admin.auditoria.index',
+            'acciones' => ['ver'],
+            'grupo' => 'Configuración',
+        ],
     ],
 
     /*
@@ -184,9 +198,9 @@ return [
         'ADMINISTRADOR' => [
             'descripcion' => 'Gestiona la clínica sin tocar roles ni usuarios del sistema.',
             'permisos' => [
-                'home.ver', 'ajustes.ver', 'ajustes.editar',
+                'home.ver', 'ajustes.ver', 'ajustes.editar', 'auditoria.ver',
                 'pacientes.*', 'especialidades.*', 'tratamientos.*', 'aseguradoras.*',
-                'doctores.*', 'horarios.*', 'citas.*', 'agenda.ver',
+                'doctores.*', 'horarios.*', 'citas.*', 'agenda.*', 'lista_espera.*',
                 'historiales.*', 'odontogramas.*', 'imagenologia.*', 'documentos.*',
                 'presupuestos.*', 'inventario.*', 'pagos.*', 'facturacion.*', 'reportes.*',
             ],
@@ -195,7 +209,7 @@ return [
         'DOCTOR' => [
             'descripcion' => 'Atiende su agenda y registra historia clínica y odontograma.',
             'permisos' => [
-                'home.ver', 'agenda.ver',
+                'home.ver', 'agenda.ver', 'lista_espera.ver',
                 'pacientes.ver', 'pacientes.editar',
                 'citas.ver', 'citas.editar', 'citas.atender',
                 'historiales.ver', 'historiales.crear', 'historiales.editar',
@@ -211,7 +225,7 @@ return [
         'RECEPCION' => [
             'descripcion' => 'Agenda citas, registra pacientes y cobra en caja.',
             'permisos' => [
-                'home.ver',
+                'home.ver', 'agenda.ver', 'agenda.todos', 'lista_espera.*',
                 'pacientes.ver', 'pacientes.crear', 'pacientes.editar',
                 'citas.ver', 'citas.crear', 'citas.editar', 'citas.confirmar', 'citas.cancelar',
                 'doctores.ver', 'horarios.ver', 'tratamientos.ver', 'especialidades.ver',
@@ -224,9 +238,10 @@ return [
             ],
         ],
 
+        // Sin permisos de panel: solo entra al portal y ve lo suyo.
         'PACIENTE' => [
-            'descripcion' => 'Consulta sus propias citas desde el portal.',
-            'permisos' => ['citas.ver'],
+            'descripcion' => 'Consulta sus propias citas, documentos y pagos desde el portal.',
+            'permisos' => [],
         ],
     ],
 

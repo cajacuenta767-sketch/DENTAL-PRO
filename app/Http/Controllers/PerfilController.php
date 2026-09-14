@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Auditoria;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -41,6 +42,10 @@ class PerfilController extends Controller
 
         $usuario->fill(collect($datos)->except('foto')->all())->save();
 
+        if ($usuario->wasChanged('email')) {
+            $usuario->sendEmailVerificationNotification();
+        }
+
         return back()->with('exito', 'Tu perfil fue actualizado.');
     }
 
@@ -48,11 +53,70 @@ class PerfilController extends Controller
     {
         $request->validate([
             'password_actual' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', self::reglaPassword()],
         ], [], ['password_actual' => 'contraseña actual']);
 
-        $request->user()->update(['password' => Hash::make($request->password)]);
+        $request->user()->forceFill([
+            'password' => Hash::make($request->password),
+            'debe_cambiar_password' => false,
+        ])->save();
+
+        Auditoria::registrar('ACTUALIZAR', $request->user(), 'Cambió su contraseña');
 
         return back()->with('exito', 'Tu contraseña fue cambiada.');
+    }
+
+    /** Activa o desactiva el segundo factor por correo. */
+    public function dosFactores(Request $request): RedirectResponse
+    {
+        $usuario = $request->user();
+
+        $request->validate(['password_actual' => ['required', 'current_password']], [], ['password_actual' => 'contraseña actual']);
+
+        if (! $usuario->hasVerifiedEmail()) {
+            return back()->with('error', 'Verifica tu correo antes de activar el doble factor: el código llegará por esa vía.');
+        }
+
+        $activar = $request->boolean('dos_factores');
+        $usuario->forceFill(['dos_factores' => $activar, 'codigo_2fa' => null, 'codigo_2fa_expira_en' => null])->save();
+
+        Auditoria::registrar('ACTUALIZAR', $usuario, $activar ? 'Activó el doble factor' : 'Desactivó el doble factor');
+
+        return back()->with('exito', $activar
+            ? 'Doble factor activado. A partir de ahora te pediremos un código enviado a tu correo al iniciar sesión.'
+            : 'Doble factor desactivado.');
+    }
+
+    /** Pantalla de cambio obligatorio para contraseñas temporales. */
+    public function cambioObligatorio(Request $request): View|RedirectResponse
+    {
+        if (! $request->user()->debe_cambiar_password) {
+            return redirect($request->user()->destinoInicial());
+        }
+
+        return view('auth.password-obligatoria');
+    }
+
+    public function guardarCambioObligatorio(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'confirmed', self::reglaPassword(), 'different:password_actual'],
+            'password_actual' => ['required', 'current_password'],
+        ], [], ['password_actual' => 'contraseña actual']);
+
+        $request->user()->forceFill([
+            'password' => Hash::make($request->password),
+            'debe_cambiar_password' => false,
+        ])->save();
+
+        Auditoria::registrar('ACTUALIZAR', $request->user(), 'Definió su contraseña en el primer acceso');
+
+        return redirect($request->user()->destinoInicial())
+            ->with('exito', 'Contraseña actualizada. ¡Bienvenido!');
+    }
+
+    public static function reglaPassword(): Password
+    {
+        return Password::min(8)->letters()->numbers();
     }
 }

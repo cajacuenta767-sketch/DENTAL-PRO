@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AgendaController;
 use App\Http\Controllers\Admin\AjusteController;
 use App\Http\Controllers\Admin\AseguradoraController;
+use App\Http\Controllers\Admin\AuditoriaController;
 use App\Http\Controllers\Admin\BusquedaController;
 use App\Http\Controllers\Admin\CitaController;
 use App\Http\Controllers\Admin\DoctorController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Admin\HistorialClinicoController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\Admin\InventarioController;
+use App\Http\Controllers\Admin\ListaEsperaController;
 use App\Http\Controllers\Admin\OdontogramaController;
 use App\Http\Controllers\Admin\PacienteController;
 use App\Http\Controllers\Admin\PagoController;
@@ -29,6 +31,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PublicoController;
 use App\Http\Controllers\ReservaPublicaController;
 use Illuminate\Support\Facades\Route;
@@ -53,7 +56,8 @@ Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
     Route::get('horas', [ReservaPublicaController::class, 'horas'])->name('horas');
     Route::post('/', [ReservaPublicaController::class, 'reservar'])
         ->middleware('throttle:10,1')->name('guardar');
-    Route::get('confirmacion/{codigo}', [ReservaPublicaController::class, 'confirmacion'])->name('confirmacion');
+    Route::get('confirmacion/{codigo}', [ReservaPublicaController::class, 'confirmacion'])
+        ->middleware('throttle:20,1')->name('confirmacion');
 });
 
 /*
@@ -64,15 +68,24 @@ Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'create'])->name('login');
-    Route::post('login', [LoginController::class, 'store']);
+    Route::post('login', [LoginController::class, 'store'])->middleware('throttle:5,1');
+
+    // Segundo factor por correo.
+    Route::get('login/verificar', [LoginController::class, 'verificar'])->name('login.verificar');
+    Route::post('login/verificar', [LoginController::class, 'confirmar'])
+        ->middleware('throttle:5,1')->name('login.confirmar');
+    Route::post('login/verificar/reenviar', [LoginController::class, 'reenviarCodigo'])
+        ->middleware('throttle:3,1')->name('login.reenviar');
 
     Route::get('registro', [RegisterController::class, 'create'])->name('register');
-    Route::post('registro', [RegisterController::class, 'store']);
+    Route::post('registro', [RegisterController::class, 'store'])->middleware('throttle:5,1');
 
     Route::get('olvide-password', [PasswordResetController::class, 'solicitar'])->name('password.request');
-    Route::post('olvide-password', [PasswordResetController::class, 'enviarEnlace'])->name('password.email');
+    Route::post('olvide-password', [PasswordResetController::class, 'enviarEnlace'])
+        ->middleware('throttle:3,1')->name('password.email');
     Route::get('restablecer-password/{token}', [PasswordResetController::class, 'formulario'])->name('password.reset');
-    Route::post('restablecer-password', [PasswordResetController::class, 'guardar'])->name('password.store');
+    Route::post('restablecer-password', [PasswordResetController::class, 'guardar'])
+        ->middleware('throttle:5,1')->name('password.store');
 
     Route::get('auth/{proveedor}/redirect', [SocialiteController::class, 'redirect'])
         ->whereIn('proveedor', ['google', 'github'])->name('social.redirect');
@@ -92,6 +105,31 @@ Route::middleware('auth')->group(function () {
     Route::get('perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::put('perfil/password', [PerfilController::class, 'password'])->name('perfil.password');
+    Route::put('perfil/dos-factores', [PerfilController::class, 'dosFactores'])->name('perfil.2fa');
+
+    // Contraseña temporal: hay que definir una propia antes de seguir.
+    Route::get('password/obligatoria', [PerfilController::class, 'cambioObligatorio'])->name('password.obligatoria');
+    Route::post('password/obligatoria', [PerfilController::class, 'guardarCambioObligatorio'])->name('password.obligatoria.guardar');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Portal del paciente (solo ve lo suyo)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'verified', 'paciente'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/', [PortalController::class, 'inicio'])->name('inicio');
+    Route::get('vincular', [PortalController::class, 'vincular'])->name('vincular');
+    Route::post('vincular', [PortalController::class, 'guardarVinculo'])->middleware('throttle:5,1')->name('vincular.guardar');
+    Route::get('citas', [PortalController::class, 'citas'])->name('citas');
+    Route::patch('citas/{cita}/cancelar', [PortalController::class, 'cancelarCita'])->name('citas.cancelar');
+    Route::get('documentos', [PortalController::class, 'documentos'])->name('documentos');
+    Route::get('documentos/{documento}/pdf', [PortalController::class, 'documentoPdf'])->name('documentos.pdf');
+    Route::get('presupuestos', [PortalController::class, 'presupuestos'])->name('presupuestos');
+    Route::get('presupuestos/{presupuesto}/pdf', [PortalController::class, 'presupuestoPdf'])->name('presupuestos.pdf');
+    Route::get('pagos', [PortalController::class, 'pagos'])->name('pagos');
+    Route::get('pagos/{pago}/recibo', [PortalController::class, 'reciboPdf'])->name('pagos.recibo');
 });
 
 /*
@@ -102,7 +140,11 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('home', [HomeController::class, 'index'])->name('home');
+    Route::get('home', [HomeController::class, 'index'])
+        ->middleware('permission:home.ver')->name('home');
+
+    Route::get('auditoria', [AuditoriaController::class, 'index'])
+        ->middleware('permission:auditoria.ver')->name('auditoria.index');
 
     // --- Configuración -------------------------------------------------
     Route::get('ajustes', [AjusteController::class, 'edit'])
@@ -150,6 +192,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middlewareFor(['edit', 'update'], 'permission:horarios.editar')
         ->middlewareFor(['destroy'], 'permission:horarios.eliminar');
 
+    Route::get('pacientes/{paciente}/foto', [PacienteController::class, 'foto'])
+        ->middleware('permission:pacientes.ver')->name('pacientes.foto');
+
     Route::resource('pacientes', PacienteController::class)
         ->middlewareFor(['index', 'show'], 'permission:pacientes.ver')
         ->middlewareFor(['create', 'store'], 'permission:pacientes.crear')
@@ -174,6 +219,16 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:agenda.ver')->name('agenda.index');
     Route::get('agenda/doctor/{doctor}', [AgendaController::class, 'porDoctor'])
         ->middleware('permission:agenda.ver')->name('agenda.doctor');
+
+    // --- Lista de espera -----------------------------------------------
+    Route::patch('lista-espera/{lista_espera}/estado', [ListaEsperaController::class, 'cambiarEstado'])
+        ->middleware('permission:lista_espera.editar')->name('lista-espera.estado');
+    Route::resource('lista-espera', ListaEsperaController::class)->except('show')
+        ->parameters(['lista-espera' => 'lista_espera'])
+        ->middlewareFor(['index'], 'permission:lista_espera.ver')
+        ->middlewareFor(['create', 'store'], 'permission:lista_espera.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:lista_espera.editar')
+        ->middlewareFor(['destroy'], 'permission:lista_espera.eliminar');
 
     // --- Historia clínica ----------------------------------------------
     Route::get('pacientes/{paciente}/historial', [HistorialClinicoController::class, 'index'])
@@ -226,9 +281,16 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:reportes.exportar')
         ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos'])
         ->name('reportes.exportar');
-    // --- Búsqueda global ---------------------------------------------------
-    Route::get('buscar', [BusquedaController::class, 'index'])->name('buscar');
-    Route::get('buscar/sugerencias', [BusquedaController::class, 'sugerencias'])->name('buscar.sugerencias');
+    Route::get('reportes/exportar/{seccion}/csv', [ReporteController::class, 'exportarCsv'])
+        ->middleware('permission:reportes.exportar')
+        ->whereIn('seccion', ['financiero', 'citas', 'padron', 'tratamientos'])
+        ->name('reportes.csv');
+
+    // --- Búsqueda global (solo para quien puede leer algún módulo buscable) --
+    Route::middleware('permission:pacientes.ver|citas.ver|doctores.ver|pagos.ver|presupuestos.ver')->group(function () {
+        Route::get('buscar', [BusquedaController::class, 'index'])->name('buscar');
+        Route::get('buscar/sugerencias', [BusquedaController::class, 'sugerencias'])->name('buscar.sugerencias');
+    });
 
     // --- Reservas en línea -------------------------------------------------
     Route::get('reservas-online', [ReservaOnlineController::class, 'edit'])
@@ -260,6 +322,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->middleware('permission:imagenologia.editar')->name('estudios.update');
     Route::delete('estudios/{estudio}', [EstudioImagenController::class, 'destroy'])
         ->middleware('permission:imagenologia.eliminar')->name('estudios.destroy');
+    Route::get('estudios/{estudio}/ver', [EstudioImagenController::class, 'ver'])
+        ->middleware('permission:imagenologia.ver')->name('estudios.ver');
     Route::get('estudios/{estudio}/descargar', [EstudioImagenController::class, 'descargar'])
         ->middleware('permission:imagenologia.descargar')->name('estudios.descargar');
     Route::get('pacientes/{paciente}/panoramicas', [EstudioImagenController::class, 'porPaciente'])

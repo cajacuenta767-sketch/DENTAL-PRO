@@ -21,6 +21,11 @@
                 </a>
             @endunless
         @endcan
+        @if ($cita->whatsapp_url)
+            <a href="{{ $cita->whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success">
+                <i class="ti ti-brand-whatsapp me-1"></i>WhatsApp
+            </a>
+        @endif
         @can('citas.editar')
             <a href="{{ route('admin.citas.edit', $cita) }}" class="btn btn-primary"><i class="ti ti-edit me-1"></i>Editar</a>
         @endcan
@@ -136,7 +141,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     @if ($cita->paciente->fotografia)
-                        <span class="avatar avatar-lg" style="background-image: url({{ Storage::url($cita->paciente->fotografia) }})"></span>
+                        <span class="avatar avatar-lg" style="background-image: url({{ $cita->paciente->foto_url }})"></span>
                     @else
                         <span class="avatar avatar-lg bg-blue-lt">
                             {{ mb_substr($cita->paciente->nombres, 0, 1) }}{{ mb_substr($cita->paciente->apellidos, 0, 1) }}

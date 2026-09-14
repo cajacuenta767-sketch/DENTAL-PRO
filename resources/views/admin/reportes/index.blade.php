@@ -116,10 +116,16 @@
                     </div>
                     <div class="col-md-2">
                         @can('reportes.exportar')
-                            <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'financiero'], request()->query())) }}"
-                               class="btn btn-danger w-100">
-                                <i class="ti ti-file-type-pdf me-1"></i>Exportar PDF
-                            </a>
+                            <div class="btn-group w-100">
+                                <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'financiero'], request()->query())) }}"
+                                   class="btn btn-danger">
+                                    <i class="ti ti-file-type-pdf me-1"></i>PDF
+                                </a>
+                                <a href="{{ route('admin.reportes.csv', array_merge(['seccion' => 'financiero'], request()->query())) }}"
+                                   class="btn btn-outline-success" title="Exportar CSV">
+                                    <i class="ti ti-file-type-csv me-1"></i>CSV
+                                </a>
+                            </div>
                         @endcan
                     </div>
                 </form>
@@ -208,8 +214,12 @@
 
         @can('reportes.exportar')
             <div class="mb-3 text-end">
-                <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'citas'], request()->query())) }}"
-                   class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                <div class="btn-group">
+                    <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'citas'], request()->query())) }}"
+                       class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                    <a href="{{ route('admin.reportes.csv', array_merge(['seccion' => 'citas'], request()->query())) }}"
+                       class="btn btn-outline-success" title="Exportar CSV"><i class="ti ti-file-type-csv me-1"></i>CSV</a>
+                </div>
             </div>
         @endcan
 
@@ -275,8 +285,12 @@
 
         @can('reportes.exportar')
             <div class="mb-3 text-end">
-                <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'padron'], request()->query())) }}"
-                   class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                <div class="btn-group">
+                    <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'padron'], request()->query())) }}"
+                       class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                    <a href="{{ route('admin.reportes.csv', array_merge(['seccion' => 'padron'], request()->query())) }}"
+                       class="btn btn-outline-success" title="Exportar CSV"><i class="ti ti-file-type-csv me-1"></i>CSV</a>
+                </div>
             </div>
         @endcan
 
@@ -349,8 +363,12 @@
 
         @can('reportes.exportar')
             <div class="mb-3 text-end">
-                <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'tratamientos'], request()->query())) }}"
-                   class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                <div class="btn-group">
+                    <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'tratamientos'], request()->query())) }}"
+                       class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                    <a href="{{ route('admin.reportes.csv', array_merge(['seccion' => 'tratamientos'], request()->query())) }}"
+                       class="btn btn-outline-success" title="Exportar CSV"><i class="ti ti-file-type-csv me-1"></i>CSV</a>
+                </div>
             </div>
         @endcan
 

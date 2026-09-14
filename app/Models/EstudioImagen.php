@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 class EstudioImagen extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'estudios_imagen';
 
@@ -59,9 +61,18 @@ class EstudioImagen extends Model
         return self::TIPOS[$this->tipo] ?? $this->tipo;
     }
 
+    /** Disco privado: los estudios solo se sirven a través de rutas autenticadas. */
+    public const DISCO = 'local';
+
+    /** URL autenticada del archivo, para el visor y las miniaturas. */
     public function getUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->archivo);
+        return route('admin.estudios.ver', $this);
+    }
+
+    public function archivoExiste(): bool
+    {
+        return filled($this->archivo) && Storage::disk(self::DISCO)->exists($this->archivo);
     }
 
     /** ¿El navegador puede mostrarlo en el visor o solo se descarga? */

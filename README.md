@@ -2,9 +2,12 @@
 
 Sistema completo para clínicas dentales construido con **Laravel 12**, **Blade**,
 **Tabler UI** y **PostgreSQL**. Incluye sitio público, reservas en línea con QR,
-panel administrativo con roles y permisos, agenda de citas, historia clínica
-digital, odontograma interactivo por capas, imagenología, recetas y certificados,
-presupuestos, inventario, caja, facturación electrónica y centro de reportes.
+portal del paciente, panel administrativo con roles y permisos, agenda de citas
+con duración por tratamiento, lista de espera, historia clínica digital,
+odontograma interactivo por capas, imagenología en almacenamiento privado,
+recetas, certificados y consentimientos firmados, presupuestos, inventario, caja,
+facturación electrónica con notas de crédito, recordatorios automáticos, centro
+de reportes con exportación a PDF y CSV, auditoría de cambios y doble factor.
 
 ---
 
@@ -13,7 +16,8 @@ presupuestos, inventario, caja, facturación electrónica y centro de reportes.
 | Módulo | Qué resuelve |
 |---|---|
 | **Home** | Panel con 8 indicadores, evolución de citas a 6 meses y reparto por estado |
-| **Agenda del día** | Saludo, franja de indicadores y línea de tiempo de turnos |
+| **Agenda del día** | Saludo, franja de indicadores y línea de tiempo de turnos; un doctor solo ve la suya salvo que tenga `agenda.todos` |
+| **Lista de espera** | Pacientes que quieren un turno antes; prioridad, preferencia de turno y agendado en un clic |
 | **Ajustes** | Datos de la clínica, divisa, logotipo, intervalo de cita y recordatorios |
 | **Roles** | 5 roles predefinidos y 82 permisos por acción, editables desde la interfaz |
 | **Usuarios** | Altas, estado activo/inactivo y asignación de roles |
@@ -22,20 +26,22 @@ presupuestos, inventario, caja, facturación electrónica y centro de reportes.
 | **Tratamientos** | Catálogo con precio y duración, base de la agenda y la caja |
 | **Doctores** | Ficha profesional, colegiatura y enlace con su usuario del sistema |
 | **Horarios** | Disponibilidad semanal por turno, con detección de solapamientos |
-| **Citas** | Token de confirmación, 5 estados, filtros y correo automático |
+| **Citas** | Token de confirmación, 5 estados, filtros, correo automático y enlace de WhatsApp; cada tratamiento bloquea su duración real |
 | **Mi Agenda** | Vista diaria de cupos libres y ocupados por doctor |
 | **Historia Clínica** | Registro por consulta con diagnóstico, tratamiento y receta en PDF |
 | **Odontograma** | Mapa interactivo por pieza y cara (FDI), adulto e infantil |
 | **Caja y Pagos** | Recibos con detalle, 4 métodos de cobro, saldos, anulación y PDF |
-| **Reportes** | 4 secciones (financiero, productividad, padrón, rentabilidad) con PDF |
+| **Reportes** | 4 secciones (financiero, productividad, padrón, rentabilidad) con PDF y CSV |
 | **Aseguradoras** | Obras sociales y convenios con cobertura y tope anual |
 | **Imagenología** | Panorámicas y fotos clínicas con visor de zoom y descarga del original |
-| **Recetas y Certificados** | 6 tipos de documento con folio correlativo, vigencia y PDF firmado |
+| **Recetas y Certificados** | 6 tipos de documento con folio correlativo, vigencia, PDF y firma del paciente en pantalla para consentimientos |
 | **Presupuestos** | Plan de tratamiento por pieza, flujo evaluación → ejecución, cobertura y cobro |
 | **Inventario** | Insumos con kardex, entradas, salidas, mermas, valorización y alertas |
-| **Facturación** | Documentos tributarios electrónicos con serie, correlativo, IVA y anulación |
+| **Facturación** | Documentos tributarios electrónicos con serie, correlativo, IVA; anular emite la nota de crédito |
 | **Turnos online** | Página pública de reserva con enlace y QR descargable |
 | **Búsqueda global** | Un solo buscador sobre pacientes, citas, doctores, recibos y presupuestos |
+| **Auditoría** | Quién creó, cambió o eliminó cada registro, con el antes y el después; ingresos y accesos fallidos |
+| **Portal del paciente** | Cuenta propia para ver y cancelar citas, descargar recetas, presupuestos y recibos |
 
 ---
 
@@ -97,7 +103,9 @@ Abre <http://localhost:8000>.
 | Recepción | `secretaria@clinica.com` | `recepcion123` |
 | Doctor | `sofia.arancibia@clinica.com` | `doctor123` |
 
-> Cambia estas contraseñas antes de poner el sistema en producción.
+> Son contraseñas temporales: el sistema exige definir una propia en el primer
+> ingreso. Los usuarios creados desde el panel sin contraseña reciben una
+> temporal que se muestra una sola vez.
 
 El seeder genera 8 especialidades, 30 tratamientos, 10 doctores con 48 turnos,
 50 pacientes, 200 citas, historias clínicas, odontogramas, recibos, 6 aseguradoras,
@@ -111,15 +119,38 @@ enlace y QR listos en **Configuración → Turnos online**.
 ## Desarrollo
 
 ```bash
-npm run dev        # Vite en modo watch
-php artisan test   # Suite de pruebas
+composer dev       # servidor, worker de colas, logs y Vite a la vez
+npm run dev        # solo Vite en modo watch
+php artisan test   # Suite de pruebas (Unit + Feature)
+vendor/bin/pint    # Estilo de código
 ```
+
+Los correos se encolan (`QUEUE_CONNECTION=database`), así que en desarrollo
+necesitas el worker (`composer dev` lo levanta) y en producción un proceso
+`php artisan queue:work` supervisado. Los recordatorios de cita salen del
+programador: `php artisan schedule:work` en desarrollo o la entrada de cron
+`* * * * * php artisan schedule:run` en producción. También puedes lanzarlos a
+mano con `php artisan citas:recordar`.
 
 Las pruebas corren contra una base aparte. Créala una sola vez:
 
 ```bash
 createdb odontosuite_testing
 ```
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+Levanta la aplicación, PostgreSQL, el worker de colas y el programador. El
+contenedor `app` ejecuta las migraciones al arrancar.
+
+### Integración continua
+
+`.github/workflows/ci.yml` ejecuta Pint y la suite completa contra PostgreSQL 16
+en cada push y pull request.
 
 ---
 
@@ -143,7 +174,35 @@ confirmes desde el panel.
 entrada, salida, ajuste o merma deja su saldo resultante registrado, y el sistema
 rechaza cualquier salida que dejaría el stock en negativo.
 
+**De la lista de espera al turno.** Cuando no hay cupo, recepción anota al
+paciente con su prioridad y preferencia de turno. Al liberarse una hora, el botón
+*Agendar* abre el formulario de cita con todo precargado y cierra la entrada.
+
+**Del consentimiento a la firma.** Un consentimiento informado se firma en la
+pantalla (ratón o dedo) y la firma viaja al PDF con fecha y hora.
+
 ---
+
+## Seguridad
+
+- **Roles sin escalada.** Nadie concede permisos que no tiene ni asigna roles con
+  más privilegios que los propios. El rol `PACIENTE` no tiene ningún permiso del
+  panel: su casa es el portal.
+- **Portal del paciente.** Quien se registra o entra con Google/GitHub queda como
+  paciente y solo ve su propia información, previa verificación del correo.
+- **Doble factor.** Cada usuario puede activar en su perfil un código de un solo
+  uso enviado por correo en cada inicio de sesión.
+- **Archivos privados.** Radiografías, fotos de pacientes y firmas viven en
+  `storage/app/private` y se sirven únicamente a través de rutas autenticadas.
+- **Límites de intentos** en login, registro, recuperación de contraseña, doble
+  factor y reserva pública.
+- **Auditoría.** Toda alta, cambio y baja de los modelos clínicos y financieros
+  queda registrada con usuario, IP y el detalle de campos modificados. Los
+  registros clínicos usan borrado lógico.
+- **Integridad concurrente.** Los correlativos (recibos, presupuestos, folios y
+  documentos fiscales) salen de una tabla de secuencias con bloqueo de fila, un
+  cupo cancelado vuelve a ofrecerse gracias a un índice único parcial, y un
+  recibo no admite dos facturas vigentes.
 
 ## Configuración adicional
 
@@ -188,6 +247,12 @@ altera el documento ya emitido. La numeración es correlativa por tipo y serie.
 > **no transmite a ninguna administración tributaria**. Para operar en producción
 > hay que conectar el firmado y el envío del organismo que corresponda a tu país.
 
+### Recordatorios de cita
+
+`horas_recordatorio` en **Ajustes** define con cuánta anticipación se avisa al
+paciente. El comando `citas:recordar` corre cada hora desde el programador y
+marca cada cita avisada para no repetir el envío.
+
 ### Roles y permisos
 
 Los módulos, sus acciones y los roles predefinidos viven en
@@ -205,24 +270,28 @@ php artisan db:seed --class=RolPermisoSeeder
 
 ```
 app/
+├── Console/Commands/         citas:recordar
 ├── Http/
-│   ├── Controllers/Admin/    21 controladores del panel
-│   ├── Controllers/Auth/     login, registro, recuperación, Socialite
-│   └── Middleware/           ajustes compartidos y bloqueo de cuentas inactivas
-├── Mail/                     confirmación de cita y comprobante de pago
-├── Models/                   19 modelos Eloquent
+│   ├── Controllers/Admin/    25 controladores del panel
+│   ├── Controllers/Auth/     login con doble factor, registro, recuperación, Socialite
+│   ├── Controllers/Portal/   portal del paciente
+│   └── Middleware/           ajustes compartidos, cuentas inactivas, contraseña temporal, portal
+├── Mail/                     confirmación de cita, comprobante de pago y código de acceso
+├── Models/                   24 modelos Eloquent (+ trait Auditable)
 └── Services/
-    ├── AgendaService         cálculo de cupos disponibles
+    ├── AgendaService         cupos, duración por tratamiento y detección de cruces
     ├── InventarioService     único punto de cambio de existencias
     └── QrService             códigos QR en SVG sin dependencias de imagen
+lang/es/                      validación, autenticación y paginación en español
 resources/views/
 ├── admin/                    vistas del panel por módulo
 ├── auth/                     pantallas de acceso
 ├── componentes/              componentes Blade (kpi, campo, odontograma…)
 ├── emails/                   plantillas de correo
-├── layouts/                  admin, público y autenticación
-├── pdf/                      recibo, historia clínica y 4 reportes
-└── publico/                  landing
+├── layouts/                  admin, portal, público y autenticación
+├── pdf/                      recibo, historia clínica, documentos y 4 reportes
+├── portal/                   portal del paciente
+└── publico/                  landing y reserva en línea
 ```
 
 ### Sobre el dialecto SQL

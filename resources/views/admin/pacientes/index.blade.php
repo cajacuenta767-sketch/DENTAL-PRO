@@ -67,7 +67,7 @@
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 @if ($paciente->fotografia)
-                                    <span class="avatar avatar-sm" style="background-image: url({{ Storage::url($paciente->fotografia) }})"></span>
+                                    <span class="avatar avatar-sm" style="background-image: url({{ $paciente->foto_url }})"></span>
                                 @else
                                     <span class="avatar avatar-sm bg-blue-lt">
                                         {{ mb_substr($paciente->nombres, 0, 1) }}{{ mb_substr($paciente->apellidos, 0, 1) }}

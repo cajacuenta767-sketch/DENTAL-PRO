@@ -32,16 +32,18 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <x-campo nombre="password" etiqueta="Contraseña" :requerido="! $usuario->exists"
-                                     :ayuda="$usuario->exists ? 'Déjala vacía para conservar la actual.' : 'Mínimo 8 caracteres.'">
+                            <x-campo nombre="password" etiqueta="Contraseña"
+                                     :ayuda="$usuario->exists
+                                         ? 'Déjala vacía para conservar la actual.'
+                                         : 'Déjalo vacío para generar una contraseña temporal que se mostrará una sola vez; el usuario deberá cambiarla al entrar. Si la escribes, mínimo 8 caracteres.'">
                                 <input type="password" id="password" name="password" class="form-control"
-                                       autocomplete="new-password" {{ $usuario->exists ? '' : 'required' }}>
+                                       autocomplete="new-password">
                             </x-campo>
                         </div>
                         <div class="col-md-6">
-                            <x-campo nombre="password_confirmation" etiqueta="Confirmar contraseña" :requerido="! $usuario->exists">
+                            <x-campo nombre="password_confirmation" etiqueta="Confirmar contraseña">
                                 <input type="password" id="password_confirmation" name="password_confirmation" class="form-control"
-                                       autocomplete="new-password" {{ $usuario->exists ? '' : 'required' }}>
+                                       autocomplete="new-password">
                             </x-campo>
                         </div>
                     </div>

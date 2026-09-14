@@ -43,6 +43,40 @@
             </div>
         </div>
 
+        @if ($documento->documentoReferencia)
+            <div class="card mt-3 border-orange">
+                <div class="card-body d-flex align-items-center gap-2">
+                    <i class="ti ti-arrow-back-up text-orange fs-2"></i>
+                    <div>
+                        <div class="text-secondary small text-uppercase">Corrige a</div>
+                        <a href="{{ route('admin.facturacion.show', $documento->documentoReferencia) }}" class="text-brand font-monospace">
+                            {{ $documento->documentoReferencia->numero_control }}
+                        </a>
+                        <span class="text-secondary small ms-2">{{ $documento->documentoReferencia->tipo_legible }}</span>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($documento->notas->isNotEmpty())
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ti ti-receipt-refund me-2"></i>Notas emitidas sobre este documento</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    @foreach ($documento->notas as $nota)
+                        <a href="{{ route('admin.facturacion.show', $nota) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                            <span class="badge bg-orange-lt">{{ $nota->tipo_legible }}</span>
+                            <span class="font-monospace small flex-fill">{{ $nota->numero_control }}</span>
+                            <span class="text-secondary small">{{ $nota->fecha_emision->format('d/m/Y') }}</span>
+                            <span class="fw-medium">{{ number_format($nota->total, 2) }}</span>
+                            <span class="badge bg-{{ $nota->color_estado }}">{{ $nota->estado }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @if ($documento->motivo_anulacion)
             <div class="card mt-3 border-danger">
                 <div class="card-header"><h3 class="card-title text-danger">Motivo de anulación</h3></div>
@@ -108,7 +142,7 @@
         </div>
 
         @can('facturacion.anular')
-            @if ($documento->estado !== 'ANULADO')
+            @if ($documento->estado !== 'ANULADO' && ! $documento->es_nota)
                 <div class="card mt-3 border-danger">
                     <div class="card-header"><h3 class="card-title text-danger">Anular documento</h3></div>
                     <form method="POST" action="{{ route('admin.facturacion.anular', $documento) }}">

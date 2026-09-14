@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\PagoComprobanteMail;
 use App\Models\Ajuste;
+use App\Models\Auditoria;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Paciente;
@@ -15,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -156,6 +158,14 @@ class PagoController extends Controller
 
     public function destroy(Pago $pago): RedirectResponse
     {
+        if ($pago->tiene_documentos_fiscales) {
+            return back()->with('error', 'Este recibo tiene documentos fiscales asociados. Anúlalo en lugar de eliminarlo.');
+        }
+
+        if ((float) $pago->monto_pagado > 0 && $pago->estado !== 'ANULADO') {
+            return back()->with('error', 'Un recibo con dinero cobrado no se elimina: anúlalo para conservar el rastro en caja.');
+        }
+
         $codigo = $pago->codigo_recibo;
         $pago->delete();
 
@@ -174,10 +184,21 @@ class PagoController extends Controller
             'motivo' => ['required', 'string', 'max:500'],
         ])['motivo'];
 
-        $pago->update([
-            'estado' => 'ANULADO',
-            'notas' => trim($pago->notas."\nANULADO el ".now()->format('d/m/Y H:i').' por '.$request->user()->nombre.': '.$motivo),
-        ]);
+        if ($pago->documentoFiscal()->exists()) {
+            return back()->with('error', 'Anula primero el documento fiscal vigente de este recibo.');
+        }
+
+        DB::transaction(function () use ($pago, $request, $motivo) {
+            $pago->update([
+                'estado' => 'ANULADO',
+                'notas' => trim($pago->notas."\nANULADO el ".now()->format('d/m/Y H:i').' por '.$request->user()->nombre.': '.$motivo),
+            ]);
+
+            // Las líneas del presupuesto vuelven a quedar pendientes de cobro.
+            \App\Models\PresupuestoDetalle::where('pago_id', $pago->id)->update(['pago_id' => null]);
+        });
+
+        Auditoria::registrar('ANULAR', $pago, "Anuló el recibo {$pago->codigo_recibo}: {$motivo}");
 
         return back()->with('exito', "El recibo {$pago->codigo_recibo} fue anulado.");
     }
@@ -206,14 +227,20 @@ class PagoController extends Controller
             'clinica' => Ajuste::actual(),
         ])->setPaper('letter')->output();
 
-        Mail::to($pago->paciente->email)->send(new PagoComprobanteMail($pago, $pdf));
+        try {
+            Mail::to($pago->paciente->email)->send(new PagoComprobanteMail($pago, $pdf));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'No pudimos enviar el comprobante. Revisa la configuración de correo del servidor.');
+        }
 
         return back()->with('exito', 'El comprobante fue enviado al correo del paciente.');
     }
 
     private function validar(Request $request): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
@@ -233,6 +260,17 @@ class PagoController extends Controller
             'fecha_pago' => 'fecha del pago',
             'detalles' => 'detalle del recibo',
         ]);
+
+        $total = round(collect($datos['detalles'])->sum(fn ($d) => $d['cantidad'] * $d['precio_unitario']), 2);
+
+        // Nunca se registra más dinero del que vale el recibo.
+        if ((float) $datos['monto_pagado'] > $total + 0.005) {
+            throw ValidationException::withMessages([
+                'monto_pagado' => "El monto pagado ({$datos['monto_pagado']}) supera el total del recibo ({$total}).",
+            ]);
+        }
+
+        return $datos;
     }
 
     private function guardarDetalles(Pago $pago, array $detalles): void

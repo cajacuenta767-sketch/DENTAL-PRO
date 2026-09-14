@@ -13,7 +13,7 @@ class PresupuestoDetalle extends Model
     protected $table = 'presupuesto_detalles';
 
     protected $fillable = [
-        'presupuesto_id', 'tratamiento_id', 'cita_id', 'pieza_dental', 'cara',
+        'presupuesto_id', 'tratamiento_id', 'cita_id', 'pago_id', 'pieza_dental', 'cara',
         'descripcion', 'cantidad', 'precio_unitario', 'subtotal',
         'estado', 'fecha_ejecucion', 'orden',
     ];
@@ -51,6 +51,16 @@ class PresupuestoDetalle extends Model
     public function cita(): BelongsTo
     {
         return $this->belongsTo(Cita::class, 'cita_id');
+    }
+
+    public function pago(): BelongsTo
+    {
+        return $this->belongsTo(Pago::class, 'pago_id');
+    }
+
+    public function scopeCobrables($query)
+    {
+        return $query->where('estado', 'EJECUTADO')->whereNull('pago_id');
     }
 
     public function getColorEstadoAttribute(): string

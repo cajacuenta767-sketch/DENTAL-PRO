@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Mail\CitaConfirmacionMail;
 use App\Models\Cita;
 use App\Models\Doctor;
+use App\Models\ListaEspera;
 use App\Models\Paciente;
 use App\Models\Tratamiento;
 use App\Services\AgendaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -59,7 +61,11 @@ class CitaController extends Controller
                 'fecha' => now()->toDateString(),
                 'paciente_id' => $request->query('paciente_id'),
                 'doctor_id' => $request->query('doctor_id'),
+                'tratamiento_id' => $request->query('tratamiento_id'),
+                'fecha' => $request->query('fecha', now()->toDateString()),
+                'hora' => $request->query('hora'),
             ]),
+            'listaEsperaId' => $request->query('lista_espera_id'),
             'pacientes' => Paciente::activos()->orderBy('apellidos')->get(),
             'doctores' => Doctor::activos()->with('especialidad')->orderBy('apellidos')->get(),
             'tratamientos' => Tratamiento::activos()->with('especialidad')->orderBy('nombre')->get(),
@@ -71,7 +77,18 @@ class CitaController extends Controller
     {
         $datos = $this->validar($request);
 
-        $cita = Cita::create($datos);
+        $cita = DB::transaction(function () use ($request, $datos) {
+            $cita = Cita::create($datos);
+
+            // Si vino desde la lista de espera, cierra esa entrada.
+            if ($request->filled('lista_espera_id')) {
+                ListaEspera::whereKey($request->integer('lista_espera_id'))
+                    ->where('paciente_id', $cita->paciente_id)
+                    ->update(['estado' => 'AGENDADO', 'cita_id' => $cita->id]);
+            }
+
+            return $cita;
+        });
 
         $aviso = $this->notificarPaciente($cita);
 
@@ -94,7 +111,8 @@ class CitaController extends Controller
             'pacientes' => Paciente::activos()->orderBy('apellidos')->get(),
             'doctores' => Doctor::activos()->with('especialidad')->orderBy('apellidos')->get(),
             'tratamientos' => Tratamiento::activos()->with('especialidad')->orderBy('nombre')->get(),
-            'horasLibres' => $this->agenda->horasLibres($cita->doctor, $cita->fecha->toDateString(), $cita->id),
+            'horasLibres' => $this->agenda->horasLibres($cita->doctor, $cita->fecha->toDateString(), $cita->id, $cita->tratamiento?->duracion),
+            'listaEsperaId' => null,
         ]);
     }
 
@@ -130,6 +148,18 @@ class CitaController extends Controller
             return back()->with('error', 'Una cita completada ya no puede cambiar de estado.');
         }
 
+        // Reactivar una cita cancelada exige que su cupo siga libre.
+        if ($cita->estado === 'CANCELADA' && $datos['estado'] !== 'CANCELADA') {
+            $conflicto = $this->agenda->conflicto(
+                $cita->doctor, $cita->fecha->toDateString(), substr((string) $cita->hora, 0, 5),
+                $cita->tratamiento?->duracion, $cita->id
+            );
+
+            if ($conflicto) {
+                return back()->with('error', "El cupo ya fue tomado por la cita {$conflicto->token}. Reprograma esta cita en otro horario.");
+            }
+        }
+
         $cita->update($datos);
 
         return back()->with('exito', "La cita {$cita->token} pasó a {$cita->estado_legible}.");
@@ -141,7 +171,13 @@ class CitaController extends Controller
             return back()->with('error', 'El paciente no tiene un correo registrado.');
         }
 
-        Mail::to($cita->paciente->email)->send(new CitaConfirmacionMail($cita));
+        try {
+            Mail::to($cita->paciente->email)->send(new CitaConfirmacionMail($cita));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'No pudimos enviar el correo. Revisa la configuración de correo del servidor.');
+        }
 
         return back()->with('exito', 'Se reenvió la confirmación al correo del paciente.');
     }
@@ -153,13 +189,15 @@ class CitaController extends Controller
             'doctor_id' => ['required', 'exists:doctores,id'],
             'fecha' => ['required', 'date'],
             'cita_id' => ['nullable', 'exists:citas,id'],
+            'tratamiento_id' => ['nullable', 'exists:tratamientos,id'],
         ]);
 
         $doctor = Doctor::findOrFail($datos['doctor_id']);
+        $duracion = isset($datos['tratamiento_id']) ? Tratamiento::find($datos['tratamiento_id'])?->duracion : null;
 
         return response()->json([
             'dia' => $this->agenda->nombreDia($datos['fecha']),
-            'horas' => $this->agenda->horasLibres($doctor, $datos['fecha'], $datos['cita_id'] ?? null),
+            'horas' => $this->agenda->horasLibres($doctor, $datos['fecha'], $datos['cita_id'] ?? null, $duracion),
         ]);
     }
 
@@ -182,25 +220,23 @@ class CitaController extends Controller
         ]);
 
         $doctor = Doctor::findOrFail($datos['doctor_id']);
+        $duracion = (int) (Tratamiento::find($datos['tratamiento_id'])?->duracion ?: $this->agenda->intervalo());
 
-        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'])) {
+        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $duracion)) {
             throw ValidationException::withMessages([
-                'hora' => 'El doctor no atiende ese día a esa hora. Revisa sus horarios configurados.',
+                'hora' => "El doctor no atiende ese día a esa hora o el tratamiento ({$duracion} min) no cabe en su turno. Revisa sus horarios configurados.",
             ]);
         }
 
-        $ocupado = Cita::query()
-            ->where('doctor_id', $datos['doctor_id'])
-            ->whereDate('fecha', $datos['fecha'])
-            ->where('hora', $datos['hora'])
-            ->vigentes()
-            ->when($cita, fn ($q) => $q->where('id', '!=', $cita->id))
-            ->exists();
+        // Las canceladas no cuentan; las demás bloquean toda su duración.
+        if ($datos['estado'] !== 'CANCELADA') {
+            $conflicto = $this->agenda->conflicto($doctor, $datos['fecha'], $datos['hora'], $duracion, $cita?->id);
 
-        if ($ocupado) {
-            throw ValidationException::withMessages([
-                'hora' => 'Ese cupo ya está tomado por otra cita. Elige otro horario.',
-            ]);
+            if ($conflicto) {
+                throw ValidationException::withMessages([
+                    'hora' => "Ese horario se cruza con la cita {$conflicto->token} (".substr((string) $conflicto->hora, 0, 5).', '.$conflicto->duracion_minutos.' min). Elige otro.',
+                ]);
+            }
         }
 
         return $datos;

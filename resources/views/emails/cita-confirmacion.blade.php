@@ -1,5 +1,5 @@
 @component('mail::message')
-# {{ $esRecordatorio ? '¡Te esperamos mañana!' : '¡Tu cita quedó registrada!' }}
+# {{ $esRecordatorio ? 'Te recordamos tu cita' : 'Tu cita quedó registrada' }}
 
 Hola **{{ $cita->paciente->nombres }}**,
 

@@ -1,0 +1,49 @@
+# Git y editores
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.idea
+.vscode
+.fleet
+.nova
+.zed
+.phpactor.json
+
+# Dependencias (se instalan dentro de la imagen)
+node_modules
+vendor
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+auth.json
+Homestead.json
+Homestead.yaml
+
+# Artefactos generados
+public/build
+public/hot
+public/storage
+storage/app/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+storage/pail
+storage/*.key
+bootstrap/cache/*
+.phpunit.result.cache
+.phpunit.cache
+
+# Pruebas, CI y documentación
+tests
+.github
+README.md
+compose.yaml
+docker-compose*.yml
+Dockerfile
+*.log
+.DS_Store
+Thumbs.db

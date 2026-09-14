@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -108,7 +109,8 @@ class PresupuestoController extends Controller
 
         return view('admin.presupuestos.show', [
             'presupuesto' => $presupuesto,
-            'pagado' => (float) Pago::where('paciente_id', $presupuesto->paciente_id)->vigentes()->sum('monto_pagado'),
+            'pagado' => (float) $presupuesto->pagos()->vigentes()->sum('monto_pagado'),
+            'porCobrar' => (float) $presupuesto->detalles()->cobrables()->sum('subtotal'),
         ]);
     }
 
@@ -185,11 +187,19 @@ class PresupuestoController extends Controller
             'estado' => ['required', 'in:'.implode(',', array_keys(Presupuesto::ESTADOS))],
         ])['estado'];
 
-        if ($presupuesto->estado === 'COMPLETADO' && $estado !== 'COMPLETADO') {
-            return back()->with('error', 'Un presupuesto completado ya no cambia de estado.');
+        if ($estado === $presupuesto->estado) {
+            return back()->with('aviso', "El presupuesto ya estaba en {$presupuesto->estado_legible}.");
         }
 
-        $presupuesto->update(['estado' => $estado]);
+        if (! $presupuesto->puedeTransitarA($estado)) {
+            return back()->with('error', "No se puede pasar de {$presupuesto->estado_legible} a ".Presupuesto::ESTADOS[$estado].'. El avance y el cierre se registran ejecutando las líneas del plan.');
+        }
+
+        DB::transaction(function () use ($presupuesto, $estado) {
+            $presupuesto->update(['estado' => $estado]);
+            // Al aprobar se congela la aseguradora y su porcentaje.
+            $presupuesto->recalcular();
+        });
 
         return back()->with('exito', "El presupuesto pasó a {$presupuesto->estado_legible}.");
     }
@@ -208,12 +218,22 @@ class PresupuestoController extends Controller
             return back()->with('error', 'Aprueba el presupuesto antes de ejecutar tratamientos.');
         }
 
-        $detalle->update($datos + [
-            'fecha_ejecucion' => $datos['estado'] === 'EJECUTADO' ? now()->toDateString() : null,
-        ]);
+        if ($presupuesto->estado === 'RECHAZADO') {
+            return back()->with('error', 'Un presupuesto rechazado no se ejecuta.');
+        }
 
-        $presupuesto->recalcular();
-        $presupuesto->sincronizarEstado();
+        if ($detalle->pago_id && $datos['estado'] !== 'EJECUTADO') {
+            return back()->with('error', 'Esa línea ya fue cobrada en el recibo '.$detalle->pago?->codigo_recibo.'. Anula el recibo antes de cambiarla.');
+        }
+
+        DB::transaction(function () use ($detalle, $datos, $presupuesto) {
+            $detalle->update($datos + [
+                'fecha_ejecucion' => $datos['estado'] === 'EJECUTADO' ? now()->toDateString() : null,
+            ]);
+
+            $presupuesto->recalcular();
+            $presupuesto->sincronizarEstado();
+        });
 
         return back()->with('exito', 'El plan de tratamiento fue actualizado.');
     }
@@ -225,18 +245,22 @@ class PresupuestoController extends Controller
             return back()->with('error', 'Solo puedes cobrar un presupuesto aprobado.');
         }
 
-        $lineas = $presupuesto->detalles()->where('estado', 'EJECUTADO')->get();
+        $pago = DB::transaction(function () use ($presupuesto, $request) {
+            // Solo lo ejecutado y todavía sin recibo: cobrar dos veces no crea nada.
+            $lineas = $presupuesto->detalles()->cobrables()->lockForUpdate()->get();
 
-        if ($lineas->isEmpty()) {
-            return back()->with('error', 'Marca al menos un tratamiento como ejecutado antes de cobrar.');
-        }
+            if ($lineas->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'detalles' => 'No hay tratamientos ejecutados pendientes de cobro en este presupuesto.',
+                ]);
+            }
 
-        $pago = DB::transaction(function () use ($presupuesto, $lineas, $request) {
             $pago = Pago::create([
                 'codigo_recibo' => Pago::siguienteCodigo(),
                 'paciente_id' => $presupuesto->paciente_id,
                 'doctor_id' => $presupuesto->doctor_id,
                 'usuario_id' => $request->user()->id,
+                'presupuesto_id' => $presupuesto->id,
                 'monto_pagado' => 0,
                 'metodo_pago' => 'EFECTIVO',
                 'fecha_pago' => now(),
@@ -251,6 +275,8 @@ class PresupuestoController extends Controller
                     'precio_unitario' => $linea->precio_unitario,
                     'subtotal' => $linea->subtotal,
                 ]);
+
+                $linea->update(['pago_id' => $pago->id]);
             }
 
             $pago->recalcular();

@@ -92,6 +92,11 @@ class DemoClinicaSeeder extends Seeder
         $estadosFuturos = ['PENDIENTE', 'CONFIRMADA', 'CONFIRMADA'];
 
         // Evita chocar con la restricción única (doctor, fecha, hora).
+        // Segunda siembra: no duplica la agenda ya generada.
+        if (Cita::count() >= self::CITAS) {
+            return Cita::with(['paciente', 'doctor', 'tratamiento'])->get();
+        }
+
         $ocupados = [];
         $creadas = 0;
         $intentos = 0;

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +13,7 @@ use Illuminate\Support\Str;
 
 class Cita extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'citas';
 
@@ -116,5 +118,63 @@ class Cita extends Model
     public function scopeVigentes($query)
     {
         return $query->whereNotIn('estado', ['CANCELADA']);
+    }
+
+    public function scopeDelPaciente($query, Paciente|int $paciente)
+    {
+        return $query->where('paciente_id', $paciente instanceof Paciente ? $paciente->id : $paciente);
+    }
+
+    public function listaEspera(): HasOne
+    {
+        return $this->hasOne(ListaEspera::class, 'cita_id');
+    }
+
+    /** Minutos que ocupa la cita: la duración del tratamiento o, si no, el intervalo de agenda. */
+    public function getDuracionMinutosAttribute(): int
+    {
+        $duracion = (int) ($this->tratamiento?->duracion ?? 0);
+
+        return $duracion > 0 ? $duracion : max(5, (int) Ajuste::actual()->minutos_intervalo_cita);
+    }
+
+    public function getInicioAttribute(): CarbonImmutable
+    {
+        return CarbonImmutable::parse($this->fecha->toDateString().' '.substr((string) $this->hora, 0, 5));
+    }
+
+    public function getFinAttribute(): CarbonImmutable
+    {
+        return $this->inicio->addMinutes($this->duracion_minutos);
+    }
+
+    /** Todavía no ocurrió y no está cerrada. */
+    public function getEsFuturaAttribute(): bool
+    {
+        return in_array($this->estado, ['PENDIENTE', 'CONFIRMADA'], true) && $this->inicio->isFuture();
+    }
+
+    /** El paciente puede cancelar desde el portal con la anticipación mínima configurada. */
+    public function getCancelablePorPacienteAttribute(): bool
+    {
+        $minimo = max(1, (int) Ajuste::actual()->reservas_minimo_horas);
+
+        return $this->es_futura && $this->inicio->greaterThan(now()->addHours($minimo));
+    }
+
+    /** Enlace de WhatsApp con el mensaje de confirmación prellenado. */
+    public function getWhatsappUrlAttribute(): ?string
+    {
+        $numero = $this->paciente?->whatsapp_numero;
+
+        if (! $numero) {
+            return null;
+        }
+
+        $clinica = Ajuste::actual()->nombre;
+        $texto = "Hola {$this->paciente->nombres}, te escribimos de {$clinica}. "
+            ."Tu cita es el {$this->fecha_hora} con {$this->doctor?->nombre_profesional}. ¿Nos confirmas tu asistencia?";
+
+        return 'https://wa.me/'.$numero.'?text='.rawurlencode($texto);
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EstudioImagenController extends Controller
@@ -84,9 +85,10 @@ class EstudioImagenController extends Controller
 
         $estudio = EstudioImagen::create($datos + [
             'usuario_id' => $request->user()->id,
-            'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
+            'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
             'nombre_original' => $archivo->getClientOriginalName(),
-            'mime' => $archivo->getClientMimeType(),
+            // MIME detectado del contenido real, no del que declara el navegador.
+            'mime' => $archivo->getMimeType(),
             'tamano' => $archivo->getSize(),
         ]);
 
@@ -110,13 +112,13 @@ class EstudioImagenController extends Controller
         $datos = $this->validar($request);
 
         if ($request->hasFile('archivo')) {
-            Storage::disk('public')->delete($estudio->archivo);
+            Storage::disk(EstudioImagen::DISCO)->delete($estudio->archivo);
 
             $archivo = $request->file('archivo');
             $datos += [
-                'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
+                'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
                 'nombre_original' => $archivo->getClientOriginalName(),
-                'mime' => $archivo->getClientMimeType(),
+                'mime' => $archivo->getMimeType(),
                 'tamano' => $archivo->getSize(),
             ];
         }
@@ -131,19 +133,30 @@ class EstudioImagenController extends Controller
     {
         $paciente = $estudio->paciente_id;
 
-        Storage::disk('public')->delete($estudio->archivo);
+        // Borrado lógico: el archivo se conserva para poder restaurar el estudio.
         $estudio->delete();
 
         return redirect()->route('admin.estudios.paciente', $paciente)
             ->with('exito', 'El estudio fue eliminado.');
     }
 
+    /** Muestra el archivo en línea (visor y miniaturas) desde el disco privado. */
+    public function ver(EstudioImagen $estudio): Response
+    {
+        abort_unless($estudio->archivoExiste(), 404, 'El archivo del estudio ya no está disponible.');
+
+        return Storage::disk(EstudioImagen::DISCO)->response($estudio->archivo, null, [
+            'Content-Type' => $estudio->mime ?: 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
     /** Entrega el archivo original con su nombre de subida. */
     public function descargar(EstudioImagen $estudio): StreamedResponse
     {
-        abort_unless(Storage::disk('public')->exists($estudio->archivo), 404, 'El archivo del estudio ya no está disponible.');
+        abort_unless($estudio->archivoExiste(), 404, 'El archivo del estudio ya no está disponible.');
 
-        return Storage::disk('public')->download(
+        return Storage::disk(EstudioImagen::DISCO)->download(
             $estudio->archivo,
             $estudio->nombre_original ?: basename($estudio->archivo)
         );

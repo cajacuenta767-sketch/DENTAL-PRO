@@ -77,6 +77,11 @@
                             <span class="badge bg-azure-lt">
                                 <i class="{{ $documento->icono }} me-1"></i>{{ $documento->tipo_legible }}
                             </span>
+                            @if ($documento->esta_firmado)
+                                <span class="badge bg-success-lt badge-sm" title="Firmado el {{ $documento->firmado_en->format('d/m/Y H:i') }}">
+                                    <i class="ti ti-writing-sign me-1"></i>Firmado
+                                </span>
+                            @endif
                         </td>
                         <td>
                             <div class="fw-medium">{{ $documento->paciente->nombre_completo }}</div>

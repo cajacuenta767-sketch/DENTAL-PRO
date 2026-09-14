@@ -28,6 +28,12 @@ class InventarioService
                 'AJUSTE' => $cantidad,
             };
 
+            // En un ajuste el kardex guarda la diferencia (con signo) y no el
+            // saldo contado, para que la suma de movimientos cuadre con el stock.
+            if ($tipo === 'AJUSTE') {
+                $cantidad = round($resultante - (float) $insumo->stock_actual, 2);
+            }
+
             if ($resultante < 0) {
                 throw ValidationException::withMessages([
                     'cantidad' => "No hay existencias suficientes: quedan {$insumo->stock_actual} {$insumo->unidad_medida}.",

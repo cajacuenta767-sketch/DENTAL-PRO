@@ -19,10 +19,20 @@
         @endcan
         @can('pagos.crear')
             @if (in_array($presupuesto->estado, ['APROBADO', 'EN_EJECUCION', 'COMPLETADO'], true))
-                <form method="POST" action="{{ route('admin.presupuestos.facturar', $presupuesto) }}">
-                    @csrf
-                    <button class="btn btn-success"><i class="ti ti-cash me-1"></i>Cobrar lo ejecutado</button>
-                </form>
+                @if ($porCobrar > 0)
+                    <form method="POST" action="{{ route('admin.presupuestos.facturar', $presupuesto) }}">
+                        @csrf
+                        <button class="btn btn-success">
+                            <i class="ti ti-cash me-1"></i>Cobrar lo ejecutado
+                            <span class="badge bg-white text-success ms-2">{{ number_format($porCobrar, 2) }} {{ $ajustes->divisa }}</span>
+                        </button>
+                    </form>
+                @else
+                    <button type="button" class="btn btn-success" disabled
+                            title="No hay tratamientos ejecutados pendientes de cobro">
+                        <i class="ti ti-cash me-1"></i>Cobrar lo ejecutado
+                    </button>
+                @endif
             @endif
         @endcan
     </div>
@@ -45,15 +55,25 @@
                         </div>
                     </div>
                     @can('presupuestos.aprobar')
-                        <form method="POST" action="{{ route('admin.presupuestos.estado', $presupuesto) }}" class="d-flex gap-2">
-                            @csrf @method('PATCH')
-                            <select name="estado" class="form-select form-select-sm" style="width: auto;">
-                                @foreach (\App\Models\Presupuesto::ESTADOS as $clave => $etiqueta)
-                                    <option value="{{ $clave }}" @selected($presupuesto->estado === $clave)>{{ $etiqueta }}</option>
-                                @endforeach
-                            </select>
-                            <button class="btn btn-sm btn-primary">Cambiar</button>
-                        </form>
+                        @php $transiciones = \App\Models\Presupuesto::TRANSICIONES[$presupuesto->estado] ?? []; @endphp
+                        @if (! empty($transiciones))
+                            <form method="POST" action="{{ route('admin.presupuestos.estado', $presupuesto) }}" class="d-flex gap-2">
+                                @csrf @method('PATCH')
+                                <select name="estado" class="form-select form-select-sm" style="width: auto;" required>
+                                    <option value="">— Cambiar a… —</option>
+                                    @foreach (\App\Models\Presupuesto::ESTADOS as $clave => $etiqueta)
+                                        @if ($presupuesto->puedeTransitarA($clave))
+                                            <option value="{{ $clave }}">{{ $etiqueta }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-sm btn-primary">Cambiar</button>
+                            </form>
+                        @else
+                            <span class="text-secondary small" title="El estado avanza automáticamente al ejecutar los tratamientos">
+                                <i class="ti ti-lock me-1"></i>Sin cambios manuales
+                            </span>
+                        @endif
                     @endcan
                 </div>
             </div>
@@ -91,6 +111,15 @@
                                         <div class="text-secondary small">
                                             Ejecutado el {{ $detalle->fecha_ejecucion->format('d/m/Y') }}
                                         </div>
+                                    @endif
+                                    @if ($detalle->pago_id)
+                                        @can('pagos.ver')
+                                            <a href="{{ route('admin.pagos.show', $detalle->pago_id) }}" class="badge bg-success-lt mt-1" title="Ver recibo">
+                                                <i class="ti ti-check me-1"></i>Cobrado
+                                            </a>
+                                        @else
+                                            <span class="badge bg-success-lt mt-1"><i class="ti ti-check me-1"></i>Cobrado</span>
+                                        @endcan
                                     @endif
                                 </td>
                                 <td class="text-center">
@@ -180,6 +209,12 @@
                     <span class="h2 mb-0 text-brand">{{ number_format($presupuesto->total, 2) }}</span>
                 </div>
                 <div class="text-secondary small text-end">{{ $ajustes->divisa }}</div>
+                <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                    <span class="text-secondary">Ejecutado sin cobrar</span>
+                    <span class="fw-medium {{ $porCobrar > 0 ? 'text-warning' : 'text-secondary' }}">
+                        {{ number_format($porCobrar, 2) }} {{ $ajustes->divisa }}
+                    </span>
+                </div>
             </div>
         </div>
 

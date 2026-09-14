@@ -20,17 +20,19 @@
         </a>
 
         {{-- Búsqueda global --}}
-        <div class="flex-fill d-none d-lg-block px-3" style="max-width: 28rem;">
-            <form action="{{ route('admin.buscar') }}" method="GET" class="position-relative" autocomplete="off">
-                <div class="input-icon">
-                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                    <input type="search" name="q" value="{{ request('q') }}" class="form-control"
-                           placeholder="Barra de búsqueda..." data-os-buscador
-                           aria-label="Buscar en el sistema">
-                </div>
-                <div class="dropdown-menu w-100 mt-1 d-none" data-os-resultados style="max-height: 24rem; overflow-y: auto;"></div>
-            </form>
-        </div>
+        @canany(['pacientes.ver', 'citas.ver', 'doctores.ver', 'pagos.ver', 'presupuestos.ver'])
+            <div class="flex-fill d-none d-lg-block px-3" style="max-width: 28rem;">
+                <form action="{{ route('admin.buscar') }}" method="GET" class="position-relative" autocomplete="off">
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="search" name="q" value="{{ request('q') }}" class="form-control"
+                               placeholder="Barra de búsqueda..." data-os-buscador
+                               aria-label="Buscar en el sistema">
+                    </div>
+                    <div class="dropdown-menu w-100 mt-1 d-none" data-os-resultados style="max-height: 24rem; overflow-y: auto;"></div>
+                </form>
+            </div>
+        @endcanany
 
         <div class="navbar-nav flex-row order-md-last align-items-center">
             <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema">
@@ -143,6 +145,7 @@
 </header>
 
 
+@canany(['pacientes.ver', 'citas.ver', 'doctores.ver', 'pagos.ver', 'presupuestos.ver'])
 @once
     @push('scripts')
         <script>
@@ -209,3 +212,4 @@
         </script>
     @endpush
 @endonce
+@endcanany

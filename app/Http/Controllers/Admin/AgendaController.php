@@ -24,7 +24,11 @@ class AgendaController extends Controller
         $propio = $request->user()->doctor;
         $doctores = Doctor::activos()->with('especialidad')->orderBy('apellidos')->get();
 
+        // Sin "agenda.todos", un doctor solo mira su propia agenda.
+        $puedeVerTodas = $request->user()->can('agenda.todos') || ! $propio;
+
         $doctorFiltro = match (true) {
+            ! $puedeVerTodas => $propio,
             $request->filled('doctor_id') => $doctores->firstWhere('id', (int) $request->doctor_id),
             (bool) $propio => $propio,
             default => null,
@@ -57,6 +61,7 @@ class AgendaController extends Controller
             // Los cupos solo tienen sentido mirando a un profesional concreto.
             'cupos' => $doctorFiltro ? $this->agenda->cupos($doctorFiltro, $fecha) : collect(),
             'esAgendaPropia' => $propio && $doctorFiltro && $propio->is($doctorFiltro),
+            'puedeVerTodas' => $puedeVerTodas,
             'proximosDias' => $this->proximosDias($doctorFiltro),
         ]);
     }

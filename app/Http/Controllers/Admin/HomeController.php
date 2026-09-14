@@ -124,7 +124,7 @@ class HomeController extends Controller
         foreach (Cita::ESTADOS as $estado) {
             $etiquetas[] = ucfirst(mb_strtolower(str_replace('_', ' ', $estado)));
             $series[] = (int) ($conteos[$estado] ?? 0);
-            $colores[] = $paleta[$estado];
+            $colores[] = $paleta[$estado] ?? '#adb5bd';
         }
 
         return [

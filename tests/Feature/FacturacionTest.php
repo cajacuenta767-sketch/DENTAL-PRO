@@ -116,7 +116,14 @@ class FacturacionTest extends CasoClinico
 
         $this->assertSame('ANULADO', $documento->fresh()->estado);
         $this->assertStringContainsString('Datos del receptor', $documento->fresh()->motivo_anulacion);
-        $this->assertSame(0, DocumentoFiscal::where('estado', 'EMITIDO')->count());
+        $this->assertSame(0, DocumentoFiscal::ventas()->where('estado', 'EMITIDO')->count());
+
+        // La anulación deja una nota de crédito que apunta al documento original.
+        $nota = DocumentoFiscal::where('tipo', 'NOTA_CREDITO')->first();
+        $this->assertNotNull($nota);
+        $this->assertSame($documento->id, $nota->documento_referencia_id);
+        $this->assertSame((float) $documento->total, (float) $nota->total);
+        $this->assertSame('DTE-05', substr($nota->numero_control, 0, 6));
     }
 
     public function test_tras_anular_se_puede_volver_a_facturar_el_recibo(): void
@@ -126,7 +133,8 @@ class FacturacionTest extends CasoClinico
 
         $this->emitir(['tipo' => 'CREDITO_FISCAL']);
 
-        $this->assertSame(2, DocumentoFiscal::count());
-        $this->assertSame(1, DocumentoFiscal::where('estado', 'EMITIDO')->count());
+        // Factura anulada + nota de crédito + comprobante nuevo.
+        $this->assertSame(3, DocumentoFiscal::count());
+        $this->assertSame(1, DocumentoFiscal::ventas()->where('estado', 'EMITIDO')->count());
     }
 }

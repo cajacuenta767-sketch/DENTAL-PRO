@@ -38,7 +38,7 @@ class CitaTest extends CasoClinico
 
         $this->assertNotNull($cita);
         $this->assertSame(12, strlen($cita->token));
-        Mail::assertSent(CitaConfirmacionMail::class);
+        Mail::assertQueued(CitaConfirmacionMail::class);
     }
 
     public function test_no_se_puede_ocupar_dos_veces_el_mismo_cupo(): void

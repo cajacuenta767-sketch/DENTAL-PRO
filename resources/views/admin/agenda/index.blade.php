@@ -49,17 +49,19 @@
 <div class="card mb-3">
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label">Profesional</label>
-                <select name="doctor_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">— Toda la clínica —</option>
-                    @foreach ($doctores as $d)
-                        <option value="{{ $d->id }}" @selected($doctor?->id === $d->id)>
-                            {{ $d->nombre_profesional }} · {{ $d->especialidad->nombre }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            @if ($puedeVerTodas)
+                <div class="col-md-5">
+                    <label class="form-label">Profesional</label>
+                    <select name="doctor_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">— Toda la clínica —</option>
+                        @foreach ($doctores as $d)
+                            <option value="{{ $d->id }}" @selected($doctor?->id === $d->id)>
+                                {{ $d->nombre_profesional }} · {{ $d->especialidad->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
             <div class="col-md-3">
                 <label class="form-label">Fecha</label>
                 <input type="date" name="fecha" value="{{ $fecha }}" class="form-control" onchange="this.form.submit()">
@@ -183,8 +185,8 @@
                         @foreach ($cupos as $cupo)
                             @if ($cupo['disponible'])
                                 @can('citas.crear')
-                                    <a href="{{ route('admin.citas.create', ['doctor_id' => $doctor->id]) }}"
-                                       class="btn btn-sm btn-outline-success" title="Cupo libre">{{ $cupo['hora'] }}</a>
+                                    <a href="{{ route('admin.citas.create', ['doctor_id' => $doctor->id, 'fecha' => $fecha, 'hora' => $cupo['hora']]) }}"
+                                       class="btn btn-sm btn-outline-success" title="Agendar a las {{ $cupo['hora'] }}">{{ $cupo['hora'] }}</a>
                                 @else
                                     <span class="btn btn-sm btn-outline-success disabled">{{ $cupo['hora'] }}</span>
                                 @endcan

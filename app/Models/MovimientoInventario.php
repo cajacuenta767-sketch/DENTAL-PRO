@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MovimientoInventario extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'movimientos_inventario';
 
@@ -59,6 +60,16 @@ class MovimientoInventario extends Model
     /** Signo con el que el movimiento afecta las existencias. */
     public function getSignoAttribute(): int
     {
+        if ($this->tipo === 'AJUSTE') {
+            return (float) $this->cantidad < 0 ? -1 : 1;
+        }
+
         return in_array($this->tipo, ['SALIDA', 'MERMA'], true) ? -1 : 1;
+    }
+
+    /** Cantidad sin signo, para mostrar junto al indicador +/−. */
+    public function getCantidadAbsolutaAttribute(): float
+    {
+        return abs((float) $this->cantidad);
     }
 }

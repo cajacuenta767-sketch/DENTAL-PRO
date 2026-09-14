@@ -5,18 +5,22 @@
 
 @section('contenido')
 <div class="row row-cards mb-3">
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl">
         <x-kpi titulo="Documentos emitidos" :valor="$totales['emitidos']" icono="ti ti-receipt-tax" color="primary" />
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl">
         <x-kpi titulo="Total facturado" :valor="number_format($totales['facturado'], 2).' '.$ajustes->divisa"
                icono="ti ti-coin" color="success" />
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl">
         <x-kpi titulo="IVA generado" :valor="number_format($totales['iva'], 2).' '.$ajustes->divisa"
                icono="ti ti-percentage" color="azure" />
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl">
+        <x-kpi titulo="Notas de crédito" :valor="$totales['notasCredito'] ?? 0" icono="ti ti-receipt-refund"
+               :color="($totales['notasCredito'] ?? 0) > 0 ? 'orange' : 'secondary'" />
+    </div>
+    <div class="col-sm-6 col-xl">
         <x-kpi titulo="Anulados" :valor="$totales['anulados']" icono="ti ti-ban"
                :color="$totales['anulados'] > 0 ? 'danger' : 'secondary'" />
     </div>
@@ -110,7 +114,9 @@
                             <div class="font-monospace" style="font-size: .72rem;">{{ $documento->numero_control }}</div>
                             <div class="text-secondary small">Recibo {{ $documento->pago->codigo_recibo }}</div>
                         </td>
-                        <td><span class="badge bg-azure-lt">{{ $documento->tipo }}</span></td>
+                        <td>
+                            <span class="badge bg-{{ $documento->es_nota ? 'orange' : 'azure' }}-lt">{{ $documento->tipo_legible }}</span>
+                        </td>
                         <td>
                             <div class="fw-medium">{{ $documento->receptor_nombre }}</div>
                             @if ($documento->receptor_documento)

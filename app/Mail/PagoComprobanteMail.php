@@ -5,13 +5,14 @@ namespace App\Mail;
 use App\Models\Ajuste;
 use App\Models\Pago;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PagoComprobanteMail extends Mailable
+class PagoComprobanteMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

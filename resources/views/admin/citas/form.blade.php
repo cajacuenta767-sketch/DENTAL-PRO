@@ -6,6 +6,9 @@
 @section('contenido')
 <form method="POST" action="{{ $cita->exists ? route('admin.citas.update', $cita) : route('admin.citas.store') }}">
     @csrf
+    @if (! empty($listaEsperaId))
+        <input type="hidden" name="lista_espera_id" value="{{ $listaEsperaId }}">
+    @endif
     @if ($cita->exists) @method('PUT') @endif
 
     <div class="row g-3">
@@ -178,6 +181,7 @@
         url.searchParams.set('doctor_id', doctor.value);
         url.searchParams.set('fecha', fecha.value);
         if (citaId) url.searchParams.set('cita_id', citaId);
+        if (tratamiento.value) url.searchParams.set('tratamiento_id', tratamiento.value);
 
         try {
             const respuesta = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -224,6 +228,7 @@
     }
 
     doctor.addEventListener('change', cargarHoras);
+    tratamiento.addEventListener('change', cargarHoras);
     fecha.addEventListener('change', cargarHoras);
     tratamiento.addEventListener('change', actualizarResumen);
 

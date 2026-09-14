@@ -57,8 +57,16 @@
             @endif
         </td>
         <td class="cen" style="width:50%;">
-            ______________________________<br>
-            <span class="apagado">Recibí conforme · {{ $documento->paciente->nombre_completo }}</span>
+            @if ($documento->esta_firmado && $documento->firma_data_uri)
+                <div class="etiqueta-campo">Firma del paciente</div>
+                <img src="{{ $documento->firma_data_uri }}" alt="Firma del paciente" style="max-height:70px; max-width:240px;"><br>
+                ______________________________<br>
+                <strong>{{ $documento->paciente->nombre_completo }}</strong><br>
+                <span class="apagado">Firmado el {{ $documento->firmado_en->format('d/m/Y H:i') }}</span>
+            @else
+                ______________________________<br>
+                <span class="apagado">Recibí conforme · {{ $documento->paciente->nombre_completo }}</span>
+            @endif
         </td>
     </tr>
 </table>
