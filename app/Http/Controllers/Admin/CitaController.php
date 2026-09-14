@@ -68,6 +68,7 @@ class CitaController extends Controller
                 'tratamiento_id' => $request->query('tratamiento_id'),
                 'fecha' => $request->query('fecha', now()->toDateString()),
                 'hora' => $request->query('hora'),
+                'motivo' => $request->query('motivo'),
             ]),
             'listaEsperaId' => $request->query('lista_espera_id'),
             'pacientes' => Paciente::activos()->orderBy('apellidos')->get(),

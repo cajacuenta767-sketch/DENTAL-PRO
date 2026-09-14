@@ -88,8 +88,17 @@
                     {{ $presupuesto->detalles->where('estado', '!=', 'ANULADO')->count() }} ejecutados
                 </span>
             </div>
+            @php
+                $puedeEjecutar = in_array($presupuesto->estado, ['APROBADO', 'EN_EJECUCION', 'COMPLETADO'], true);
+                $puedeAgendar = in_array($presupuesto->estado, ['APROBADO', 'EN_EJECUCION'], true);
+                $puedeReasignar = auth()->user()->can('presupuestos.editar');
+                $porSesion = $presupuesto->detalles->groupBy(fn ($d) => max(1, (int) $d->sesion))->sortKeys();
+                $maxSesion = min(50, max(5, (int) $porSesion->keys()->max() + 1));
+                $columnas = $puedeReasignar ? 8 : 7;
+                $numeroLinea = 0;
+            @endphp
             <div class="table-responsive">
-                <table class="table table-vcenter card-table">
+                <table class="table table-vcenter card-table" id="tabla-plan-sesiones">
                     <thead>
                         <tr>
                             <th style="width: 3rem;">#</th>
@@ -98,13 +107,57 @@
                             <th class="text-center">Cant.</th>
                             <th class="text-end">Precio</th>
                             <th class="text-end">Subtotal</th>
+                            @if ($puedeReasignar)
+                                <th class="text-center" style="width: 6rem;" title="Cambiar la línea de sesión">Sesión</th>
+                            @endif
                             <th class="text-center" style="width: 12rem;">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($presupuesto->detalles as $detalle)
+                        @foreach ($porSesion as $sesion => $lineas)
+                            @php
+                                $vigentes = $lineas->where('estado', '!=', 'ANULADO');
+                                $ejecutadas = $vigentes->where('estado', 'EJECUTADO')->count();
+                                $pendientes = $vigentes->count() - $ejecutadas;
+                                $avanceSesion = $vigentes->count() ? (int) round($ejecutadas / $vigentes->count() * 100) : 0;
+                                $citaSesion = $lineas->pluck('cita')->filter()->sortByDesc('fecha')->first();
+                            @endphp
+                            <tr class="bg-surface-secondary" data-sesion="{{ $sesion }}">
+                                <th colspan="{{ $columnas }}" class="py-2">
+                                    <div class="d-flex align-items-center flex-wrap gap-2">
+                                        <span class="badge bg-primary"><i class="ti ti-calendar-event me-1"></i>Sesión {{ $sesion }}</span>
+                                        <span class="text-secondary small fw-normal">
+                                            {{ $ejecutadas }} de {{ $vigentes->count() }} ejecutados ·
+                                            {{ number_format($vigentes->sum('subtotal'), 2) }} {{ $ajustes->divisa }}
+                                        </span>
+                                        <div class="progress" style="width: 8rem; height: .5rem;" title="Avance de la sesión: {{ $avanceSesion }}%">
+                                            <div class="progress-bar bg-{{ $avanceSesion === 100 ? 'success' : 'primary' }}" style="width: {{ $avanceSesion }}%"></div>
+                                        </div>
+                                        <span class="small fw-normal {{ $avanceSesion === 100 ? 'text-success' : 'text-secondary' }}">{{ $avanceSesion }}%</span>
+                                        @if ($citaSesion)
+                                            @can('citas.ver')
+                                                <a href="{{ route('admin.citas.show', $citaSesion) }}" class="badge bg-azure-lt fw-normal" title="Cita vinculada a esta sesión">
+                                                    <i class="ti ti-calendar-check me-1"></i>{{ $citaSesion->fecha->format('d/m/Y') }}
+                                                </a>
+                                            @else
+                                                <span class="badge bg-azure-lt fw-normal"><i class="ti ti-calendar-check me-1"></i>{{ $citaSesion->fecha->format('d/m/Y') }}</span>
+                                            @endcan
+                                        @endif
+                                        @can('citas.crear')
+                                            @if ($puedeAgendar && $pendientes > 0)
+                                                <a href="{{ route('admin.presupuestos.agendar-sesion', ['presupuesto' => $presupuesto, 'sesion' => $sesion]) }}"
+                                                   class="btn btn-sm btn-outline-primary ms-auto" title="Abre la agenda con los datos de esta sesión">
+                                                    <i class="ti ti-calendar-plus me-1"></i>Agendar sesión
+                                                </a>
+                                            @endif
+                                        @endcan
+                                    </div>
+                                </th>
+                            </tr>
+                        @foreach ($lineas as $detalle)
+                            @php($numeroLinea++)
                             <tr class="{{ $detalle->estado === 'ANULADO' ? 'opacity-50' : '' }}">
-                                <td class="text-secondary">{{ $loop->iteration }}</td>
+                                <td class="text-secondary">{{ $numeroLinea }}</td>
                                 <td>
                                     <div class="fw-medium">{{ $detalle->descripcion }}</div>
                                     @if ($detalle->fecha_ejecucion)
@@ -135,6 +188,17 @@
                                 <td class="text-center">{{ $detalle->cantidad }}</td>
                                 <td class="text-end">{{ number_format($detalle->precio_unitario, 2) }}</td>
                                 <td class="text-end fw-medium">{{ number_format($detalle->subtotal, 2) }}</td>
+                                @if ($puedeReasignar)
+                                    <td class="text-center">
+                                        <select class="form-select form-select-sm" data-sesion-linea="{{ $detalle->id }}"
+                                                data-actual="{{ $sesion }}" aria-label="Sesión de la línea"
+                                                @disabled($detalle->estado === 'ANULADO')>
+                                            @for ($s = 1; $s <= $maxSesion; $s++)
+                                                <option value="{{ $s }}" @selected($s === $sesion)>{{ $s }}</option>
+                                            @endfor
+                                        </select>
+                                    </td>
+                                @endif
                                 <td class="text-center">
                                     @can('presupuestos.ejecutar')
                                         @if (in_array($presupuesto->estado, ['APROBADO', 'EN_EJECUCION', 'COMPLETADO'], true))
@@ -158,9 +222,16 @@
                                 </td>
                             </tr>
                         @endforeach
+                        @endforeach
                     </tbody>
                 </table>
             </div>
+            @if ($puedeReasignar && $presupuesto->detalles->isNotEmpty())
+                <div class="card-body border-top py-2 text-secondary small">
+                    <i class="ti ti-info-circle me-1"></i>
+                    Cambia el número de sesión de una línea para reorganizar el plan; el cambio se guarda al instante.
+                </div>
+            @endif
 
             @unless (in_array($presupuesto->estado, ['APROBADO', 'EN_EJECUCION', 'COMPLETADO'], true))
                 <div class="card-body border-top">
@@ -270,4 +341,44 @@
         </div>
     </div>
 </div>
+
+@if ($puedeReasignar)
+@push('scripts')
+<script>
+(() => {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const url = @json(route('admin.presupuestos.sesiones', $presupuesto));
+
+    document.querySelectorAll('[data-sesion-linea]').forEach((select) => {
+        select.addEventListener('change', async () => {
+            const anterior = select.dataset.actual;
+            select.disabled = true;
+
+            try {
+                const respuesta = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sesiones: { [select.dataset.sesionLinea]: Number(select.value) } }),
+                });
+
+                if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+
+                // Se recarga para reagrupar las líneas por sesión.
+                window.location.reload();
+            } catch (error) {
+                select.value = anterior;
+                select.disabled = false;
+                alert('No se pudo cambiar la sesión de la línea. Intenta de nuevo.');
+            }
+        });
+    });
+})();
+</script>
+@endpush
+@endif
 @endsection
