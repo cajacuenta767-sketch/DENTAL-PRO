@@ -13,5 +13,10 @@
          data-piezas="{{ json_encode($piezas ?? []) }}"
          data-estados="{{ json_encode(\App\Models\Odontograma::ESTADOS) }}"
      @endunless>
-    <div class="text-secondary small text-center py-5">Cargando la arcada…</div>
+    @if ($editable)
+        <div class="text-secondary small text-center py-5">Cargando la arcada…</div>
+    @else
+        {{-- Respaldo sin JavaScript (o con assets sin recompilar): la cuadrícula ya pintada. --}}
+        @include('componentes.odontograma', ['tipo' => $tipo, 'piezas' => $piezas ?? [], 'editable' => false])
+    @endif
 </div>

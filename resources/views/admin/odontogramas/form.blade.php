@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         panel.detalle.forEach((cara) => {
             const clave = pieza.estado !== 'sano' ? pieza.estado : (pieza.caras?.[cara.dataset.detalleCara] ?? 'sano');
-            cara.setAttribute('fill', colorVisible(clave));
+            cara.style.fill = colorVisible(clave);
         });
 
         panel.chips.forEach((chip) => {

@@ -194,7 +194,7 @@ export function montarArcada(contenedor, opciones = {}) {
             }));
 
             CARAS.forEach((cara) => {
-                grupo.appendChild(el('path', { d: caras[cara], class: 'pieza-cara', 'data-cara': cara, fill: '#ffffff' }));
+                grupo.appendChild(el('path', { d: caras[cara], class: 'pieza-cara', 'data-cara': cara, fill: '#ffffff', style: 'fill: #ffffff' }));
             });
 
             const surco = surcos(w, h, posicion);
@@ -245,7 +245,9 @@ export function pintarMapa(raiz, mapa, estados, opciones = {}) {
 
         nodo.querySelectorAll('[data-cara]').forEach((cara) => {
             const clave = pieza.estado !== 'sano' ? pieza.estado : (pieza.caras?.[cara.dataset.cara] ?? 'sano');
-            cara.setAttribute('fill', color(clave));
+            const relleno = color(clave);
+            cara.setAttribute('fill', relleno);
+            cara.style.fill = relleno;
         });
     });
 
