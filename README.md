@@ -549,3 +549,58 @@ reserva pública y la API (`402 {ok:false, error, codigo}`); `login`, `/` y
 
 Detalle completo en [docs/licencia.md](docs/licencia.md). Pruebas:
 `DB_PASSWORD=postgres php artisan test --filter=LicenciaTest`.
+
+## Aplicación Android y PWA
+
+DENTAL-PRO también se usa desde el teléfono:
+
+- **App Android** (`movil/`, Kotlin + WebView): pantalla inicial para indicar
+  la dirección del servidor (`https://clinica.midominio.com` o la de red local
+  del instalador de escritorio, `http://192.168.1.10:8181`), subida de fotos y
+  radiografías con cámara, descargas de recibos y respaldos, página sin
+  conexión y ajustes para cambiar de servidor. La APK
+  `DENTAL-PRO-<versión>.apk` se compila en GitHub Actions
+  (`.github/workflows/movil.yml`) en cada push que toque `movil/`, a mano y en
+  los tags `v*`, donde se adjunta a la release. Sin secretos
+  `ANDROID_KEYSTORE_*` se firma con un keystore temporal (instalable, no apto
+  para tiendas).
+- **PWA**: la versión web es instalable desde Chrome, Edge o Safari
+  (*Añadir a pantalla de inicio*), con `public/manifest.webmanifest`, service
+  worker `public/sw.js` y página `public/offline.html`.
+
+Instalación, permisos, firma para Play Store y detalles en
+[docs/movil.md](docs/movil.md).
+
+---
+
+## Web de producto (`sitio/`)
+
+La carpeta `sitio/` contiene la web pública para vender y distribuir DENTAL-PRO:
+módulos, capturas reales, precios en vivo desde el panel central de ventas
+**CONTROL** (`GET /api/v1/publico/catalogo`), formulario de compra
+(`POST /api/v1/publico/pedidos`, con referidos `?ref=`), consulta de pedido con
+entrega de claves `CTL-…`, descargas para Windows y Android desde GitHub Releases,
+demo, preguntas frecuentes y contacto. Es HTML, CSS y JavaScript sin dependencias;
+todo lo configurable está en `sitio/config.js` (`CONTROL_URL`, `DEMO_URL`,
+`RELEASES_URL`, WhatsApp, correo y precios de respaldo).
+
+Se publica en GitHub Pages con `.github/workflows/sitio.yml` (el dueño debe activar
+**Settings → Pages → Source: GitHub Actions**) o se sirve como carpeta estática con
+Caddy/Nginx junto a CONTROL. Detalles en [docs/sitio.md](docs/sitio.md).
+
+## Instalador de escritorio (Windows)
+
+Para clínicas que prefieren un PC local sin servidor: `escritorio/` contiene un
+lanzador Electron que empaqueta la aplicación con **PHP 8.4 y PostgreSQL 16
+integrados** en un único `DENTAL-PRO-Setup-<versión>.exe` (NSIS, en español,
+instalación por usuario). Al abrirlo crea su propia base de datos en
+`%LOCALAPPDATA%\DENTAL-PRO`, migra, siembra un administrador inicial
+(`admin@admin.com` / `admin123`, con cambio de contraseña obligatorio) y muestra
+la aplicación en una ventana propia con icono en la bandeja. La licencia se
+activa desde el menú **Aplicación → Licencia** (`/licencia`) con la clave de
+CONTROL; la huella del equipo es `sha256(hostname + MachineGuid)`.
+
+El instalador se genera en GitHub Actions (`.github/workflows/escritorio.yml`,
+en cada push, a mano o al etiquetar `v*`, que además lo adjunta a la release).
+Detalles de instalación, datos, respaldos, actualización y compilación manual en
+[docs/escritorio.md](docs/escritorio.md).

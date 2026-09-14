@@ -1,0 +1,23 @@
+{
+  "name": "dental-pro-escritorio",
+  "productName": "DENTAL-PRO",
+  "version": "2.0.0",
+  "description": "DENTAL-PRO para Windows: lanzador de escritorio con PHP y PostgreSQL integrados.",
+  "author": "DENTAL-PRO",
+  "license": "MIT",
+  "private": true,
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "iconos": "node herramientas/generar-iconos.mjs",
+    "preparar:app": "node preparar-app.mjs",
+    "preparar:runtime": "pwsh -NoProfile -ExecutionPolicy Bypass -File preparar-runtime.ps1",
+    "empaquetar": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "26.0.12"
+  }
+}
