@@ -56,15 +56,24 @@
                             <td>
                                 @if ($documento->esta_firmado)
                                     <span class="badge bg-success-lt"><i class="ti ti-signature me-1"></i>Firmado</span>
+                                @elseif ($documento->tipo === 'CONSENTIMIENTO')
+                                    <span class="badge bg-warning-lt">Pendiente de firma</span>
                                 @else
                                     <span class="badge bg-secondary-lt">Sin firma</span>
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('portal.documentos.pdf', $documento) }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-outline-primary text-nowrap">
-                                    <i class="ti ti-file-type-pdf me-1"></i>Ver PDF
-                                </a>
+                                <div class="btn-list flex-nowrap">
+                                    @if ($documento->tipo === 'CONSENTIMIENTO' && ! $documento->esta_firmado)
+                                        <a href="{{ route('portal.documentos.firmar', $documento) }}" class="btn btn-sm btn-primary text-nowrap">
+                                            <i class="ti ti-writing-sign me-1"></i>Firmar
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('portal.documentos.pdf', $documento) }}" target="_blank" rel="noopener"
+                                       class="btn btn-sm btn-outline-primary text-nowrap">
+                                        <i class="ti ti-file-type-pdf me-1"></i>Ver PDF
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

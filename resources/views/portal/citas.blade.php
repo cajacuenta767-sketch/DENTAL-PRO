@@ -3,6 +3,14 @@
 @section('pretitulo', 'Portal del paciente')
 @section('titulo', 'Mis citas')
 
+@if ($ajustes->portal_reservas_activas)
+    @section('acciones')
+        <a href="{{ route('portal.reservar') }}" class="btn btn-primary">
+            <i class="ti ti-calendar-plus me-1"></i>Reservar cita
+        </a>
+    @endsection
+@endif
+
 @section('contenido')
 <div class="card">
     <div class="card-header">
@@ -15,7 +23,13 @@
     @if ($citas->isEmpty())
         <div class="card-body">
             <x-vacio icono="ti ti-calendar-off" titulo="Aún no tienes citas registradas"
-                     texto="Cuando la clínica agende una cita para ti, la verás aquí." />
+                     texto="Cuando la clínica agende una cita para ti, la verás aquí.">
+                @if ($ajustes->portal_reservas_activas)
+                    <a href="{{ route('portal.reservar') }}" class="btn btn-primary">
+                        <i class="ti ti-calendar-plus me-1"></i>Reservar mi primera cita
+                    </a>
+                @endif
+            </x-vacio>
         </div>
     @else
         <div class="table-responsive">

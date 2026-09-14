@@ -4,9 +4,16 @@
 @section('titulo', 'Hola, ' . $paciente->nombres)
 
 @section('acciones')
-    <a href="{{ route('portal.citas') }}" class="btn btn-outline-primary">
-        <i class="ti ti-calendar-event me-1"></i>Ver todas mis citas
-    </a>
+    <div class="btn-list">
+        @if ($ajustes->portal_reservas_activas)
+            <a href="{{ route('portal.reservar') }}" class="btn btn-primary">
+                <i class="ti ti-calendar-plus me-1"></i>Reservar cita
+            </a>
+        @endif
+        <a href="{{ route('portal.citas') }}" class="btn btn-outline-primary">
+            <i class="ti ti-calendar-event me-1"></i>Ver todas mis citas
+        </a>
+    </div>
 @endsection
 
 @section('contenido')

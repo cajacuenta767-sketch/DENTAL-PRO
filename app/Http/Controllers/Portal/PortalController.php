@@ -13,6 +13,8 @@ use App\Models\Presupuesto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -111,6 +113,72 @@ class PortalController extends Controller
             'documento' => $documento,
             'clinica' => Ajuste::actual(),
         ])->setPaper('letter')->stream($documento->folio.'.pdf');
+    }
+
+    /** Consentimiento informado pendiente de firma: muestra el texto y el pad de firma. */
+    public function firmar(Request $request, DocumentoClinico $documento): View|RedirectResponse
+    {
+        $this->consentimientoFirmable($request, $documento);
+
+        if ($documento->esta_firmado) {
+            return redirect()->route('portal.documentos')
+                ->with('aviso', "El consentimiento {$documento->folio} ya está firmado.");
+        }
+
+        $documento->load(['doctor.especialidad', 'cita.tratamiento']);
+
+        return view('portal.firmar', [
+            'paciente' => $documento->paciente,
+            'documento' => $documento,
+        ]);
+    }
+
+    /** Guarda la firma dibujada (PNG en data URI) con la misma validación que el panel. */
+    public function guardarFirma(Request $request, DocumentoClinico $documento): RedirectResponse
+    {
+        $this->consentimientoFirmable($request, $documento);
+
+        if ($documento->esta_firmado) {
+            return redirect()->route('portal.documentos')
+                ->with('aviso', "El consentimiento {$documento->folio} ya estaba firmado; no se hicieron cambios.");
+        }
+
+        $request->validate([
+            'firma' => ['required', 'string', 'max:300000', 'starts_with:data:image/png;base64,'],
+            'acepto' => ['accepted'],
+        ], [
+            'acepto.accepted' => 'Debes declarar que leíste y aceptas el consentimiento.',
+        ], ['firma' => 'firma']);
+
+        $binario = base64_decode(Str::after($request->input('firma'), 'base64,'), true);
+
+        if ($binario === false || strlen($binario) < 100 || ! str_starts_with($binario, "\x89PNG")) {
+            throw ValidationException::withMessages(['firma' => 'La firma no es una imagen PNG válida.']);
+        }
+
+        $ruta = 'firmas/'.$documento->paciente_id.'/'.$documento->folio.'-'.Str::lower(Str::random(8)).'.png';
+        Storage::disk(DocumentoClinico::DISCO_FIRMAS)->put($ruta, $binario);
+
+        $documento->update(['firma_archivo' => $ruta, 'firmado_en' => now()]);
+
+        Auditoria::registrar('ACTUALIZAR', $documento, "El paciente firmó el consentimiento {$documento->folio} desde el portal");
+
+        return redirect()->route('portal.documentos')
+            ->with('exito', "Gracias. El consentimiento {$documento->folio} quedó firmado.");
+    }
+
+    /** Solo el dueño puede firmar, y solo consentimientos emitidos; lo demás no existe para el portal. */
+    private function consentimientoFirmable(Request $request, DocumentoClinico $documento): void
+    {
+        $paciente = $this->paciente($request);
+
+        abort_unless(
+            $paciente
+            && $documento->paciente_id === $paciente->id
+            && $documento->tipo === 'CONSENTIMIENTO'
+            && $documento->estado === 'EMITIDO',
+            404
+        );
     }
 
     public function presupuestos(Request $request): View|RedirectResponse

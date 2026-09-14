@@ -10,7 +10,7 @@
                :valor="($ajustes->simbolo_divisa ?? '') . ' ' . number_format((float) $saldo, 2)"
                icono="ti ti-cash"
                :color="$saldo > 0 ? 'warning' : 'success'"
-               :pie="$saldo > 0 ? 'Acércate a recepción para regularizar tu saldo.' : 'No tienes saldos pendientes.'" />
+               :pie="$saldo > 0 ? ($ajustes->pagos_online_activos ? 'Puedes pagar en línea desde cada recibo o en recepción.' : 'Acércate a recepción para regularizar tu saldo.') : 'No tienes saldos pendientes.'" />
     </div>
     <div class="col-sm-6 col-lg-4">
         <x-kpi titulo="Recibos emitidos" :valor="$pagos->total()" icono="ti ti-receipt" color="primary" />
@@ -59,10 +59,20 @@
                                 <span class="badge bg-{{ $pago->color_estado }}">{{ ucfirst(mb_strtolower((string) $pago->estado)) }}</span>
                             </td>
                             <td>
-                                <a href="{{ route('portal.pagos.recibo', $pago) }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-outline-primary text-nowrap">
-                                    <i class="ti ti-file-type-pdf me-1"></i>Recibo
-                                </a>
+                                <div class="btn-list flex-nowrap">
+                                    @if ($ajustes->pagos_online_activos && $pago->monto_saldo > 0)
+                                        <form method="POST" action="{{ route('portal.pagos.pagar', $pago) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-primary text-nowrap">
+                                                <i class="ti ti-credit-card me-1"></i>Pagar en línea
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <a href="{{ route('portal.pagos.recibo', $pago) }}" target="_blank" rel="noopener"
+                                       class="btn btn-sm btn-outline-primary text-nowrap">
+                                        <i class="ti ti-file-type-pdf me-1"></i>Recibo
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
