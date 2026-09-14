@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Odontograma extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'odontogramas';
 
@@ -107,6 +109,96 @@ class Odontograma extends Model
         }
 
         return $conteo;
+    }
+
+    /** Grados de movilidad dentaria (índice de Miller). */
+    public const MOVILIDAD = [0 => 'Sin movilidad', 1 => 'Grado I', 2 => 'Grado II', 3 => 'Grado III'];
+
+    /**
+     * Diferencias respecto a otro mapa (normalmente el odontograma anterior):
+     * qué piezas o caras cambiaron y en qué sentido.
+     *
+     * @return array<int, array{pieza: string, cara: ?string, antes: string, despues: string}>
+     */
+    public function cambiosRespectoA(?array $anterior): array
+    {
+        if (! $anterior) {
+            return [];
+        }
+
+        $cambios = [];
+
+        foreach ($this->piezas ?? [] as $numero => $pieza) {
+            $previa = $anterior[$numero] ?? null;
+            $estadoAntes = $previa['estado'] ?? 'sano';
+            $estadoAhora = $pieza['estado'] ?? 'sano';
+
+            if ($estadoAntes !== $estadoAhora) {
+                $cambios[] = ['pieza' => (string) $numero, 'cara' => null, 'antes' => $estadoAntes, 'despues' => $estadoAhora];
+
+                continue;
+            }
+
+            foreach (self::CARAS as $cara) {
+                $antes = $previa['caras'][$cara] ?? 'sano';
+                $ahora = $pieza['caras'][$cara] ?? 'sano';
+
+                if ($antes !== $ahora) {
+                    $cambios[] = ['pieza' => (string) $numero, 'cara' => $cara, 'antes' => $antes, 'despues' => $ahora];
+                }
+            }
+        }
+
+        return $cambios;
+    }
+
+    /** Texto de diagnóstico listo para pegar en la historia clínica. */
+    public function resumenTexto(): string
+    {
+        $lineas = [];
+
+        foreach ($this->piezas ?? [] as $numero => $pieza) {
+            $partes = [];
+            $estado = $pieza['estado'] ?? 'sano';
+
+            if ($estado !== 'sano') {
+                $partes[] = mb_strtolower(self::ESTADOS[$estado]['etiqueta'] ?? $estado);
+            } else {
+                foreach ($pieza['caras'] ?? [] as $cara => $valor) {
+                    if ($valor !== 'sano') {
+                        $partes[] = mb_strtolower(self::ESTADOS[$valor]['etiqueta'] ?? $valor)." ({$cara})";
+                    }
+                }
+            }
+
+            if (($pieza['movilidad'] ?? 0) > 0) {
+                $partes[] = 'movilidad '.self::MOVILIDAD[(int) $pieza['movilidad']];
+            }
+
+            if ($partes === []) {
+                continue;
+            }
+
+            $linea = "Pieza {$numero}: ".implode(', ', $partes);
+
+            if (! empty($pieza['urgente'])) {
+                $linea .= ' [URGENTE]';
+            }
+
+            if (! empty($pieza['nota'])) {
+                $linea .= ' — '.$pieza['nota'];
+            }
+
+            $lineas[] = $linea.'.';
+        }
+
+        return $lineas === [] ? 'Sin hallazgos: dentición sana.' : implode("\n", $lineas);
+    }
+
+    /** Piezas marcadas como urgentes. */
+    public function getPiezasUrgentesAttribute(): array
+    {
+        return array_map('strval', array_keys(array_filter($this->piezas ?? [], fn ($p) => ! empty($p['urgente']))));
     }
 
     /** Número de piezas con algún hallazgo distinto de sano. */

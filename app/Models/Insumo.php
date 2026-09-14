@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Insumo extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'insumos';
 
     protected $fillable = [
-        'codigo', 'nombre', 'descripcion', 'categoria', 'unidad_medida',
+        'sucursal_id', 'codigo', 'nombre', 'descripcion', 'categoria', 'unidad_medida',
         'stock_actual', 'stock_minimo', 'costo_unitario',
         'proveedor', 'ubicacion', 'fecha_vencimiento', 'activo',
     ];

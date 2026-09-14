@@ -257,6 +257,7 @@
             const url = new URL(urlHoras, window.location.origin);
             url.searchParams.set('doctor_id', doctor.value);
             url.searchParams.set('fecha', fecha.value);
+            if (tratamiento.value) url.searchParams.set('tratamiento_id', tratamiento.value);
             const datos = await (await fetch(url, { headers: { Accept: 'application/json' } })).json();
 
             if (!datos.horas.length) {
@@ -289,6 +290,7 @@
     doctor.addEventListener('change', () => { cargarCupos(); actualizarResumen(); });
     fecha.addEventListener('change', cargarCupos);
     tratamiento.addEventListener('change', actualizarResumen);
+    tratamiento.addEventListener('change', cargarCupos);
 })();
 </script>
 @endpush

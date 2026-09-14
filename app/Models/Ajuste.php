@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Ajuste extends Model
 {
+    use Auditable;
+
     protected $table = 'ajustes';
 
     protected $fillable = [
@@ -16,6 +19,7 @@ class Ajuste extends Model
         'reservas_online', 'reservas_token', 'reservas_anticipacion_dias',
         'reservas_minimo_horas', 'reservas_mensaje',
         'facturacion_serie', 'facturacion_tasa_iva', 'facturacion_activa',
+        'recordatorio_canal', 'pagos_online_activos', 'portal_reservas_activas',
     ];
 
     protected function casts(): array
@@ -26,6 +30,8 @@ class Ajuste extends Model
             'reservas_minimo_horas' => 'integer',
             'facturacion_activa' => 'boolean',
             'facturacion_tasa_iva' => 'decimal:2',
+            'pagos_online_activos' => 'boolean',
+            'portal_reservas_activas' => 'boolean',
         ];
     }
 

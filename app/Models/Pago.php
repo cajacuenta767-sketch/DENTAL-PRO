@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pago extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'pagos';
 
     protected $fillable = [
-        'codigo_recibo', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id',
+        'codigo_recibo', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id', 'presupuesto_id', 'sucursal_id',
         'monto_total', 'monto_pagado', 'monto_saldo',
         'metodo_pago', 'estado', 'notas', 'fecha_pago',
     ];
@@ -66,21 +68,51 @@ class Pago extends Model
         return $this->hasMany(PagoDetalle::class, 'pago_id');
     }
 
-    public function documentoFiscal(): HasOne
+    public function sucursal(): BelongsTo
     {
-        return $this->hasOne(DocumentoFiscal::class, 'pago_id')->where('estado', '!=', 'ANULADO');
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
-    /** Genera el correlativo REC-AAAA-NNNNN del siguiente recibo. */
+    public function pagosOnline(): HasMany
+    {
+        return $this->hasMany(PagoOnline::class, 'pago_id');
+    }
+
+    public function presupuesto(): BelongsTo
+    {
+        return $this->belongsTo(Presupuesto::class, 'presupuesto_id');
+    }
+
+    /** Factura o comprobante vigente del recibo (las notas de crédito no cuentan). */
+    public function documentoFiscal(): HasOne
+    {
+        return $this->hasOne(DocumentoFiscal::class, 'pago_id')
+            ->where('estado', '!=', 'ANULADO')
+            ->whereIn('tipo', ['FACTURA', 'CREDITO_FISCAL']);
+    }
+
+    /** Todos los documentos fiscales ligados al recibo, anulados y notas incluidos. */
+    public function documentosFiscales(): HasMany
+    {
+        return $this->hasMany(DocumentoFiscal::class, 'pago_id');
+    }
+
+    /**
+     * Correlativo REC-AAAA-NNNNN del siguiente recibo, tomado de una
+     * secuencia bloqueada para que dos cajas no repitan número.
+     */
     public static function siguienteCodigo(): string
     {
         $anio = now()->year;
-        $ultimo = static::query()
-            ->where('codigo_recibo', 'like', "REC-{$anio}-%")
-            ->orderByDesc('id')
-            ->value('codigo_recibo');
 
-        $correlativo = $ultimo ? ((int) substr($ultimo, -5)) + 1 : 1;
+        $correlativo = Secuencia::siguiente("recibo-{$anio}", function () use ($anio) {
+            $ultimo = static::withTrashed()
+                ->where('codigo_recibo', 'like', "REC-{$anio}-%")
+                ->orderByDesc('codigo_recibo')
+                ->value('codigo_recibo');
+
+            return $ultimo ? (int) substr($ultimo, -5) : 0;
+        });
 
         return sprintf('REC-%d-%05d', $anio, $correlativo);
     }
@@ -89,6 +121,7 @@ class Pago extends Model
     public function recalcular(): void
     {
         $this->monto_total = (float) $this->detalles()->sum('subtotal');
+        $this->monto_pagado = min((float) $this->monto_pagado, (float) $this->monto_total);
         $this->monto_saldo = max(0, round($this->monto_total - (float) $this->monto_pagado, 2));
 
         if ($this->estado !== 'ANULADO') {
@@ -110,5 +143,11 @@ class Pago extends Model
     public function scopeVigentes($query)
     {
         return $query->where('estado', '!=', 'ANULADO');
+    }
+
+    /** Un recibo con documento fiscal asociado ya forma parte del registro tributario. */
+    public function getTieneDocumentosFiscalesAttribute(): bool
+    {
+        return $this->documentosFiscales()->exists();
     }
 }

@@ -24,7 +24,7 @@ class RegisterController extends Controller
             'nombre' => ['required', 'string', 'max:150'],
             'email' => ['required', 'string', 'email', 'max:150', 'unique:usuarios,email'],
             'telefono' => ['nullable', 'string', 'max:50'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
         $usuario = Usuario::create($datos);
@@ -33,7 +33,7 @@ class RegisterController extends Controller
         event(new Registered($usuario));
         Auth::login($usuario);
 
-        return redirect()->route('admin.home')
-            ->with('exito', '¡Bienvenido a '.config('app.name').'! Tu cuenta fue creada correctamente.');
+        return redirect()->route('portal.inicio')
+            ->with('exito', '¡Bienvenido a '.config('app.name').'! Confirma tu correo para ver tus citas y documentos.');
     }
 }

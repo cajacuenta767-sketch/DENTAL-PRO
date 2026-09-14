@@ -26,14 +26,7 @@
                     <div class="row">
                         <div class="col-md-7">
                             <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
-                                <select id="paciente_id" name="paciente_id" class="form-select" required>
-                                    <option value="">— Selecciona —</option>
-                                    @foreach ($pacientes as $paciente)
-                                        <option value="{{ $paciente->id }}" @selected(old('paciente_id', $pago->paciente_id) == $paciente->id)>
-                                            {{ $paciente->nombre_completo }} · {{ $paciente->numero_documento }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-selector-paciente nombre="paciente_id" :seleccionado="$pago->paciente_id" requerido />
                             </x-campo>
                         </div>
                         <div class="col-md-5">
@@ -111,6 +104,17 @@
                             <i class="ti ti-check me-1"></i>Cobrar el total
                         </button>
                     </div>
+
+                    @if (($sucursales ?? collect())->count() > 1)
+                    <x-campo nombre="sucursal_id" etiqueta="Sede" ayuda="Sede donde se realiza el cobro.">
+                        <select id="sucursal_id" name="sucursal_id" class="form-select">
+                            <option value="">— Sin sede específica —</option>
+                            @foreach ($sucursales as $sede)
+                                <option value="{{ $sede->id }}" @selected(old('sucursal_id', $pago->sucursal_id) == $sede->id)>{{ $sede->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </x-campo>
+                    @endif
 
                     <x-campo nombre="fecha_pago" etiqueta="Fecha y hora del pago" requerido>
                         <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control"

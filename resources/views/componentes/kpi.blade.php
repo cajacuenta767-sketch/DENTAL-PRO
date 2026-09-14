@@ -15,7 +15,7 @@
             <div class="text-secondary small">{{ $titulo }}</div>
             <div class="h1 mb-0">{{ $valor }}</div>
             @if ($pie)
-                <div class="small text-secondary mt-1">{!! $pie !!}</div>
+                <div class="small text-secondary mt-1">{{ $pie }}</div>
             @endif
         </div>
     </div>

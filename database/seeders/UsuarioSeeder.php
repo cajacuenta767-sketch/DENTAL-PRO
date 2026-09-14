@@ -25,6 +25,8 @@ class UsuarioSeeder extends Seeder
                     'password' => $password,
                     'estado' => 'activo',
                     'email_verified_at' => now(),
+                    // Cuentas de demostración: el sistema exige cambiar la clave al entrar.
+                    'debe_cambiar_password' => true,
                 ]
             );
 

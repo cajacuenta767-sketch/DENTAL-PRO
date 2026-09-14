@@ -2,23 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class DocumentoFiscal extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'documentos_fiscales';
 
     protected $fillable = [
-        'pago_id', 'usuario_id', 'tipo', 'serie', 'correlativo',
+        'pago_id', 'usuario_id', 'documento_referencia_id', 'tipo', 'serie', 'correlativo',
         'numero_control', 'codigo_generacion',
         'receptor_nombre', 'receptor_documento', 'receptor_direccion', 'receptor_email',
         'subtotal', 'descuento', 'iva', 'total', 'tasa_iva',
         'estado', 'sello_recepcion', 'contenido', 'motivo_anulacion', 'fecha_emision',
+        'proveedor', 'estado_transmision', 'respuesta_proveedor', 'transmitido_en',
     ];
 
     protected function casts(): array
@@ -32,6 +35,8 @@ class DocumentoFiscal extends Model
             'tasa_iva' => 'decimal:2',
             'contenido' => 'array',
             'fecha_emision' => 'datetime',
+            'respuesta_proveedor' => 'array',
+            'transmitido_en' => 'datetime',
         ];
     }
 
@@ -66,12 +71,37 @@ class DocumentoFiscal extends Model
         return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
+    /** Documento que esta nota de crédito o débito corrige. */
+    public function documentoReferencia(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'documento_referencia_id');
+    }
+
+    public function notas(): HasMany
+    {
+        return $this->hasMany(self::class, 'documento_referencia_id');
+    }
+
+    /** Facturas y comprobantes; excluye las notas de crédito y débito. */
+    public function scopeVentas($query)
+    {
+        return $query->whereIn('tipo', ['FACTURA', 'CREDITO_FISCAL']);
+    }
+
+    /** Correlativo por tipo y serie desde una secuencia bloqueada. */
     public static function siguienteCorrelativo(string $tipo, string $serie): int
     {
-        return (int) static::query()
+        $serie = mb_strtoupper($serie);
+
+        return Secuencia::siguiente("fiscal-{$tipo}-{$serie}", fn () => (int) static::query()
             ->where('tipo', $tipo)
             ->where('serie', $serie)
-            ->max('correlativo') + 1;
+            ->max('correlativo'));
+    }
+
+    public function getEsNotaAttribute(): bool
+    {
+        return in_array($this->tipo, ['NOTA_CREDITO', 'NOTA_DEBITO'], true);
     }
 
     /** Número de control con el formato DTE-TT-SERIE-000000000000000. */

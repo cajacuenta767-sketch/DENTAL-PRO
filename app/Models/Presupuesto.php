@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Presupuesto extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'presupuestos';
 
     protected $fillable = [
         'codigo', 'paciente_id', 'doctor_id', 'usuario_id', 'odontograma_id',
-        'estado', 'subtotal', 'descuento', 'cobertura_seguro', 'total',
+        'aseguradora_id', 'porcentaje_cobertura', 'estado', 'subtotal', 'descuento', 'cobertura_seguro', 'total',
         'validez_dias', 'fecha', 'notas',
     ];
 
@@ -25,6 +28,7 @@ class Presupuesto extends Model
             'subtotal' => 'decimal:2',
             'descuento' => 'decimal:2',
             'cobertura_seguro' => 'decimal:2',
+            'porcentaje_cobertura' => 'decimal:2',
             'total' => 'decimal:2',
             'validez_dias' => 'integer',
             'fecha' => 'date',
@@ -38,6 +42,16 @@ class Presupuesto extends Model
         'EN_EJECUCION' => 'En ejecución',
         'COMPLETADO' => 'Completado',
         'RECHAZADO' => 'Rechazado',
+    ];
+
+    /** Cambios manuales permitidos; ejecución y cierre los maneja sincronizarEstado(). */
+    public const TRANSICIONES = [
+        'BORRADOR' => ['PRESENTADO', 'APROBADO', 'RECHAZADO'],
+        'PRESENTADO' => ['BORRADOR', 'APROBADO', 'RECHAZADO'],
+        'APROBADO' => ['RECHAZADO'],
+        'EN_EJECUCION' => [],
+        'COMPLETADO' => [],
+        'RECHAZADO' => ['PRESENTADO'],
     ];
 
     public const COLORES = [
@@ -64,6 +78,22 @@ class Presupuesto extends Model
         return $this->belongsTo(Odontograma::class, 'odontograma_id');
     }
 
+    /** Aseguradora congelada en el presupuesto (no la actual del paciente). */
+    public function aseguradora(): BelongsTo
+    {
+        return $this->belongsTo(Aseguradora::class, 'aseguradora_id');
+    }
+
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'presupuesto_id');
+    }
+
+    public function puedeTransitarA(string $estado): bool
+    {
+        return in_array($estado, self::TRANSICIONES[$this->estado] ?? [], true);
+    }
+
     public function detalles(): HasMany
     {
         return $this->hasMany(PresupuestoDetalle::class, 'presupuesto_id')->orderBy('orden')->orderBy('id');
@@ -73,19 +103,25 @@ class Presupuesto extends Model
     {
         $anio = now()->year;
 
-        $ultimo = static::query()
-            ->where('codigo', 'like', "PRE-{$anio}-%")
-            ->orderByDesc('id')
-            ->value('codigo');
+        $correlativo = Secuencia::siguiente("presupuesto-{$anio}", function () use ($anio) {
+            $ultimo = static::withTrashed()
+                ->where('codigo', 'like', "PRE-{$anio}-%")
+                ->orderByDesc('codigo')
+                ->value('codigo');
 
-        $correlativo = $ultimo ? ((int) substr($ultimo, -5)) + 1 : 1;
+            return $ultimo ? (int) substr($ultimo, -5) : 0;
+        });
 
         return sprintf('PRE-%d-%05d', $anio, $correlativo);
     }
 
     /**
      * Recalcula importes desde las líneas y aplica la cobertura de la
-     * aseguradora del paciente sobre el neto ya descontado.
+     * aseguradora sobre el neto ya descontado. Mientras el presupuesto es
+     * editable toma la aseguradora actual del paciente y la deja congelada;
+     * una vez aprobado respeta la que quedó guardada, aunque el paciente
+     * cambie de seguro después. El tope anual se aplica sobre lo que la
+     * aseguradora ya cubrió al paciente en el año.
      */
     public function recalcular(): void
     {
@@ -93,12 +129,39 @@ class Presupuesto extends Model
 
         $neto = max(0, round((float) $this->subtotal - (float) $this->descuento, 2));
 
-        $aseguradora = $this->paciente?->aseguradora;
-        $this->cobertura_seguro = $aseguradora ? $aseguradora->cobertura($neto) : 0;
+        if ($this->es_editable || $this->aseguradora_id === null) {
+            $actual = $this->paciente?->aseguradora;
+            $this->aseguradora_id = $actual?->id;
+            $this->porcentaje_cobertura = $actual?->porcentaje_cobertura;
+        }
+
+        $aseguradora = $this->aseguradora_id ? $this->aseguradora()->first() : null;
+
+        $this->cobertura_seguro = $aseguradora
+            ? $aseguradora->cobertura(
+                $neto,
+                $this->coberturaYaUsadaEnElAnio($aseguradora),
+                $this->porcentaje_cobertura !== null ? (float) $this->porcentaje_cobertura : null,
+            )
+            : 0;
 
         $this->total = max(0, round($neto - (float) $this->cobertura_seguro, 2));
 
         $this->save();
+    }
+
+    /** Suma de lo que la aseguradora ya cubrió al paciente en otros presupuestos vigentes del año. */
+    private function coberturaYaUsadaEnElAnio(Aseguradora $aseguradora): float
+    {
+        $anio = ($this->fecha ?? now())->year;
+
+        return (float) static::query()
+            ->where('paciente_id', $this->paciente_id)
+            ->where('aseguradora_id', $aseguradora->id)
+            ->whereIn('estado', ['APROBADO', 'EN_EJECUCION', 'COMPLETADO'])
+            ->whereYear('fecha', $anio)
+            ->when($this->exists, fn ($q) => $q->where('id', '!=', $this->id))
+            ->sum('cobertura_seguro');
     }
 
     /** Avanza el estado según cuántas líneas se han ejecutado. */
@@ -132,7 +195,7 @@ class Presupuesto extends Model
         return self::ESTADOS[$this->estado] ?? $this->estado;
     }
 
-    public function getVenceElAttribute(): \Illuminate\Support\Carbon
+    public function getVenceElAttribute(): Carbon
     {
         return $this->fecha->copy()->addDays((int) $this->validez_dias);
     }

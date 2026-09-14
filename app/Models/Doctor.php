@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Doctor extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'doctores';
 
@@ -17,7 +19,7 @@ class Doctor extends Model
         'usuario_id', 'especialidad_id', 'nombres', 'apellidos',
         'tipo_documento', 'numero_documento', 'fecha_nacimiento', 'genero',
         'telefono', 'email', 'direccion', 'colegiatura',
-        'descripcion', 'observaciones', 'fotografia', 'activo',
+        'descripcion', 'observaciones', 'fotografia', 'activo', 'porcentaje_comision',
     ];
 
     protected function casts(): array
@@ -25,6 +27,7 @@ class Doctor extends Model
         return [
             'fecha_nacimiento' => 'date',
             'activo' => 'boolean',
+            'porcentaje_comision' => 'decimal:2',
         ];
     }
 

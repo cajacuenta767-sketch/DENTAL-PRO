@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
+use App\Models\Auditoria;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\DocumentoClinico;
@@ -11,6 +12,10 @@ use App\Models\Paciente;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,11 +24,11 @@ class DocumentoClinicoController extends Controller
     /** Plantillas que precargan el contenido según el tipo elegido. */
     private const PLANTILLAS = [
         'RECETA' => "Rp/\n\n1. [Medicamento] [concentración] — [presentación]\n   Tomar [dosis] cada [intervalo] horas por [días] días.\n\n2. \n",
-        'CERTIFICADO' => "Por medio del presente se hace constar que el paciente recibió atención odontológica en esta clínica en la fecha indicada, y se le recomienda reposo por [N] día(s).",
+        'CERTIFICADO' => 'Por medio del presente se hace constar que el paciente recibió atención odontológica en esta clínica en la fecha indicada, y se le recomienda reposo por [N] día(s).',
         'ORDEN_LABORATORIO' => "Se solicita al laboratorio dental la elaboración de:\n\n- Trabajo: \n- Piezas: \n- Color: \n- Material: \n- Fecha de entrega requerida: ",
-        'CONSENTIMIENTO' => "El paciente declara haber sido informado sobre el procedimiento a realizar, sus beneficios, riesgos, alternativas y cuidados posteriores, y otorga su consentimiento para su ejecución.",
+        'CONSENTIMIENTO' => 'El paciente declara haber sido informado sobre el procedimiento a realizar, sus beneficios, riesgos, alternativas y cuidados posteriores, y otorga su consentimiento para su ejecución.',
         'REFERENCIA' => "Se refiere al paciente a la especialidad de [especialidad] por el siguiente motivo:\n\n[Motivo de la referencia]\n\nSe adjunta resumen clínico.",
-        'CONSTANCIA' => "Se hace constar que el paciente asistió a consulta odontológica en esta clínica en la fecha y hora indicadas.",
+        'CONSTANCIA' => 'Se hace constar que el paciente asistió a consulta odontológica en esta clínica en la fecha y hora indicadas.',
     ];
 
     public function index(Request $request): View
@@ -96,11 +101,17 @@ class DocumentoClinicoController extends Controller
     {
         $datos = $this->validar($request);
 
-        $documento = DocumentoClinico::create($datos + [
-            'folio' => DocumentoClinico::siguienteFolio($datos['tipo']),
-            'usuario_id' => $request->user()->id,
-            'estado' => 'EMITIDO',
-        ]);
+        $documento = DB::transaction(function () use ($datos, $request) {
+            $documento = DocumentoClinico::create($datos + [
+                'folio' => DocumentoClinico::siguienteFolio($datos['tipo']),
+                'usuario_id' => $request->user()->id,
+                'estado' => 'EMITIDO',
+            ]);
+
+            $this->guardarFirma($request, $documento);
+
+            return $documento;
+        });
 
         return redirect()->route('admin.documentos.pdf', $documento)
             ->with('exito', "Documento {$documento->folio} emitido.");
@@ -125,6 +136,7 @@ class DocumentoClinicoController extends Controller
         }
 
         $documento->update($this->validar($request));
+        $this->guardarFirma($request, $documento);
 
         return redirect()->route('admin.documentos.index')
             ->with('exito', "Documento {$documento->folio} actualizado.");
@@ -137,6 +149,7 @@ class DocumentoClinicoController extends Controller
         }
 
         $documento->update(['estado' => 'ANULADO']);
+        Auditoria::registrar('ANULAR', $documento, "Anuló el documento {$documento->folio}");
 
         return back()->with('exito', "Documento {$documento->folio} anulado.");
     }
@@ -164,11 +177,50 @@ class DocumentoClinicoController extends Controller
             'indicaciones' => ['nullable', 'string', 'max:2000'],
             'vigencia_dias' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'fecha_emision' => ['required', 'date', 'before_or_equal:today'],
+            'firma' => ['nullable', 'string', 'max:300000', 'starts_with:data:image/png;base64,'],
+            'quitar_firma' => ['nullable', 'boolean'],
         ], [], [
             'paciente_id' => 'paciente',
             'doctor_id' => 'doctor',
             'vigencia_dias' => 'vigencia en días',
             'fecha_emision' => 'fecha de emisión',
+            'firma' => 'firma del paciente',
         ]);
+
+        // La firma no forma parte de los atributos de texto del documento.
+        unset($datos['firma'], $datos['quitar_firma']);
+
+        return $datos;
+    }
+
+    /**
+     * Guarda la firma dibujada en el formulario (PNG en data URI) en el
+     * disco privado y deja constancia de cuándo se firmó.
+     */
+    private function guardarFirma(Request $request, DocumentoClinico $documento): void
+    {
+        if ($request->boolean('quitar_firma') && $documento->firma_archivo) {
+            Storage::disk(DocumentoClinico::DISCO_FIRMAS)->delete($documento->firma_archivo);
+            $documento->update(['firma_archivo' => null, 'firmado_en' => null]);
+        }
+
+        if (! $request->filled('firma')) {
+            return;
+        }
+
+        $binario = base64_decode(Str::after($request->input('firma'), 'base64,'), true);
+
+        if ($binario === false || strlen($binario) < 100 || ! str_starts_with($binario, "\x89PNG")) {
+            throw ValidationException::withMessages(['firma' => 'La firma no es una imagen PNG válida.']);
+        }
+
+        $ruta = 'firmas/'.$documento->paciente_id.'/'.$documento->folio.'-'.Str::lower(Str::random(8)).'.png';
+        Storage::disk(DocumentoClinico::DISCO_FIRMAS)->put($ruta, $binario);
+
+        if ($documento->firma_archivo) {
+            Storage::disk(DocumentoClinico::DISCO_FIRMAS)->delete($documento->firma_archivo);
+        }
+
+        $documento->update(['firma_archivo' => $ruta, 'firmado_en' => now()]);
     }
 }

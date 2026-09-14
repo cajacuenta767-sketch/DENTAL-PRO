@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- En Android 12+ el sistema dibuja el splash: mismo color de marca e icono de la app. -->
+    <style name="Theme.DentalPro.Splash">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:windowSplashScreenBackground">@color/marca</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icono</item>
+        <item name="android:statusBarColor">@color/marca</item>
+        <item name="android:navigationBarColor">@color/marca</item>
+    </style>
+</resources>

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Aseguradora;
 use App\Models\Paciente;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class PacienteController extends Controller
 {
@@ -47,7 +49,7 @@ class PacienteController extends Controller
         $datos = $this->validar($request);
 
         if ($request->hasFile('foto')) {
-            $datos['fotografia'] = $request->file('foto')->store('pacientes', 'public');
+            $datos['fotografia'] = $request->file('foto')->store('pacientes', Paciente::DISCO_FOTOS);
         }
 
         $paciente = Paciente::create(collect($datos)->except('foto')->all());
@@ -88,9 +90,9 @@ class PacienteController extends Controller
 
         if ($request->hasFile('foto')) {
             if ($paciente->fotografia) {
-                Storage::disk('public')->delete($paciente->fotografia);
+                Storage::disk(Paciente::DISCO_FOTOS)->delete($paciente->fotografia);
             }
-            $datos['fotografia'] = $request->file('foto')->store('pacientes', 'public');
+            $datos['fotografia'] = $request->file('foto')->store('pacientes', Paciente::DISCO_FOTOS);
         }
 
         $paciente->update(collect($datos)->except('foto')->all());
@@ -105,15 +107,47 @@ class PacienteController extends Controller
             return back()->with('error', 'No puedes eliminar un paciente con recibos emitidos. Desactívalo en su lugar.');
         }
 
-        if ($paciente->fotografia) {
-            Storage::disk('public')->delete($paciente->fotografia);
-        }
-
+        // Borrado lógico: la ficha y sus archivos se conservan para restaurarla.
         $nombre = $paciente->nombre_completo;
         $paciente->delete();
 
         return redirect()->route('admin.pacientes.index')
             ->with('exito', "El paciente {$nombre} fue eliminado.");
+    }
+
+    /**
+     * Búsqueda ligera para los selectores de paciente (Tom Select): hasta 20
+     * pacientes activos que coincidan con ?q por nombre, documento o teléfono.
+     */
+    public function buscar(Request $request): JsonResponse
+    {
+        $termino = trim((string) $request->query('q', ''));
+
+        $pacientes = Paciente::query()
+            ->with('aseguradora:id,nombre,porcentaje_cobertura')
+            ->activos()
+            ->buscar($termino)
+            ->orderBy('apellidos')->orderBy('nombres')
+            ->limit(20)
+            ->get(['id', 'nombres', 'apellidos', 'numero_documento', 'telefono', 'aseguradora_id']);
+
+        return response()->json($pacientes->map(fn (Paciente $p) => [
+            'id' => $p->id,
+            'texto' => "{$p->apellidos}, {$p->nombres} · {$p->numero_documento}",
+            'telefono' => $p->telefono,
+            'cobertura' => (float) ($p->aseguradora?->porcentaje_cobertura ?? 0),
+            'aseguradora' => $p->aseguradora?->nombre ?? '',
+        ])->values());
+    }
+
+    /** Fotografía servida desde el disco privado solo a usuarios con permiso. */
+    public function foto(Paciente $paciente): Response
+    {
+        abort_unless($paciente->fotografia && Storage::disk(Paciente::DISCO_FOTOS)->exists($paciente->fotografia), 404);
+
+        return Storage::disk(Paciente::DISCO_FOTOS)->response($paciente->fotografia, null, [
+            'Cache-Control' => 'private, max-age=300',
+        ]);
     }
 
     private function validar(Request $request, ?int $ignorar = null): array

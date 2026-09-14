@@ -41,7 +41,12 @@
     'Diagnóstico' => $historial->diagnostico,
     'Tratamiento realizado' => $historial->tratamiento_realizado,
     'Prescripción / receta' => $historial->prescripcion_receta,
+    'Anestesia' => $historial->anestesia
+        ? $historial->anestesia.($historial->anestesia_cantidad ? ' · '.$historial->anestesia_cantidad.' cartucho(s)' : '')
+        : null,
+    'Medicación administrada' => $historial->medicacion,
     'Observaciones e indicaciones' => $historial->observaciones,
+    'Indicaciones para la próxima cita' => $historial->proxima_cita_indicaciones,
 ] as $titulo => $valor)
     <div class="bloque">
         <div class="etiqueta-campo">{{ $titulo }}</div>

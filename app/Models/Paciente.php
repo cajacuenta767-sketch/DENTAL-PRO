@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Paciente extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'pacientes';
 
@@ -75,9 +77,41 @@ class Paciente extends Model
         return $this->hasMany(Pago::class, 'paciente_id');
     }
 
+    public function periodontogramas(): HasMany
+    {
+        return $this->hasMany(Periodontograma::class, 'paciente_id');
+    }
+
+    public function listaEspera(): HasMany
+    {
+        return $this->hasMany(ListaEspera::class, 'paciente_id');
+    }
+
+    /** Disco privado para la fotografía: nunca se sirve sin sesión. */
+    public const DISCO_FOTOS = 'local';
+
     public function getNombreCompletoAttribute(): string
     {
         return trim("{$this->nombres} {$this->apellidos}");
+    }
+
+    /** URL autenticada de la fotografía (o null si no tiene). */
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->fotografia ? route('admin.pacientes.foto', $this) : null;
+    }
+
+    /** Teléfono en formato internacional sin símbolos, listo para wa.me. */
+    public function getWhatsappNumeroAttribute(): ?string
+    {
+        $digitos = preg_replace('/\D+/', '', (string) $this->telefono);
+
+        return strlen($digitos) >= 8 ? $digitos : null;
+    }
+
+    public function getWhatsappUrlAttribute(): ?string
+    {
+        return $this->whatsapp_numero ? 'https://wa.me/'.$this->whatsapp_numero : null;
     }
 
     public function getEdadAttribute(): ?int

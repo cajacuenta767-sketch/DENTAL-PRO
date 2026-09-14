@@ -13,7 +13,7 @@ class VerificacionEmailController extends Controller
     public function aviso(Request $request): View|RedirectResponse
     {
         return $request->user()->hasVerifiedEmail()
-            ? redirect()->route('admin.home')
+            ? redirect($request->user()->destinoInicial())
             : view('auth.verify-email');
     }
 
@@ -23,13 +23,13 @@ class VerificacionEmailController extends Controller
             $request->fulfill();
         }
 
-        return redirect()->route('admin.home')->with('exito', 'Tu correo fue verificado correctamente.');
+        return redirect($request->user()->destinoInicial())->with('exito', 'Tu correo fue verificado correctamente.');
     }
 
     public function reenviar(Request $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route('admin.home');
+            return redirect($request->user()->destinoInicial());
         }
 
         $request->user()->sendEmailVerificationNotification();

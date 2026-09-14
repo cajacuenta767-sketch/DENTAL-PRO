@@ -38,6 +38,11 @@
                 </div>
             @endif
 
+            @php $esSuperAdmin = auth()->user()->hasRole('SUPER ADMINISTRADOR'); @endphp
+            @error('permisos')
+                <div class="alert alert-danger"><i class="ti ti-alert-circle me-1"></i>{{ $message }}</div>
+            @enderror
+
             @foreach ($permisosPorGrupo as $grupo => $modulos)
                 <h4 class="mt-3 text-uppercase text-secondary small">{{ $grupo }}</h4>
                 <div class="row g-3">
@@ -50,12 +55,16 @@
                                         {{ config("odontosuite.modulos.{$modulo}.etiqueta", ucfirst($modulo)) }}
                                     </div>
                                     @foreach ($permisos as $permiso)
-                                        <label class="form-check">
+                                        @php $bloqueado = ! $esSuperAdmin && ! in_array($permiso->name, $concedibles ?? [], true); @endphp
+                                        <label class="form-check {{ $bloqueado ? 'text-secondary' : '' }}"
+                                               @if ($bloqueado) title="No puedes conceder un permiso que no tienes" @endif>
                                             <input type="checkbox" name="permisos[]" value="{{ $permiso->name }}"
                                                    class="form-check-input" data-os-permiso
+                                                   @if ($bloqueado) disabled title="No puedes conceder un permiso que no tienes" @endif
                                                    {{ in_array($permiso->name, old('permisos', $asignados), true) ? 'checked' : '' }}>
                                             <span class="form-check-label text-capitalize">
                                                 {{ str($permiso->name)->after('.')->value() }}
+                                                @if ($bloqueado)<i class="ti ti-lock ms-1 small"></i>@endif
                                             </span>
                                         </label>
                                     @endforeach
@@ -80,7 +89,7 @@
     document.querySelectorAll('[data-os-marcar]').forEach((boton) => {
         boton.addEventListener('click', () => {
             const marcar = boton.dataset.osMarcar === 'todos';
-            document.querySelectorAll('[data-os-permiso]').forEach((c) => { c.checked = marcar; });
+            document.querySelectorAll('[data-os-permiso]:not(:disabled)').forEach((c) => { c.checked = marcar; });
         });
     });
 </script>

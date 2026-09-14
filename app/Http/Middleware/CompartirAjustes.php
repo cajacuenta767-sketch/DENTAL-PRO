@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\Ajuste;
 use App\Models\Cita;
+use App\Models\Sucursal;
+use App\Support\SucursalActiva;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Pone a disposición de todas las vistas la configuración de la clínica y,
- * para usuarios autenticados, la agenda del día que alimenta la campana
- * de notificaciones del navbar.
+ * para el personal con acceso a la agenda, las citas del día que alimentan
+ * la campana de notificaciones del navbar. Un doctor solo ve las suyas.
+ * También comparte la sede activa y las sedes disponibles para el selector.
  */
 class CompartirAjustes
 {
@@ -22,18 +25,32 @@ class CompartirAjustes
         View::share('ajustes', Ajuste::actual());
 
         $agendaHoy = collect();
+        $citasHoy = 0;
+        $usuario = Auth::user();
 
-        if (Auth::check()) {
-            $agendaHoy = Cita::with(['paciente:id,nombres,apellidos', 'tratamiento:id,nombre'])
+        if ($usuario && ($usuario->can('citas.ver') || $usuario->can('agenda.ver'))) {
+            $propio = $usuario->can('agenda.todos') || $usuario->can('citas.ver') ? null : $usuario->doctor;
+
+            $consulta = Cita::query()
                 ->delDia()
                 ->vigentes()
+                ->when($propio, fn ($q) => $q->where('doctor_id', $propio->id))
+                ->when(! $propio && ! $usuario->can('citas.ver') && $usuario->doctor, fn ($q) => $q->where('doctor_id', $usuario->doctor->id));
+
+            $citasHoy = (clone $consulta)->count();
+            $agendaHoy = $consulta
+                ->with(['paciente:id,nombres,apellidos', 'tratamiento:id,nombre'])
                 ->orderBy('hora')
                 ->limit(6)
                 ->get();
         }
 
         View::share('agendaHoy', $agendaHoy);
-        View::share('citasHoy', Auth::check() ? Cita::delDia()->vigentes()->count() : 0);
+        View::share('citasHoy', $citasHoy);
+
+        // Sede con la que se trabaja y sedes elegibles; los invitados no ven ninguna.
+        View::share('sucursalActiva', $usuario ? SucursalActiva::modelo() : null);
+        View::share('sucursales', $usuario ? Sucursal::activas()->orderBy('nombre')->get() : collect());
 
         return $next($request);
     }

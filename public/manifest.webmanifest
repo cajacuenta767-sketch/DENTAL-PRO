@@ -1,0 +1,62 @@
+{
+    "id": "/admin/home",
+    "name": "DENTAL-PRO",
+    "short_name": "DENTAL-PRO",
+    "description": "Gestión integral de la clínica dental: pacientes, agenda, tratamientos, caja y portal del paciente.",
+    "lang": "es",
+    "dir": "ltr",
+    "start_url": "/admin/home",
+    "scope": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
+    "orientation": "any",
+    "theme_color": "#0d9488",
+    "background_color": "#ffffff",
+    "categories": ["medical", "business", "productivity"],
+    "icons": [
+        {
+            "src": "/iconos/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/iconos/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/iconos/maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/iconos/maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Agenda",
+            "short_name": "Agenda",
+            "url": "/admin/citas",
+            "icons": [{ "src": "/iconos/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        },
+        {
+            "name": "Pacientes",
+            "short_name": "Pacientes",
+            "url": "/admin/pacientes",
+            "icons": [{ "src": "/iconos/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        },
+        {
+            "name": "Portal del paciente",
+            "short_name": "Portal",
+            "url": "/portal",
+            "icons": [{ "src": "/iconos/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        }
+    ]
+}

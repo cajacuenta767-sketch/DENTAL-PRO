@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema principal: Material 3 con el verde azulado de DENTAL-PRO. -->
+    <style name="Theme.DentalPro" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/marca</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorPrimaryContainer">@color/marca_clara</item>
+        <item name="colorSecondary">@color/marca_oscura</item>
+        <item name="android:statusBarColor">@color/marca_oscura</item>
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Pantalla de arranque: fondo de marca con la muela hasta que el WebView está listo. -->
+    <style name="Theme.DentalPro.Splash">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/marca</item>
+        <item name="android:navigationBarColor">@color/marca</item>
+    </style>
+</resources>

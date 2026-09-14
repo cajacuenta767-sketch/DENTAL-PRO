@@ -43,7 +43,12 @@
             <div class="card mb-3">
                 <div class="card-header">
                     <div>
-                        <h3 class="card-title mb-0">{{ $historial->fecha->format('d/m/Y') }}</h3>
+                        <h3 class="card-title mb-0">
+                            {{ $historial->fecha->format('d/m/Y') }}
+                            @if ($historial->plantilla && config("evolucion.plantillas.{$historial->plantilla}.etiqueta"))
+                                <span class="badge bg-azure-lt ms-2">{{ config("evolucion.plantillas.{$historial->plantilla}.etiqueta") }}</span>
+                            @endif
+                        </h3>
                         <div class="text-secondary small">
                             {{ $historial->doctor->nombre_profesional }} · {{ $historial->doctor->especialidad->nombre }}
                             @if ($historial->cita)
@@ -77,12 +82,17 @@
                             'Diagnóstico' => $historial->diagnostico,
                             'Tratamiento realizado' => $historial->tratamiento_realizado,
                             'Prescripción / receta' => $historial->prescripcion_receta,
+                            'Anestesia' => $historial->anestesia
+                                ? $historial->anestesia.($historial->anestesia_cantidad ? ' · '.$historial->anestesia_cantidad.' cartucho(s)' : '')
+                                : null,
+                            'Medicación' => $historial->medicacion,
                             'Observaciones' => $historial->observaciones,
+                            'Indicaciones para la próxima cita' => $historial->proxima_cita_indicaciones,
                         ] as $titulo => $valor)
                             @if ($valor)
                                 <div class="col-md-6">
                                     <div class="text-secondary small text-uppercase">{{ $titulo }}</div>
-                                    <div>{{ $valor }}</div>
+                                    <div style="white-space: pre-line;">{{ $valor }}</div>
                                 </div>
                             @endif
                         @endforeach

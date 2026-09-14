@@ -47,4 +47,55 @@ return [
         'redirect' => env('GITHUB_REDIRECT_URI'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mensajería (WhatsApp / SMS)
+    |--------------------------------------------------------------------------
+    |
+    | Proveedor usado por App\Services\MensajeriaService para los recordatorios
+    | de cita: "log" (solo escribe en el log), "twilio" o "meta" (WhatsApp
+    | Cloud API). El prefijo de país se antepone a los números de 8 dígitos.
+    |
+    */
+
+    'mensajeria' => [
+        'proveedor' => env('MENSAJERIA_PROVEEDOR', 'log'),
+        'prefijo_pais' => env('MENSAJERIA_PREFIJO_PAIS', '591'),
+        'twilio' => [
+            'sid' => env('TWILIO_SID'),
+            'token' => env('TWILIO_TOKEN'),
+            'desde_sms' => env('TWILIO_DESDE_SMS'),
+            'desde_whatsapp' => env('TWILIO_DESDE_WHATSAPP'),
+        ],
+        'meta' => [
+            'token' => env('META_WHATSAPP_TOKEN'),
+            'phone_id' => env('META_WHATSAPP_PHONE_ID'),
+        ],
+    ],
+
+    'facturacion_electronica' => [
+        'proveedor' => env('FACTURACION_PROVEEDOR', 'simulado'),
+        'endpoint' => env('FACTURACION_ENDPOINT'),
+        'token' => env('FACTURACION_TOKEN'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pasarela de pagos en línea
+    |--------------------------------------------------------------------------
+    |
+    | Proveedor usado por App\Services\PasarelaPagoService para cobrar saldos
+    | desde el portal del paciente: "simulado" (sin cobro real, para
+    | desarrollo y pruebas) o "stripe" (Checkout + webhook firmado).
+    |
+    */
+
+    'pasarela' => [
+        'proveedor' => env('PASARELA_PROVEEDOR', 'simulado'),
+        'stripe' => [
+            'secret' => env('STRIPE_SECRET'),
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+    ],
+
 ];

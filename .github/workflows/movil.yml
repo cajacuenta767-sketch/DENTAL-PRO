@@ -1,0 +1,138 @@
+name: App Android
+
+on:
+  push:
+    tags: ['v*']
+    branches: ['**']
+    paths:
+      - 'movil/**'
+      - '.github/workflows/movil.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  VERSION_APP: 2.0.0
+
+jobs:
+  apk:
+    name: Compilar APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: movil
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ubuntu-latest ya trae el SDK de Android en ANDROID_HOME; este paso sólo
+      # garantiza la plataforma y build-tools que pide app/build.gradle.kts.
+      - name: SDK de Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0 platform-tools'
+
+      - name: Caché de Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
+      - name: Permitir ejecutar gradlew
+        run: chmod +x gradlew
+
+      # Firma: keystore propio de los secretos del repositorio o, si no está
+      # configurado, uno temporal para que la APK sea instalable.
+      - name: Preparar keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            echo "origen=secretos" >> "$GITHUB_OUTPUT"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+            echo "Se usará el keystore de los secretos del repositorio."
+          else
+            CLAVE_TEMPORAL="$(head -c 24 /dev/urandom | base64 | tr -d '/+=')"
+            keytool -genkeypair -v \
+              -keystore release.keystore -storetype PKCS12 \
+              -alias dentalpro -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$CLAVE_TEMPORAL" -keypass "$CLAVE_TEMPORAL" \
+              -dname "CN=DENTAL-PRO, OU=Movil, O=DENTAL-PRO, L=La Paz, C=BO"
+            echo "origen=temporal" >> "$GITHUB_OUTPUT"
+            echo "ANDROID_KEYSTORE_PASSWORD=$CLAVE_TEMPORAL" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=dentalpro" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$CLAVE_TEMPORAL" >> "$GITHUB_ENV"
+            echo "::warning::No hay secretos ANDROID_KEYSTORE_*: la APK se firma con un keystore TEMPORAL. Sirve para instalar, pero no para publicar en tiendas ni para actualizar una instalación previa (ver docs/movil.md)."
+          fi
+          echo "ANDROID_KEYSTORE_FILE=$PWD/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Compilar APK release
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Lint (no bloqueante)
+        continue-on-error: true
+        run: ./gradlew lint --no-daemon
+
+      - name: Renombrar APK
+        id: apk
+        run: |
+          ORIGEN="$(ls app/build/outputs/apk/release/*.apk | head -n 1)"
+          NOMBRE="DENTAL-PRO-${VERSION_APP}.apk"
+          mkdir -p salida
+          cp "$ORIGEN" "salida/$NOMBRE"
+          cp "salida/$NOMBRE" "salida/DENTAL-PRO.apk"
+          sha256sum "salida/$NOMBRE" | tee "salida/$NOMBRE.sha256"
+          echo "ruta=movil/salida/$NOMBRE" >> "$GITHUB_OUTPUT"
+          echo "nombre=$NOMBRE" >> "$GITHUB_OUTPUT"
+
+      - name: Resumen
+        run: |
+          {
+            echo "## APK DENTAL-PRO ${VERSION_APP}"
+            echo ""
+            echo "- Firma: **${{ steps.keystore.outputs.origen }}**"
+            echo "- Archivo: \`${{ steps.apk.outputs.nombre }}\`"
+            echo "- SHA-256: \`$(cut -d ' ' -f 1 salida/${{ steps.apk.outputs.nombre }}.sha256)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: DENTAL-PRO-${{ env.VERSION_APP }}-apk
+          path: |
+            movil/salida/DENTAL-PRO-${{ env.VERSION_APP }}.apk
+            movil/salida/DENTAL-PRO-${{ env.VERSION_APP }}.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Informe de lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-android
+          path: movil/app/build/reports/lint-results-*.html
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Adjuntar a la release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            movil/salida/DENTAL-PRO-${{ env.VERSION_APP }}.apk
+            movil/salida/DENTAL-PRO-${{ env.VERSION_APP }}.apk.sha256
+          generate_release_notes: true

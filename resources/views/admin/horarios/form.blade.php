@@ -23,6 +23,17 @@
                         </select>
                     </x-campo>
 
+                    @if (($sucursales ?? collect())->count() > 1)
+                        <x-campo nombre="sucursal_id" etiqueta="Sede" ayuda="Vacío = el doctor atiende en cualquier sede.">
+                            <select id="sucursal_id" name="sucursal_id" class="form-select">
+                                <option value="">— Cualquier sede —</option>
+                                @foreach ($sucursales as $sede)
+                                    <option value="{{ $sede->id }}" @selected(old('sucursal_id', $horario->sucursal_id) == $sede->id)>{{ $sede->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </x-campo>
+                    @endif
+
                     <div class="row">
                         <div class="col-md-6">
                             <x-campo nombre="dia_semana" etiqueta="Día de la semana" requerido>

@@ -8,14 +8,20 @@
      data-estudio-archivo="{{ $estudio->nombre_original }}"
      data-estudio-url="{{ $estudio->url }}"
      data-estudio-descarga="{{ route('admin.estudios.descargar', $estudio) }}"
-     data-estudio-hallazgos="{{ $estudio->hallazgos }}">
+     data-estudio-hallazgos="{{ $estudio->hallazgos }}"
+     data-estudio-visualizable="{{ $estudio->es_visualizable ? '1' : '0' }}"
+     data-estudio-pdf="{{ $estudio->es_pdf ? '1' : '0' }}"
+     data-estudio-familia="{{ $estudio->familia }}"
+     data-estudio-anotaciones-url="{{ route('admin.estudios.anotaciones', $estudio) }}"
+     data-anotaciones="{{ json_encode($estudio->anotaciones ?: []) }}">
 
     <div class="ratio ratio-16x9 bg-dark rounded-top overflow-hidden">
         @if ($estudio->es_visualizable)
             <img src="{{ $estudio->url }}" alt="{{ $estudio->titulo }}" style="object-fit: cover;" loading="lazy">
         @else
-            <div class="d-flex align-items-center justify-content-center text-white-50">
-                <i class="ti ti-file-type-pdf fs-1"></i>
+            <div class="d-flex flex-column align-items-center justify-content-center text-white-50">
+                <i class="ti {{ $estudio->icono }} fs-1"></i>
+                <span class="small text-uppercase">{{ $estudio->extension }}</span>
             </div>
         @endif
     </div>
@@ -29,7 +35,13 @@
                     @if ($estudio->doctor) · {{ $estudio->doctor->nombre_profesional }} @endif
                 </div>
             </div>
-            <span class="badge bg-azure-lt">{{ $estudio->tipo_legible }}</span>
+            <div class="d-flex flex-column align-items-end gap-1">
+                <span class="badge bg-azure-lt">{{ $estudio->tipo_legible }}</span>
+                <span class="badge bg-orange-lt {{ $estudio->anotaciones ? '' : 'd-none' }}" data-estudio-badge-anotado
+                      title="Este estudio tiene anotaciones dibujadas">
+                    <i class="ti ti-pencil me-1"></i>Anotado
+                </span>
+            </div>
         </div>
 
         @if ($estudio->piezas_referidas)

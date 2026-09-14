@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HistorialClinico extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'historiales_clinicos';
 
@@ -16,6 +18,7 @@ class HistorialClinico extends Model
         'paciente_id', 'doctor_id', 'cita_id', 'fecha',
         'motivo_consulta', 'sintomas', 'diagnostico',
         'tratamiento_realizado', 'prescripcion_receta', 'observaciones',
+        'plantilla', 'anestesia', 'anestesia_cantidad', 'medicacion', 'proxima_cita_indicaciones',
     ];
 
     protected function casts(): array

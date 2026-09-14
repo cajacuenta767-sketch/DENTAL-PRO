@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Insumo;
 use App\Models\MovimientoInventario;
+use App\Models\Sucursal;
 use App\Services\InventarioService;
+use App\Support\SucursalActiva;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InventarioController extends Controller
@@ -16,7 +19,10 @@ class InventarioController extends Controller
 
     public function index(Request $request): View
     {
+        $sede = $this->sedeFiltrada($request);
+
         $insumos = Insumo::query()
+            ->when($sede, fn ($q) => $q->where('sucursal_id', $sede))
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $t = '%'.$request->buscar.'%';
                 $q->where(fn ($s) => $s->where('nombre', 'ilike', $t)
@@ -33,7 +39,10 @@ class InventarioController extends Controller
         return view('admin.inventario.index', [
             'insumos' => $insumos,
             'resumen' => $this->inventario->resumen(),
-            'alertas' => Insumo::activos()->bajoMinimo()->orderBy('stock_actual')->limit(8)->get(),
+            'alertas' => Insumo::activos()->bajoMinimo()
+                ->when($sede, fn ($q) => $q->where('sucursal_id', $sede))
+                ->orderBy('stock_actual')->limit(8)->get(),
+            'sedes' => Sucursal::orderBy('nombre')->get()->keyBy('id'),
         ]);
     }
 
@@ -41,6 +50,7 @@ class InventarioController extends Controller
     {
         return view('admin.inventario.form', [
             'insumo' => new Insumo([
+                'sucursal_id' => SucursalActiva::id(),
                 'activo' => true,
                 'categoria' => 'OTRO',
                 'unidad_medida' => 'UNIDAD',
@@ -56,19 +66,25 @@ class InventarioController extends Controller
         $datos = $this->validar($request);
         $inicial = (float) ($datos['stock_actual'] ?? 0);
 
-        // El stock inicial entra como el primer movimiento del kardex.
+        // El stock inicial entra como el primer movimiento del kardex; ficha y
+        // movimiento se crean juntos o no se crea nada.
         $datos['stock_actual'] = 0;
-        $insumo = Insumo::create($datos);
 
-        if ($inicial > 0) {
-            $this->inventario->registrar($insumo, [
-                'tipo' => 'ENTRADA',
-                'cantidad' => $inicial,
-                'costo_unitario' => $insumo->costo_unitario,
-                'motivo' => 'Carga inicial de existencias',
-                'usuario_id' => $request->user()->id,
-            ]);
-        }
+        $insumo = DB::transaction(function () use ($datos, $inicial, $request) {
+            $insumo = Insumo::create($datos);
+
+            if ($inicial > 0) {
+                $this->inventario->registrar($insumo, [
+                    'tipo' => 'ENTRADA',
+                    'cantidad' => $inicial,
+                    'costo_unitario' => $insumo->costo_unitario,
+                    'motivo' => 'Carga inicial de existencias',
+                    'usuario_id' => $request->user()->id,
+                ]);
+            }
+
+            return $insumo;
+        });
 
         return redirect()->route('admin.inventario.show', $insumo)
             ->with('exito', 'El insumo fue registrado.');
@@ -123,7 +139,8 @@ class InventarioController extends Controller
     {
         $datos = $request->validate([
             'tipo' => ['required', 'in:'.implode(',', MovimientoInventario::TIPOS)],
-            'cantidad' => ['required', 'numeric', 'min:0'],
+            // Un ajuste puede fijar el saldo en cero; los demás necesitan cantidad.
+            'cantidad' => ['required', 'numeric', 'min:0', $request->tipo === 'AJUSTE' ? 'max:9999999' : 'gt:0'],
             'costo_unitario' => ['nullable', 'numeric', 'min:0'],
             'motivo' => ['nullable', 'string', 'max:255'],
             'referencia' => ['nullable', 'string', 'max:100'],
@@ -157,6 +174,7 @@ class InventarioController extends Controller
     private function validar(Request $request, ?int $ignorar = null): array
     {
         $datos = $request->validate([
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'codigo' => ['required', 'string', 'max:40', 'unique:insumos,codigo'.($ignorar ? ",{$ignorar}" : '')],
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string', 'max:255'],
@@ -170,6 +188,7 @@ class InventarioController extends Controller
             'fecha_vencimiento' => ['nullable', 'date'],
             'activo' => ['nullable', 'boolean'],
         ], [], [
+            'sucursal_id' => 'sede',
             'unidad_medida' => 'unidad de medida',
             'stock_actual' => 'existencias iniciales',
             'stock_minimo' => 'existencias mínimas',
@@ -180,7 +199,20 @@ class InventarioController extends Controller
         $datos['nombre'] = mb_strtoupper($datos['nombre']);
         $datos['codigo'] = mb_strtoupper($datos['codigo']);
         $datos['activo'] = $request->boolean('activo');
+        $datos['sucursal_id'] = $datos['sucursal_id'] ?? $this->sedePorDefecto();
 
         return $datos;
+    }
+
+    /** Sin sede elegida se usa la activa; con una sola sede, la principal. */
+    private function sedePorDefecto(): ?int
+    {
+        return SucursalActiva::id() ?? (Sucursal::activas()->count() === 1 ? Sucursal::principal()?->id : null);
+    }
+
+    /** La sede activa manda; si se ven todas, aplica el filtro elegido en el listado. */
+    private function sedeFiltrada(Request $request): ?int
+    {
+        return SucursalActiva::id() ?? ($request->filled('sucursal_id') ? (int) $request->sucursal_id : null);
     }
 }

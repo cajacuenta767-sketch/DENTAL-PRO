@@ -4,16 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
+use App\Services\MensajeriaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AjusteController extends Controller
 {
     public function edit(): View
     {
-        return view('admin.ajustes.edit', ['ajuste' => Ajuste::actual()]);
+        return view('admin.ajustes.edit', [
+            'ajuste' => Ajuste::actual(),
+            'canales' => MensajeriaService::ETIQUETAS_CANAL,
+            'proveedorMensajeria' => MensajeriaService::nombreProveedor(),
+        ]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -35,12 +41,21 @@ class AjusteController extends Controller
             'whatsapp' => ['nullable', 'string', 'max:50'],
             'minutos_intervalo_cita' => ['required', 'integer', 'min:5', 'max:180'],
             'horas_recordatorio' => ['required', 'integer', 'min:1', 'max:168'],
+            'recordatorio_canal' => ['required', Rule::in(MensajeriaService::CANALES)],
+            'pagos_online_activos' => ['nullable', 'boolean'],
+            'portal_reservas_activas' => ['nullable', 'boolean'],
             'terminos_recibo' => ['nullable', 'string', 'max:2000'],
             'logo_archivo' => ['nullable', 'image', 'max:2048'],
         ], [], [
             'minutos_intervalo_cita' => 'intervalo entre citas',
             'horas_recordatorio' => 'horas de anticipación del recordatorio',
+            'recordatorio_canal' => 'canal del recordatorio',
+            'pagos_online_activos' => 'pagos en línea',
+            'portal_reservas_activas' => 'reservas desde el portal',
         ]);
+
+        $datos['pagos_online_activos'] = $request->boolean('pagos_online_activos');
+        $datos['portal_reservas_activas'] = $request->boolean('portal_reservas_activas');
 
         if ($request->hasFile('logo_archivo')) {
             if ($ajuste->logo) {

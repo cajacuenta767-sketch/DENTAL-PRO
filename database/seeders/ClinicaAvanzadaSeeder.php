@@ -13,6 +13,7 @@ use App\Models\Presupuesto;
 use App\Models\Tratamiento;
 use App\Models\Usuario;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -239,7 +240,8 @@ class ClinicaAvanzadaSeeder extends Seeder
             $tipo = $tipos[$i % count($tipos)];
             $ruta = "estudios/{$cita->paciente_id}/demo-{$cita->id}.svg";
 
-            \Illuminate\Support\Facades\Storage::disk('public')->put($ruta, $this->svgDemostracion($tipo));
+            $svg = $this->svgDemostracion($tipo);
+            Storage::disk(EstudioImagen::DISCO)->put($ruta, $svg);
 
             EstudioImagen::create([
                 'paciente_id' => $cita->paciente_id,
@@ -251,7 +253,7 @@ class ClinicaAvanzadaSeeder extends Seeder
                 'archivo' => $ruta,
                 'nombre_original' => Str::slug(EstudioImagen::TIPOS[$tipo]).'-'.$cita->fecha->format('Ymd').'.svg',
                 'mime' => 'image/svg+xml',
-                'tamano' => strlen($this->svgDemostracion($tipo)),
+                'tamano' => strlen($svg),
                 'piezas_referidas' => collect([16, 26, 36, 46, 11, 21])->random(rand(1, 3))->implode(', '),
                 'fecha_estudio' => $cita->fecha,
                 'hallazgos' => 'Estructuras óseas sin alteraciones evidentes. Se observan restauraciones previas.',

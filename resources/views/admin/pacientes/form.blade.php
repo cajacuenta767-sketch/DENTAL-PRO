@@ -173,7 +173,7 @@
                 <div class="card-body">
                     @if ($paciente->fotografia)
                         <div class="text-center mb-3">
-                            <span class="avatar avatar-xl" style="background-image: url({{ Storage::url($paciente->fotografia) }})"></span>
+                            <span class="avatar avatar-xl" style="background-image: url({{ $paciente->foto_url }})"></span>
                         </div>
                     @endif
                     <x-campo nombre="foto" etiqueta="Fotografía" ayuda="JPG o PNG, máximo 2 MB.">

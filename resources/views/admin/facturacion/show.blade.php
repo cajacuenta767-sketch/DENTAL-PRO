@@ -13,6 +13,13 @@
     </div>
 @endsection
 
+@push('head')
+<style>
+    .transmision-sello { font-size: .7rem; word-break: break-all; }
+    .transmision-cruda { max-height: 12rem; overflow: auto; font-size: .7rem; }
+</style>
+@endpush
+
 @section('contenido')
 <div class="row g-3">
     <div class="col-lg-8">
@@ -43,6 +50,40 @@
             </div>
         </div>
 
+        @if ($documento->documentoReferencia)
+            <div class="card mt-3 border-orange">
+                <div class="card-body d-flex align-items-center gap-2">
+                    <i class="ti ti-arrow-back-up text-orange fs-2"></i>
+                    <div>
+                        <div class="text-secondary small text-uppercase">Corrige a</div>
+                        <a href="{{ route('admin.facturacion.show', $documento->documentoReferencia) }}" class="text-brand font-monospace">
+                            {{ $documento->documentoReferencia->numero_control }}
+                        </a>
+                        <span class="text-secondary small ms-2">{{ $documento->documentoReferencia->tipo_legible }}</span>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($documento->notas->isNotEmpty())
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ti ti-receipt-refund me-2"></i>Notas emitidas sobre este documento</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    @foreach ($documento->notas as $nota)
+                        <a href="{{ route('admin.facturacion.show', $nota) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                            <span class="badge bg-orange-lt">{{ $nota->tipo_legible }}</span>
+                            <span class="font-monospace small flex-fill">{{ $nota->numero_control }}</span>
+                            <span class="text-secondary small">{{ $nota->fecha_emision->format('d/m/Y') }}</span>
+                            <span class="fw-medium">{{ number_format($nota->total, 2) }}</span>
+                            <span class="badge bg-{{ $nota->color_estado }}">{{ $nota->estado }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @if ($documento->motivo_anulacion)
             <div class="card mt-3 border-danger">
                 <div class="card-header"><h3 class="card-title text-danger">Motivo de anulación</h3></div>
@@ -52,6 +93,72 @@
     </div>
 
     <div class="col-lg-4">
+        @php
+            $coloresTransmision = ['NO_APLICA' => 'secondary', 'PENDIENTE' => 'warning', 'ACEPTADO' => 'success', 'RECHAZADO' => 'danger'];
+            $etiquetasTransmision = ['NO_APLICA' => 'No aplica', 'PENDIENTE' => 'Pendiente', 'ACEPTADO' => 'Aceptado', 'RECHAZADO' => 'Rechazado'];
+            $estadoTransmision = $documento->estado_transmision ?: 'NO_APLICA';
+            $respuestaProveedor = $documento->respuesta_proveedor ?? [];
+        @endphp
+        <div class="card mb-3 border-{{ $coloresTransmision[$estadoTransmision] ?? 'secondary' }}">
+            <div class="card-header">
+                <h3 class="card-title"><i class="ti ti-cloud-upload me-2"></i>Transmisión fiscal</h3>
+                <span class="badge bg-{{ $coloresTransmision[$estadoTransmision] ?? 'secondary' }} ms-auto" data-prueba="estado-transmision">
+                    {{ $etiquetasTransmision[$estadoTransmision] ?? $estadoTransmision }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="datagrid">
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Proveedor</div>
+                        <div class="datagrid-content">{{ $documento->proveedor ?: $proveedorFiscal }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Último intento</div>
+                        <div class="datagrid-content">{{ $documento->transmitido_en?->format('d/m/Y H:i') ?? '—' }}</div>
+                    </div>
+                    @if (! empty($respuestaProveedor['codigo']))
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Código</div>
+                            <div class="datagrid-content font-monospace">{{ $respuestaProveedor['codigo'] }}</div>
+                        </div>
+                    @endif
+                    @if (! empty($respuestaProveedor['mensaje']))
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Mensaje del proveedor</div>
+                            <div class="datagrid-content {{ $estadoTransmision === 'RECHAZADO' ? 'text-danger' : '' }}">
+                                {{ $respuestaProveedor['mensaje'] }}
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                @if ($estadoTransmision === 'NO_APLICA' && $proveedorFiscal === 'ninguno')
+                    <p class="text-secondary small mb-0 mt-3">
+                        No hay proveedor de transmisión configurado: el documento solo se conserva localmente.
+                    </p>
+                @endif
+
+                @if (! empty($respuestaProveedor['cruda']))
+                    <details class="mt-3">
+                        <summary class="text-secondary small">Respuesta completa</summary>
+                        <pre class="transmision-cruda mt-2 mb-0">{{ json_encode($respuestaProveedor['cruda'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                    </details>
+                @endif
+            </div>
+            @can('facturacion.emitir')
+                @if ($estadoTransmision !== 'ACEPTADO' && $proveedorFiscal !== 'ninguno' && $documento->estado !== 'ANULADO')
+                    <div class="card-footer">
+                        <form method="POST" action="{{ route('admin.facturacion.transmitir', $documento) }}">
+                            @csrf
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="ti ti-refresh me-1"></i>Reintentar transmisión
+                            </button>
+                        </form>
+                    </div>
+                @endif
+            @endcan
+        </div>
+
         <div class="card">
             <div class="card-header"><h3 class="card-title">Identificación tributaria</h3></div>
             <div class="card-body">
@@ -108,7 +215,7 @@
         </div>
 
         @can('facturacion.anular')
-            @if ($documento->estado !== 'ANULADO')
+            @if ($documento->estado !== 'ANULADO' && ! $documento->es_nota)
                 <div class="card mt-3 border-danger">
                     <div class="card-header"><h3 class="card-title text-danger">Anular documento</h3></div>
                     <form method="POST" action="{{ route('admin.facturacion.anular', $documento) }}">

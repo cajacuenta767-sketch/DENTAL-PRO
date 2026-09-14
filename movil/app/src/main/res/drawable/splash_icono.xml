@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono del splash de Android 12+: la muela sobre el fondo de marca (el sistema recorta un círculo). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/marca" />
+    <item
+        android:drawable="@drawable/splash_muela"
+        android:gravity="center" />
+</layer-list>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aseguradora;
+use App\Models\Paciente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,7 +29,7 @@ class AseguradoraController extends Controller
             'totales' => [
                 'convenios' => Aseguradora::count(),
                 'activas' => Aseguradora::activas()->count(),
-                'afiliados' => \App\Models\Paciente::whereNotNull('aseguradora_id')->count(),
+                'afiliados' => Paciente::whereNotNull('aseguradora_id')->count(),
                 'coberturaMedia' => round((float) Aseguradora::activas()->avg('porcentaje_cobertura'), 1),
             ],
         ]);

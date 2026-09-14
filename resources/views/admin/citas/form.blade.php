@@ -6,6 +6,9 @@
 @section('contenido')
 <form method="POST" action="{{ $cita->exists ? route('admin.citas.update', $cita) : route('admin.citas.store') }}">
     @csrf
+    @if (! empty($listaEsperaId))
+        <input type="hidden" name="lista_espera_id" value="{{ $listaEsperaId }}">
+    @endif
     @if ($cita->exists) @method('PUT') @endif
 
     <div class="row g-3">
@@ -14,14 +17,7 @@
                 <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-event me-2"></i>Datos de la cita</h3></div>
                 <div class="card-body">
                     <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
-                        <select id="paciente_id" name="paciente_id" class="form-select" required>
-                            <option value="">— Selecciona un paciente —</option>
-                            @foreach ($pacientes as $paciente)
-                                <option value="{{ $paciente->id }}" @selected(old('paciente_id', $cita->paciente_id) == $paciente->id)>
-                                    {{ $paciente->nombre_completo }} · {{ $paciente->numero_documento }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-selector-paciente nombre="paciente_id" :seleccionado="$cita->paciente_id" requerido />
                     </x-campo>
 
                     <div class="row">
@@ -85,6 +81,33 @@
                             </x-campo>
                         </div>
                     </div>
+
+                    @unless ($cita->exists)
+                        <div class="card card-sm bg-azure-lt mb-3">
+                            <div class="card-body">
+                                <div class="fw-medium mb-2"><i class="ti ti-repeat me-1"></i>Repetir</div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <x-campo nombre="repetir" etiqueta="Frecuencia" class="mb-2"
+                                                 ayuda="Genera citas adicionales a la misma hora; las que no quepan se omiten.">
+                                            <select id="repetir" name="repetir" class="form-select">
+                                                <option value="" @selected(! old('repetir'))>Ninguna</option>
+                                                <option value="semanal" @selected(old('repetir') === 'semanal')>Semanal</option>
+                                                <option value="quincenal" @selected(old('repetir') === 'quincenal')>Quincenal</option>
+                                                <option value="mensual" @selected(old('repetir') === 'mensual')>Mensual</option>
+                                            </select>
+                                        </x-campo>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <x-campo nombre="repeticiones" etiqueta="Citas adicionales" class="mb-2">
+                                            <input type="number" id="repeticiones" name="repeticiones" class="form-control"
+                                                   min="1" max="52" value="{{ old('repeticiones', 1) }}" {{ old('repetir') ? '' : 'disabled' }}>
+                                        </x-campo>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endunless
 
                     <x-campo nombre="motivo" etiqueta="Motivo de la consulta">
                         <textarea id="motivo" name="motivo" class="form-control" rows="2">{{ old('motivo', $cita->motivo) }}</textarea>
@@ -178,6 +201,7 @@
         url.searchParams.set('doctor_id', doctor.value);
         url.searchParams.set('fecha', fecha.value);
         if (citaId) url.searchParams.set('cita_id', citaId);
+        if (tratamiento.value) url.searchParams.set('tratamiento_id', tratamiento.value);
 
         try {
             const respuesta = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -224,11 +248,21 @@
     }
 
     doctor.addEventListener('change', cargarHoras);
+    tratamiento.addEventListener('change', cargarHoras);
     fecha.addEventListener('change', cargarHoras);
     tratamiento.addEventListener('change', actualizarResumen);
 
     actualizarResumen();
     if (doctor.value && fecha.value) cargarHoras();
+
+    const repetir = document.getElementById('repetir');
+    const repeticiones = document.getElementById('repeticiones');
+    if (repetir && repeticiones) {
+        repetir.addEventListener('change', () => {
+            repeticiones.disabled = !repetir.value;
+            if (repetir.value && !repeticiones.value) repeticiones.value = 1;
+        });
+    }
 })();
 </script>
 @endpush

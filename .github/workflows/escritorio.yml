@@ -1,0 +1,171 @@
+name: Instalador de escritorio (Windows)
+
+on:
+  push:
+    # Mientras se estabiliza el flujo se compila en cada push a cualquier rama;
+    # quita "branches" cuando solo quieras compilarlo por etiqueta o a mano.
+    branches: ['**']
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  instalador:
+    name: DENTAL-PRO-Setup.exe
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP 8.4 (para composer y los assets)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, mbstring, gd, zip, intl, fileinfo, curl, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Caché de Composer
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-nodev-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-nodev-
+
+      - name: Dependencias PHP (producción)
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            escritorio/package-lock.json
+
+      - name: Assets (Vite)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Pruebas del lanzador (node --test)
+        working-directory: escritorio
+        run: node --test test/*.test.mjs
+
+      - name: Preparar la aplicación Laravel (recursos/app)
+        run: node escritorio/preparar-app.mjs
+
+      - name: Caché del runtime descargado (PHP + PostgreSQL)
+        id: runtime-cache
+        uses: actions/cache@v4
+        with:
+          path: escritorio/recursos/runtime
+          key: runtime-${{ runner.os }}-${{ hashFiles('escritorio/preparar-runtime.ps1') }}-${{ github.run_number }}
+          restore-keys: runtime-${{ runner.os }}-${{ hashFiles('escritorio/preparar-runtime.ps1') }}-
+
+      - name: Descargar PHP 8.4 NTS y PostgreSQL 16 (recursos/runtime)
+        if: steps.runtime-cache.outputs.cache-hit != 'true'
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File escritorio/preparar-runtime.ps1
+
+      - name: Prueba de humo del runtime
+        run: |
+          $php = 'escritorio\recursos\runtime\php\php.exe'
+          $ini = 'escritorio\recursos\runtime\php\php.ini'
+          & $php -c $ini -v
+          if ($LASTEXITCODE -ne 0) { throw "php -v falló ($LASTEXITCODE)" }
+          $modulos = (& $php -c $ini -m) -join "`n"
+          Write-Host $modulos
+          $faltan = @()
+          foreach ($m in @('pdo_pgsql','pgsql','gd','mbstring','fileinfo','curl','openssl','zip','intl','sodium','Zend OPcache')) {
+            if ($modulos -notmatch "(?im)^\s*$([regex]::Escape($m))\s*$") { $faltan += $m }
+          }
+          if ($faltan.Count) { throw "Faltan extensiones PHP: $($faltan -join ', ')" }
+          & 'escritorio\recursos\runtime\pgsql\bin\initdb.exe' --version
+          if ($LASTEXITCODE -ne 0) { throw "initdb --version falló ($LASTEXITCODE)" }
+          & 'escritorio\recursos\runtime\pgsql\bin\pg_ctl.exe' --version
+          & 'escritorio\recursos\runtime\pgsql\bin\pg_dump.exe' --version
+          Get-Content escritorio\recursos\runtime\VERSIONES.txt
+          # La app empaquetada debe arrancar con este PHP (sin base de datos aún).
+          Push-Location escritorio\recursos\app
+          & "..\runtime\php\php.exe" -c "..\runtime\php\php.ini" artisan --version
+          if ($LASTEXITCODE -ne 0) { throw "artisan --version falló con el PHP empaquetado" }
+          Pop-Location
+
+      - name: Arranque real con el runtime (initdb, migrate, seed, serve)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $raiz = (Get-Location).Path
+          $pg = "$raiz\escritorio\recursos\runtime\pgsql\bin"
+          $php = "$raiz\escritorio\recursos\runtime\php\php.exe"
+          $ini = "$raiz\escritorio\recursos\runtime\php\php.ini"
+          $datos = "$env:RUNNER_TEMP\dp-pg"
+          $storage = "$env:RUNNER_TEMP\dp-storage"
+          New-Item -ItemType Directory -Force -Path $storage\framework\cache\data, $storage\framework\sessions, $storage\framework\views, $storage\app\private, $storage\logs | Out-Null
+          Set-Content "$env:RUNNER_TEMP\pw.txt" 'claveDePrueba'
+          & "$pg\initdb.exe" -D $datos -U postgres -A scram-sha-256 --pwfile "$env:RUNNER_TEMP\pw.txt" --encoding=UTF8 --locale=C --no-instructions
+          & "$pg\pg_ctl.exe" start -D $datos -w -t 90 -l "$env:RUNNER_TEMP\pg.log" -o "-p 5499 -c listen_addresses=127.0.0.1"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\pg.log"; throw 'pg_ctl start falló' }
+          try {
+            $env:PGPASSWORD = 'claveDePrueba'
+            & "$pg\psql.exe" -h 127.0.0.1 -p 5499 -U postgres -c "CREATE DATABASE odontosuite ENCODING 'UTF8' TEMPLATE template0"
+            Push-Location escritorio\recursos\app
+            $env:LARAVEL_STORAGE_PATH = $storage
+            Copy-Item .env.example .env
+            @('APP_ENV=production','APP_DEBUG=false','DB_PORT=5499','DB_PASSWORD=claveDePrueba','DB_SSLMODE=disable','SESSION_DRIVER=file','CACHE_STORE=file','QUEUE_CONNECTION=sync','CONTROL_ACTIVO=false') | Add-Content .env
+            & $php -c $ini artisan key:generate --force
+            & $php -c $ini artisan migrate --force
+            if ($LASTEXITCODE -ne 0) { throw 'migrate falló' }
+            & $php -c $ini artisan db:seed --class=ProduccionSeeder --force
+            if ($LASTEXITCODE -ne 0) { throw 'ProduccionSeeder falló' }
+            $servidor = Start-Process -FilePath $php -ArgumentList @('-c', $ini, 'artisan', 'serve', '--host=127.0.0.1', '--port=8199', '--no-reload') -PassThru -NoNewWindow -RedirectStandardOutput "$env:RUNNER_TEMP\serve.log"
+            $ok = $false
+            for ($i = 0; $i -lt 60 -and -not $ok; $i++) {
+              Start-Sleep -Seconds 1
+              try { $r = Invoke-WebRequest -Uri http://127.0.0.1:8199/login -UseBasicParsing -TimeoutSec 5; $ok = ($r.StatusCode -eq 200) } catch { }
+            }
+            Stop-Process -Id $servidor.Id -Force -ErrorAction SilentlyContinue
+            Get-Process php -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Remove-Item .env -Force
+            Pop-Location
+            if (-not $ok) { Get-Content "$env:RUNNER_TEMP\serve.log"; Get-Content "$storage\logs\*.log" -ErrorAction SilentlyContinue; throw '/login no respondió 200 con el runtime empaquetado' }
+            Write-Host '/login responde 200 con PHP y PostgreSQL empaquetados.'
+          } finally {
+            & "$pg\pg_ctl.exe" stop -D $datos -m fast -w
+          }
+
+      - name: Dependencias de Electron
+        working-directory: escritorio
+        run: npm ci
+
+      - name: Empaquetar instalador NSIS
+        working-directory: escritorio
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Listar resultado
+        run: Get-ChildItem escritorio\dist -Filter *.exe | Format-Table Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: DENTAL-PRO-Setup
+          path: escritorio/dist/DENTAL-PRO-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Adjuntar a la release (solo etiquetas v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: escritorio/dist/DENTAL-PRO-Setup-*.exe
+          generate_release_notes: true

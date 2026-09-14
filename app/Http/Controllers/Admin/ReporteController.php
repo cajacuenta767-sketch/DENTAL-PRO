@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
+use App\Models\Auditoria;
 use App\Models\Cita;
+use App\Models\Doctor;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\PagoDetalle;
@@ -14,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteController extends Controller
 {
@@ -27,7 +30,8 @@ class ReporteController extends Controller
             $this->productividad($desde, $hasta),
             $this->padron($desde, $hasta),
             $this->rentabilidad($desde, $hasta),
-            ['doctores' => \App\Models\Doctor::orderBy('apellidos')->get()],
+            $this->comisiones($desde, $hasta),
+            ['doctores' => Doctor::orderBy('apellidos')->get()],
         ));
     }
 
@@ -35,32 +39,116 @@ class ReporteController extends Controller
     {
         [$desde, $hasta] = $this->rango($request);
 
-        $datos = match ($seccion) {
-            'financiero' => $this->financiero($request, $desde, $hasta),
-            'citas' => $this->productividad($desde, $hasta),
-            'padron' => $this->padron($desde, $hasta),
-            'tratamientos' => $this->rentabilidad($desde, $hasta),
-        };
+        $datos = $this->seccion($request, $seccion, $desde, $hasta);
 
-        $titulos = [
-            'financiero' => 'Reporte Financiero y de Caja',
-            'citas' => 'Reporte de Citas y Productividad',
-            'padron' => 'Padrón de Pacientes',
-            'tratamientos' => 'Rentabilidad por Tratamiento',
-        ];
+        Auditoria::registrar('EXPORTAR', null, "Exportó a PDF el reporte {$seccion} ({$desde->toDateString()} a {$hasta->toDateString()})");
 
         return Pdf::loadView("pdf.reportes.{$seccion}", array_merge($datos, [
             'clinica' => Ajuste::actual(),
             'desde' => $desde,
             'hasta' => $hasta,
-            'titulo' => $titulos[$seccion],
+            'titulo' => self::TITULOS[$seccion],
         ]))->setPaper('letter', 'landscape')
             ->download("reporte-{$seccion}-".$desde->format('Ymd').'-'.$hasta->format('Ymd').'.pdf');
+    }
+
+    /** Exporta la sección a CSV (UTF-8 con BOM, separador ";" para Excel en español). */
+    public function exportarCsv(Request $request, string $seccion): StreamedResponse
+    {
+        [$desde, $hasta] = $this->rango($request);
+        $datos = $this->seccion($request, $seccion, $desde, $hasta);
+        [$cabeceras, $filas] = $this->filasCsv($seccion, $datos);
+
+        Auditoria::registrar('EXPORTAR', null, "Exportó a CSV el reporte {$seccion} ({$desde->toDateString()} a {$hasta->toDateString()})");
+
+        $nombre = "reporte-{$seccion}-".$desde->format('Ymd').'-'.$hasta->format('Ymd').'.csv';
+
+        return response()->streamDownload(function () use ($cabeceras, $filas) {
+            $salida = fopen('php://output', 'w');
+            fwrite($salida, "\xEF\xBB\xBF");
+            fputcsv($salida, $cabeceras, ';');
+
+            foreach ($filas as $fila) {
+                fputcsv($salida, $fila, ';');
+            }
+
+            fclose($salida);
+        }, $nombre, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private const TITULOS = [
+        'financiero' => 'Reporte Financiero y de Caja',
+        'citas' => 'Reporte de Citas y Productividad',
+        'padron' => 'Padrón de Pacientes',
+        'tratamientos' => 'Rentabilidad por Tratamiento',
+        'comisiones' => 'Comisiones por doctor',
+    ];
+
+    private function seccion(Request $request, string $seccion, Carbon $desde, Carbon $hasta): array
+    {
+        return match ($seccion) {
+            'financiero' => $this->financiero($request, $desde, $hasta),
+            'citas' => $this->productividad($desde, $hasta),
+            'padron' => $this->padron($desde, $hasta),
+            'tratamientos' => $this->rentabilidad($desde, $hasta),
+            'comisiones' => $this->comisiones($desde, $hasta),
+            default => abort(404),
+        };
+    }
+
+    /** @return array{0: array<int, string>, 1: iterable<int, array>} */
+    private function filasCsv(string $seccion, array $datos): array
+    {
+        return match ($seccion) {
+            'financiero' => [
+                ['Recibo', 'Fecha', 'Paciente', 'Documento', 'Doctor', 'Método', 'Estado', 'Total', 'Pagado', 'Saldo'],
+                $datos['finListado']->map(fn ($p) => [
+                    $p->codigo_recibo, $p->fecha_pago->format('d/m/Y H:i'), $p->paciente?->nombre_completo,
+                    $p->paciente?->numero_documento, $p->doctor?->nombre_profesional, $p->metodo_pago, $p->estado,
+                    number_format((float) $p->monto_total, 2, '.', ''), number_format((float) $p->monto_pagado, 2, '.', ''),
+                    number_format((float) $p->monto_saldo, 2, '.', ''),
+                ]),
+            ],
+            'citas' => [
+                ['Doctor', 'Especialidad', 'Citas', 'Completadas', 'Tasa de asistencia %'],
+                $datos['citPorDoctor']->map(fn ($c) => [
+                    $c->doctor?->nombre_profesional, $c->doctor?->especialidad?->nombre, (int) $c->total, (int) $c->completadas,
+                    $c->total > 0 ? round($c->completadas / $c->total * 100, 1) : 0,
+                ]),
+            ],
+            'padron' => [
+                ['Paciente', 'Documento', 'Teléfono', 'Correo', 'Saldo pendiente'],
+                $datos['pacConSaldo']->map(fn ($p) => [
+                    $p->nombre_completo, $p->numero_documento, $p->telefono, $p->email,
+                    number_format((float) $p->saldo_total, 2, '.', ''),
+                ]),
+            ],
+            'tratamientos' => [
+                ['Tratamiento', 'Unidades', 'Facturado'],
+                $datos['traLineas']->map(fn ($l) => [
+                    $l->descripcion, (int) $l->unidades, number_format((float) $l->facturado, 2, '.', ''),
+                ]),
+            ],
+            'comisiones' => [
+                ['Doctor', 'Especialidad', 'Recibos', 'Cobrado', '% comisión', 'Comisión'],
+                $datos['comFilas']->map(fn ($f) => [
+                    $f['doctor']->nombre_profesional, $f['doctor']->especialidad?->nombre, (int) $f['recibos'],
+                    number_format($f['cobrado'], 2, '.', ''), number_format($f['porcentaje'], 2, '.', ''),
+                    number_format($f['comision'], 2, '.', ''),
+                ]),
+            ],
+            default => abort(404),
+        };
     }
 
     /** Rango de fechas del filtro; por defecto el mes en curso. */
     private function rango(Request $request): array
     {
+        $request->validate([
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date'],
+        ]);
+
         $desde = $request->filled('desde')
             ? Carbon::parse($request->desde)->startOfDay()
             : now()->startOfMonth();
@@ -184,6 +272,46 @@ class ReporteController extends Controller
                 ->groupBy('especialidades.nombre', 'especialidades.color')
                 ->orderByDesc('facturado')
                 ->get(),
+        ];
+    }
+
+    /** 5. Comisiones por doctor sobre los recibos vigentes cobrados en el rango. */
+    private function comisiones(Carbon $desde, Carbon $hasta): array
+    {
+        $cobros = Pago::query()
+            ->vigentes()
+            ->whereNotNull('doctor_id')
+            ->whereBetween('fecha_pago', [$desde, $hasta])
+            ->selectRaw('doctor_id, COUNT(*) AS recibos, COALESCE(SUM(monto_pagado), 0) AS cobrado')
+            ->groupBy('doctor_id')
+            ->get()
+            ->keyBy('doctor_id');
+
+        $filas = Doctor::query()
+            ->with('especialidad')
+            ->whereIn('id', $cobros->keys())
+            ->orderBy('apellidos')
+            ->get()
+            ->map(function (Doctor $doctor) use ($cobros) {
+                $cobrado = round((float) $cobros[$doctor->id]->cobrado, 2);
+                $porcentaje = round((float) $doctor->porcentaje_comision, 2);
+
+                return [
+                    'doctor' => $doctor,
+                    'recibos' => (int) $cobros[$doctor->id]->recibos,
+                    'cobrado' => $cobrado,
+                    'porcentaje' => $porcentaje,
+                    'comision' => round($cobrado * $porcentaje / 100, 2),
+                ];
+            })
+            ->sortByDesc('comision')
+            ->values();
+
+        return [
+            'comFilas' => $filas,
+            'comCobrado' => round((float) $filas->sum('cobrado'), 2),
+            'comTotal' => round((float) $filas->sum('comision'), 2),
+            'comRecibos' => (int) $filas->sum('recibos'),
         ];
     }
 }

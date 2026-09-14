@@ -169,7 +169,7 @@ body {
 }
 
 .pieza-cara {
-    fill: #fff;
+    /* El color lo pone cada cara con style="fill: …"; aquí solo el trazo. */
     stroke: #adb5bd;
     stroke-width: 1;
     transition: fill 0.12s ease;
@@ -182,6 +182,17 @@ body {
 
 .pieza.pieza-ausente .pieza-svg {
     opacity: 0.35;
+}
+
+/* Cuadrícula: extracción indicada y urgencia. */
+.pieza.pieza-extraccion .pieza-svg {
+    outline: 2px solid #d63939;
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+.pieza.pieza-urgente .pieza-numero {
+    color: #d63939;
 }
 
 /* Pieza abierta en el panel lateral. */
@@ -225,5 +236,434 @@ body {
     .page-header .btn,
     .no-print {
         display: none !important;
+    }
+}
+
+/* Odontograma: vista de arcada (desde arriba) y 3D ------------ */
+
+.odontograma-arcada-contenedor {
+    max-width: 520px;
+    margin: 0 auto;
+    perspective: 1200px;
+}
+
+.odontograma-arcada-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.45s ease, filter 0.45s ease;
+    transform-origin: 50% 55%;
+}
+
+/* Modo 3D: la arcada se inclina como si se mirara al paciente sentado. */
+.odontograma-3d .odontograma-arcada-svg {
+    transform: rotateX(52deg) scale(1.12);
+    filter: drop-shadow(0 16px 12px rgba(0, 0, 0, 0.3));
+}
+
+.odontograma-3d .pieza-arcada .pieza-cara {
+    stroke-width: 1.4;
+}
+
+.arcada-fondo {
+    fill: rgba(220, 120, 130, 0.13);
+    stroke: rgba(220, 120, 130, 0.4);
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+}
+
+.arcada-etiqueta,
+.arcada-lado {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-arcada {
+    cursor: pointer;
+    outline: none;
+}
+
+.pieza-arcada .pieza-cara {
+    stroke: #8a929a;
+    stroke-width: 1;
+    transition: fill 0.12s ease, stroke 0.12s ease;
+}
+
+.pieza-arcada .pieza-cara:hover,
+.pieza-arcada:focus-visible .pieza-cara {
+    stroke: var(--os-brand);
+    stroke-width: 2;
+}
+
+.pieza-surco {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.pieza-anillo {
+    fill: none;
+    stroke: var(--os-brand);
+    stroke-width: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.pieza-arcada.pieza-activa .pieza-anillo {
+    opacity: 1;
+}
+
+.pieza-tachado {
+    stroke: #d63939;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pieza-arcada.pieza-extraccion .pieza-tachado {
+    opacity: 1;
+}
+
+.pieza-arcada.pieza-ausente .pieza-cara,
+.pieza-arcada.pieza-ausente .pieza-surco {
+    opacity: 0.3;
+}
+
+.pieza-arcada.pieza-atenuada,
+.pieza.pieza-atenuada .pieza-svg {
+    opacity: 0.22;
+}
+
+.pieza-urgente .pieza-anillo {
+    opacity: 1;
+    stroke: #d63939;
+    stroke-dasharray: 4 3;
+}
+
+.pieza-etiqueta {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-etiqueta-activa {
+    fill: var(--os-brand);
+    font-weight: 800;
+}
+
+[data-bs-theme="dark"] .pieza-arcada .pieza-cara {
+    stroke: #5c6470;
+}
+
+/* Pieza ampliada del panel lateral. */
+.pieza-detalle {
+    width: 100%;
+    max-width: 210px;
+    margin: 0 auto;
+    display: block;
+}
+
+.pieza-detalle .pieza-cara {
+    stroke: #6c757d;
+    stroke-width: 1.2;
+    cursor: pointer;
+}
+
+.pieza-detalle .pieza-cara:hover {
+    stroke: var(--os-brand);
+    stroke-width: 2.5;
+}
+
+.pieza-detalle .detalle-etiqueta {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+    text-anchor: middle;
+}
+
+/* Chips de hallazgo del panel. */
+.os-chip-hallazgo {
+    border-width: 1px;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+}
+
+.os-chip-hallazgo.active {
+    color: #fff !important;
+}
+
+.os-atajo {
+    font-size: 0.62rem;
+    opacity: 0.65;
+    margin-left: 0.25rem;
+}
+
+/* ---------------------------------------------------------------
+   Selector de paciente (Tom Select) integrado con Tabler
+   --------------------------------------------------------------- */
+
+.ts-wrapper.form-select {
+    padding: 0;
+    border: 0;
+    background-image: none;
+}
+
+.ts-wrapper .ts-control {
+    min-height: calc(1.4285714286em + 0.875rem + 2px);
+    padding: 0.4375rem 0.75rem;
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    font-size: 0.875rem;
+    line-height: 1.4285714286;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.ts-wrapper.focus .ts-control {
+    border-color: var(--os-brand);
+    box-shadow: 0 0 0 0.25rem var(--os-brand-soft);
+}
+
+.ts-wrapper .ts-control > input,
+.ts-wrapper .ts-control > input::placeholder {
+    color: var(--tblr-body-color);
+}
+
+.ts-wrapper .ts-control > input::placeholder {
+    color: var(--tblr-secondary);
+    opacity: 1;
+}
+
+.ts-wrapper .ts-dropdown {
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    background: var(--tblr-bg-surface);
+    color: var(--tblr-body-color);
+    box-shadow: var(--tblr-box-shadow-dropdown, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
+    font-size: 0.875rem;
+}
+
+.ts-wrapper .ts-dropdown .option {
+    padding: 0.5rem 0.75rem;
+}
+
+.ts-wrapper .ts-dropdown .option.active {
+    background: var(--os-brand-soft);
+    color: var(--tblr-body-color);
+}
+
+.ts-wrapper .ts-dropdown .no-results,
+.ts-wrapper .ts-dropdown .spinner {
+    padding: 0.5rem 0.75rem;
+}
+
+.ts-wrapper.single .ts-control::after {
+    border-color: var(--tblr-secondary) transparent transparent;
+}
+
+.ts-wrapper.single.dropdown-active .ts-control::after {
+    border-color: transparent transparent var(--tblr-secondary);
+}
+
+.is-invalid + .ts-wrapper .ts-control,
+.ts-wrapper.is-invalid .ts-control {
+    border-color: var(--tblr-danger);
+}
+
+/* ---------------------------------------------------------------
+   Accesibilidad
+   --------------------------------------------------------------- */
+
+/* Foco visible con el color de marca (sólo al navegar con teclado). */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+    outline: 2px solid var(--os-brand) !important;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.pieza-arcada:focus-visible,
+.pieza-svg:focus-visible {
+    outline: 2px solid var(--os-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Enlace "saltar al contenido": visible sólo al enfocarlo. */
+.os-saltar {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 1100;
+    padding: 0.5rem 1rem;
+    background: var(--os-brand);
+    color: #fff;
+    border-radius: 0 0 var(--tblr-border-radius) var(--tblr-border-radius);
+}
+
+.os-saltar:focus {
+    top: 0;
+    color: #fff;
+}
+
+/* Reduce el movimiento cuando el usuario lo pide en su sistema. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .odontograma-arcada-svg,
+    .odontograma-3d .odontograma-arcada-svg,
+    .pieza-cara,
+    .pieza-arcada .pieza-cara,
+    .pieza-anillo,
+    .os-module-card {
+        transition: none !important;
+    }
+
+    .odontograma-3d .odontograma-arcada-svg {
+        filter: none;
+    }
+
+    .badge-blink {
+        animation: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   Móvil y pantallas táctiles
+   --------------------------------------------------------------- */
+
+/* Tablas: desplazamiento horizontal dentro de las tarjetas. */
+.card .table-responsive,
+.card > .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.card > .table-responsive > .table {
+    margin-bottom: 0;
+}
+
+/* Elementos interactivos del odontograma: sin doble-toque para zoom. */
+.pieza-arcada,
+.pieza-svg,
+.pieza-detalle,
+.os-chip-hallazgo,
+.os-hallazgo {
+    touch-action: manipulation;
+}
+
+@media (pointer: coarse) {
+    /* Objetivos táctiles más amplios en la arcada y los chips de hallazgo. */
+    .pieza-arcada .pieza-cara {
+        stroke-width: 1.6;
+    }
+
+    .pieza-arcada .pieza-cara:hover,
+    .pieza-arcada:focus-visible .pieza-cara {
+        stroke-width: 2.6;
+    }
+
+    .os-chip-hallazgo {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .os-hallazgo {
+        min-height: 44px;
+    }
+
+    .navbar .nav-link,
+    .navbar .btn-icon,
+    .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .dropdown-item {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+    }
+}
+
+/* Odontograma: por debajo de 1200px el panel de la pieza se fija al pie
+   de la pantalla para no perder de vista la arcada al marcar hallazgos. */
+@media (max-width: 1199.98px) {
+    #panel-pieza {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        max-height: 45vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        margin-bottom: 0 !important;
+        border-radius: var(--tblr-border-radius) var(--tblr-border-radius) 0 0;
+        box-shadow: 0 -0.5rem 1.5rem rgba(0, 0, 0, 0.18);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    #panel-pieza .card-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--tblr-card-bg, var(--tblr-bg-surface));
+    }
+
+    /* Deja sitio para que el contenido no quede tapado por el panel. */
+    body:has(#panel-pieza) .page-body {
+        padding-bottom: 47vh;
+    }
+
+    .odontograma-arcada-contenedor {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .page-header .page-title {
+        font-size: 1.25rem;
+    }
+
+    .page-header .col-auto .btn-list,
+    .page-header .col-auto .btn {
+        flex-wrap: wrap;
+    }
+
+    .pieza {
+        width: 38px;
+    }
+
+    .odontograma-cuadrante {
+        gap: 0.2rem;
     }
 }
