@@ -41,14 +41,42 @@ jobs:
           done
           echo "Capturas: $(ls sitio/img | wc -l)"
 
+      # Si Pages aún no está activado, el flujo termina en verde con un aviso
+      # en lugar de fallar: activarlo es un paso manual del dueño del repo.
+      - name: Comprobar si GitHub Pages está activado
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" --silent 2>/dev/null; then
+            echo "activo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "activo=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages no está activado. Ve a Settings → Pages → Source: GitHub Actions y vuelve a lanzar este flujo (o intenta activarlo desde aquí con enablement)."
+            echo "### GitHub Pages no está activado" >> "$GITHUB_STEP_SUMMARY"
+            echo "Activa Pages en **Settings → Pages → Source: GitHub Actions** y vuelve a ejecutar el flujo \"Sitio web (GitHub Pages)\"." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Configurar Pages
+        if: steps.pages.outputs.activo == 'true'
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Subir la carpeta sitio/
+        if: steps.pages.outputs.activo == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: sitio
 
       - name: Desplegar
+        if: steps.pages.outputs.activo == 'true'
         id: despliegue
         uses: actions/deploy-pages@v4
+
+      - name: Guardar el sitio como artefacto descargable
+        if: steps.pages.outputs.activo != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitio-web
+          path: sitio
