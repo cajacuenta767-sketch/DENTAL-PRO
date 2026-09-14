@@ -13,6 +13,13 @@
     </div>
 @endsection
 
+@push('head')
+<style>
+    .transmision-sello { font-size: .7rem; word-break: break-all; }
+    .transmision-cruda { max-height: 12rem; overflow: auto; font-size: .7rem; }
+</style>
+@endpush
+
 @section('contenido')
 <div class="row g-3">
     <div class="col-lg-8">
@@ -86,6 +93,72 @@
     </div>
 
     <div class="col-lg-4">
+        @php
+            $coloresTransmision = ['NO_APLICA' => 'secondary', 'PENDIENTE' => 'warning', 'ACEPTADO' => 'success', 'RECHAZADO' => 'danger'];
+            $etiquetasTransmision = ['NO_APLICA' => 'No aplica', 'PENDIENTE' => 'Pendiente', 'ACEPTADO' => 'Aceptado', 'RECHAZADO' => 'Rechazado'];
+            $estadoTransmision = $documento->estado_transmision ?: 'NO_APLICA';
+            $respuestaProveedor = $documento->respuesta_proveedor ?? [];
+        @endphp
+        <div class="card mb-3 border-{{ $coloresTransmision[$estadoTransmision] ?? 'secondary' }}">
+            <div class="card-header">
+                <h3 class="card-title"><i class="ti ti-cloud-upload me-2"></i>Transmisión fiscal</h3>
+                <span class="badge bg-{{ $coloresTransmision[$estadoTransmision] ?? 'secondary' }} ms-auto" data-prueba="estado-transmision">
+                    {{ $etiquetasTransmision[$estadoTransmision] ?? $estadoTransmision }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="datagrid">
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Proveedor</div>
+                        <div class="datagrid-content">{{ $documento->proveedor ?: $proveedorFiscal }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Último intento</div>
+                        <div class="datagrid-content">{{ $documento->transmitido_en?->format('d/m/Y H:i') ?? '—' }}</div>
+                    </div>
+                    @if (! empty($respuestaProveedor['codigo']))
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Código</div>
+                            <div class="datagrid-content font-monospace">{{ $respuestaProveedor['codigo'] }}</div>
+                        </div>
+                    @endif
+                    @if (! empty($respuestaProveedor['mensaje']))
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">Mensaje del proveedor</div>
+                            <div class="datagrid-content {{ $estadoTransmision === 'RECHAZADO' ? 'text-danger' : '' }}">
+                                {{ $respuestaProveedor['mensaje'] }}
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                @if ($estadoTransmision === 'NO_APLICA' && $proveedorFiscal === 'ninguno')
+                    <p class="text-secondary small mb-0 mt-3">
+                        No hay proveedor de transmisión configurado: el documento solo se conserva localmente.
+                    </p>
+                @endif
+
+                @if (! empty($respuestaProveedor['cruda']))
+                    <details class="mt-3">
+                        <summary class="text-secondary small">Respuesta completa</summary>
+                        <pre class="transmision-cruda mt-2 mb-0">{{ json_encode($respuestaProveedor['cruda'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+                    </details>
+                @endif
+            </div>
+            @can('facturacion.emitir')
+                @if ($estadoTransmision !== 'ACEPTADO' && $proveedorFiscal !== 'ninguno' && $documento->estado !== 'ANULADO')
+                    <div class="card-footer">
+                        <form method="POST" action="{{ route('admin.facturacion.transmitir', $documento) }}">
+                            @csrf
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="ti ti-refresh me-1"></i>Reintentar transmisión
+                            </button>
+                        </form>
+                    </div>
+                @endif
+            @endcan
+        </div>
+
         <div class="card">
             <div class="card-header"><h3 class="card-title">Identificación tributaria</h3></div>
             <div class="card-body">

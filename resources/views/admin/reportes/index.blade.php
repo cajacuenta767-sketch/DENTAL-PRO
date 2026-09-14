@@ -56,6 +56,11 @@
             <i class="ti ti-dental me-1"></i>4. Tratamientos &amp; Rentabilidad
         </a>
     </li>
+    <li class="nav-item">
+        <a href="#tab-comisiones" class="nav-link" data-bs-toggle="tab" role="tab">
+            <i class="ti ti-percentage me-1"></i>5. Comisiones por Doctor
+        </a>
+    </li>
 </ul>
 
 <div class="tab-content">
@@ -423,6 +428,84 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 5. Comisiones por doctor --}}
+    <div class="tab-pane" id="tab-comisiones" role="tabpanel">
+        <div class="row row-cards mb-3">
+            <div class="col-sm-6 col-xl-4">
+                <x-kpi titulo="Cobrado a nombre de doctores" :valor="number_format($comCobrado, 2).' '.$ajustes->divisa"
+                       icono="ti ti-coin" color="success" />
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <x-kpi titulo="Comisiones a liquidar" :valor="number_format($comTotal, 2).' '.$ajustes->divisa"
+                       icono="ti ti-percentage" color="yellow" />
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <x-kpi titulo="Recibos con doctor" :valor="$comRecibos" icono="ti ti-receipt" color="indigo" />
+            </div>
+        </div>
+
+        @can('reportes.exportar')
+            <div class="mb-3 text-end">
+                <div class="btn-group">
+                    <a href="{{ route('admin.reportes.exportar', array_merge(['seccion' => 'comisiones'], request()->query())) }}"
+                       class="btn btn-danger"><i class="ti ti-file-type-pdf me-1"></i>Exportar PDF</a>
+                    <a href="{{ route('admin.reportes.csv', array_merge(['seccion' => 'comisiones'], request()->query())) }}"
+                       class="btn btn-outline-success" title="Exportar CSV"><i class="ti ti-file-type-csv me-1"></i>CSV</a>
+                </div>
+            </div>
+        @endcan
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Comisiones por doctor</h3>
+                <span class="text-secondary small ms-auto">Comisión = cobrado × porcentaje del doctor. El porcentaje se define en la ficha de cada doctor.</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead><tr><th>Doctor</th><th>Especialidad</th><th class="text-center">Recibos</th>
+                        <th class="text-end">Cobrado</th><th class="text-center">% comisión</th><th class="text-end">Comisión</th></tr></thead>
+                    <tbody>
+                        @forelse ($comFilas as $fila)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('admin.doctores.show', $fila['doctor']) }}" class="text-brand">{{ $fila['doctor']->nombre_profesional }}</a>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background-color: {{ $fila['doctor']->especialidad?->color }}20; color: {{ $fila['doctor']->especialidad?->color }}">
+                                        {{ $fila['doctor']->especialidad?->nombre ?? '—' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">{{ $fila['recibos'] }}</td>
+                                <td class="text-end">{{ number_format($fila['cobrado'], 2) }}</td>
+                                <td class="text-center">
+                                    @if ($fila['porcentaje'] > 0)
+                                        <span class="badge bg-yellow-lt">{{ number_format($fila['porcentaje'], 2) }} %</span>
+                                    @else
+                                        <span class="text-secondary">0 %</span>
+                                    @endif
+                                </td>
+                                <td class="text-end fw-medium">{{ number_format($fila['comision'], 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="text-center text-secondary py-4">Sin recibos cobrados a nombre de un doctor en el rango.</td></tr>
+                        @endforelse
+                    </tbody>
+                    @if ($comFilas->isNotEmpty())
+                        <tfoot>
+                            <tr>
+                                <th colspan="2">Totales</th>
+                                <th class="text-center">{{ $comRecibos }}</th>
+                                <th class="text-end">{{ number_format($comCobrado, 2) }}</th>
+                                <th></th>
+                                <th class="text-end">{{ number_format($comTotal, 2) }} {{ $ajustes->divisa }}</th>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
             </div>
         </div>
     </div>

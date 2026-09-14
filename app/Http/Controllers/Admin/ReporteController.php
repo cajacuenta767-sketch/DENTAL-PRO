@@ -30,6 +30,7 @@ class ReporteController extends Controller
             $this->productividad($desde, $hasta),
             $this->padron($desde, $hasta),
             $this->rentabilidad($desde, $hasta),
+            $this->comisiones($desde, $hasta),
             ['doctores' => Doctor::orderBy('apellidos')->get()],
         ));
     }
@@ -80,6 +81,7 @@ class ReporteController extends Controller
         'citas' => 'Reporte de Citas y Productividad',
         'padron' => 'Padrón de Pacientes',
         'tratamientos' => 'Rentabilidad por Tratamiento',
+        'comisiones' => 'Comisiones por doctor',
     ];
 
     private function seccion(Request $request, string $seccion, Carbon $desde, Carbon $hasta): array
@@ -89,6 +91,7 @@ class ReporteController extends Controller
             'citas' => $this->productividad($desde, $hasta),
             'padron' => $this->padron($desde, $hasta),
             'tratamientos' => $this->rentabilidad($desde, $hasta),
+            'comisiones' => $this->comisiones($desde, $hasta),
             default => abort(404),
         };
     }
@@ -124,6 +127,14 @@ class ReporteController extends Controller
                 ['Tratamiento', 'Unidades', 'Facturado'],
                 $datos['traLineas']->map(fn ($l) => [
                     $l->descripcion, (int) $l->unidades, number_format((float) $l->facturado, 2, '.', ''),
+                ]),
+            ],
+            'comisiones' => [
+                ['Doctor', 'Especialidad', 'Recibos', 'Cobrado', '% comisión', 'Comisión'],
+                $datos['comFilas']->map(fn ($f) => [
+                    $f['doctor']->nombre_profesional, $f['doctor']->especialidad?->nombre, (int) $f['recibos'],
+                    number_format($f['cobrado'], 2, '.', ''), number_format($f['porcentaje'], 2, '.', ''),
+                    number_format($f['comision'], 2, '.', ''),
                 ]),
             ],
             default => abort(404),
@@ -261,6 +272,46 @@ class ReporteController extends Controller
                 ->groupBy('especialidades.nombre', 'especialidades.color')
                 ->orderByDesc('facturado')
                 ->get(),
+        ];
+    }
+
+    /** 5. Comisiones por doctor sobre los recibos vigentes cobrados en el rango. */
+    private function comisiones(Carbon $desde, Carbon $hasta): array
+    {
+        $cobros = Pago::query()
+            ->vigentes()
+            ->whereNotNull('doctor_id')
+            ->whereBetween('fecha_pago', [$desde, $hasta])
+            ->selectRaw('doctor_id, COUNT(*) AS recibos, COALESCE(SUM(monto_pagado), 0) AS cobrado')
+            ->groupBy('doctor_id')
+            ->get()
+            ->keyBy('doctor_id');
+
+        $filas = Doctor::query()
+            ->with('especialidad')
+            ->whereIn('id', $cobros->keys())
+            ->orderBy('apellidos')
+            ->get()
+            ->map(function (Doctor $doctor) use ($cobros) {
+                $cobrado = round((float) $cobros[$doctor->id]->cobrado, 2);
+                $porcentaje = round((float) $doctor->porcentaje_comision, 2);
+
+                return [
+                    'doctor' => $doctor,
+                    'recibos' => (int) $cobros[$doctor->id]->recibos,
+                    'cobrado' => $cobrado,
+                    'porcentaje' => $porcentaje,
+                    'comision' => round($cobrado * $porcentaje / 100, 2),
+                ];
+            })
+            ->sortByDesc('comision')
+            ->values();
+
+        return [
+            'comFilas' => $filas,
+            'comCobrado' => round((float) $filas->sum('cobrado'), 2),
+            'comTotal' => round((float) $filas->sum('comision'), 2),
+            'comRecibos' => (int) $filas->sum('recibos'),
         ];
     }
 }

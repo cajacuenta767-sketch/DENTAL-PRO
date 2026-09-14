@@ -137,14 +137,17 @@ class DoctorController extends Controller
             'descripcion' => ['nullable', 'string', 'max:1000'],
             'observaciones' => ['nullable', 'string', 'max:1000'],
             'activo' => ['nullable', 'boolean'],
+            'porcentaje_comision' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ], [], [
             'especialidad_id' => 'especialidad',
+            'porcentaje_comision' => 'porcentaje de comisión',
             'usuario_id' => 'usuario del sistema',
             'numero_documento' => 'número de documento',
         ]);
 
         $datos['activo'] = $request->boolean('activo');
+        $datos['porcentaje_comision'] = round((float) ($datos['porcentaje_comision'] ?? 0), 2);
 
         return $datos;
     }

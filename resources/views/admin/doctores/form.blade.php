@@ -126,6 +126,15 @@
                         </select>
                     </x-campo>
 
+                    <x-campo nombre="porcentaje_comision" etiqueta="Comisión sobre lo cobrado (%)"
+                             ayuda="Porcentaje de los recibos cobrados a su nombre que se liquida al doctor. 0 = sin comisión.">
+                        <div class="input-group">
+                            <input type="number" step="0.01" min="0" max="100" id="porcentaje_comision" name="porcentaje_comision" class="form-control"
+                                   value="{{ old('porcentaje_comision', number_format((float) ($doctor->porcentaje_comision ?? 0), 2, '.', '')) }}">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </x-campo>
+
                     <x-campo nombre="foto" etiqueta="Fotografía" ayuda="JPG o PNG, máximo 2 MB.">
                         <input type="file" id="foto" name="foto" class="form-control" accept="image/*">
                     </x-campo>

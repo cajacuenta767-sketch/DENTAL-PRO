@@ -54,6 +54,16 @@
                         <div class="datagrid-title">Dirección</div>
                         <div class="datagrid-content">{{ $doctor->direccion ?: '—' }}</div>
                     </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Comisión sobre lo cobrado</div>
+                        <div class="datagrid-content">
+                            @if ((float) $doctor->porcentaje_comision > 0)
+                                <span class="badge bg-yellow-lt">{{ number_format($doctor->porcentaje_comision, 2) }} %</span>
+                            @else
+                                <span class="text-secondary">Sin comisión</span>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -7,6 +7,7 @@ use App\Models\Ajuste;
 use App\Models\Auditoria;
 use App\Models\DocumentoFiscal;
 use App\Models\Pago;
+use App\Services\FacturacionElectronicaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FacturacionController extends Controller
 {
+    public function __construct(private readonly FacturacionElectronicaService $transmision) {}
+
     public function index(Request $request): View
     {
         $documentos = DocumentoFiscal::query()
@@ -138,15 +141,53 @@ class FacturacionController extends Controller
             ]);
         });
 
+        // La transmisión va fuera de la transacción: el documento ya existe
+        // con su correlativo aunque el proveedor no responda.
+        $respuesta = $this->transmision->transmitir($documento);
+
+        $mensaje = "Documento {$documento->numero_control} emitido.";
+
+        if ($respuesta !== null && ! $respuesta->aceptado) {
+            return redirect()->route('admin.facturacion.show', $documento)
+                ->with('aviso', $mensaje.' El proveedor fiscal lo rechazó: '.($respuesta->mensaje ?: 'sin detalle').'. Puedes reintentar la transmisión.');
+        }
+
         return redirect()->route('admin.facturacion.show', $documento)
-            ->with('exito', "Documento {$documento->numero_control} emitido.");
+            ->with('exito', $mensaje.($respuesta?->aceptado ? ' Transmitido y aceptado.' : ''));
     }
 
     public function show(DocumentoFiscal $documento): View
     {
         $documento->load(['pago.paciente', 'pago.detalles', 'emisor', 'documentoReferencia', 'notas']);
 
-        return view('admin.facturacion.show', compact('documento'));
+        return view('admin.facturacion.show', [
+            'documento' => $documento,
+            'proveedorFiscal' => $this->transmision->proveedor(),
+        ]);
+    }
+
+    /** Reintenta la transmisión de un documento rechazado o pendiente. */
+    public function transmitir(DocumentoFiscal $documento): RedirectResponse
+    {
+        if ($documento->estado === 'ANULADO') {
+            return back()->with('error', 'Un documento anulado no se transmite.');
+        }
+
+        if (! $this->transmision->activa()) {
+            return back()->with('aviso', 'No hay un proveedor de transmisión configurado (FACTURACION_PROVEEDOR=ninguno).');
+        }
+
+        if ($documento->estado_transmision === 'ACEPTADO') {
+            return back()->with('aviso', 'Este documento ya fue aceptado por el proveedor.');
+        }
+
+        $respuesta = $this->transmision->transmitir($documento);
+
+        if ($respuesta?->aceptado) {
+            return back()->with('exito', "El documento {$documento->numero_control} fue aceptado por el proveedor.");
+        }
+
+        return back()->with('error', 'El proveedor rechazó el documento: '.($respuesta?->mensaje ?: 'sin detalle').'.');
     }
 
     public function anular(Request $request, DocumentoFiscal $documento): RedirectResponse
