@@ -2,6 +2,7 @@ import './bootstrap';
 
 import '@tabler/core/dist/js/tabler.min.js';
 import ApexCharts from 'apexcharts';
+import './odontograma';
 
 window.ApexCharts = ApexCharts;
 
@@ -20,7 +21,7 @@ function aplicarTema(tema) {
     }
 }
 
-window.OdontoSuite = {
+window.OdontoSuite = Object.assign(window.OdontoSuite ?? {}, {
     aplicarTema,
 
     temaActual() {
@@ -36,7 +37,7 @@ window.OdontoSuite = {
         const n = Number(valor || 0);
         return `${n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${simbolo}`;
     },
-};
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-os-theme-toggle]').forEach((boton) => {

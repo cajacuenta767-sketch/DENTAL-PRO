@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Auditoria;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -9,7 +10,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Los datos de demostración no dejan rastro en la auditoría.
-        \App\Models\Auditoria::$activa = false;
+        Auditoria::$activa = false;
 
         $this->call([
             AjusteSeeder::class,
@@ -23,7 +24,7 @@ class DatabaseSeeder extends Seeder
             ClinicaAvanzadaSeeder::class,
         ]);
 
-        \App\Models\Auditoria::$activa = true;
+        Auditoria::$activa = true;
 
         $this->command->newLine();
         $this->command->info('OdontoSuite listo. Cuentas de acceso (se pide cambiar la contraseña al primer ingreso):');

@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Odontograma;
 use App\Models\Paciente;
+use App\Models\Tratamiento;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,6 +29,17 @@ class OdontogramaController extends Controller
     {
         $tipo = $request->query('tipo') === 'INFANTIL' ? 'INFANTIL' : 'ADULTO';
 
+        // El último odontograma del paciente sirve de punto de partida y de
+        // referencia para marcar qué cambió desde entonces.
+        $anterior = $paciente->odontogramas()
+            ->where('tipo', $tipo)
+            ->orderByDesc('fecha')->orderByDesc('id')
+            ->first();
+
+        $piezas = $request->query('desde') === 'ultimo' && $anterior
+            ? $anterior->piezas
+            : $this->piezasEnBlanco($tipo);
+
         return view('admin.odontogramas.form', [
             'paciente' => $paciente,
             'odontograma' => new Odontograma([
@@ -35,10 +47,12 @@ class OdontogramaController extends Controller
                 'fecha' => now()->toDateString(),
                 'doctor_id' => $request->user()->doctor?->id,
                 'cita_id' => $request->query('cita_id'),
-                'piezas' => $this->piezasEnBlanco($tipo),
+                'piezas' => $piezas,
             ]),
+            'anterior' => $anterior,
             'doctores' => Doctor::activos()->orderBy('apellidos')->get(),
             'citas' => Cita::where('paciente_id', $paciente->id)->with('tratamiento')->orderByDesc('fecha')->limit(30)->get(),
+            'tratamientos' => Tratamiento::activos()->orderBy('nombre')->get(['id', 'nombre', 'precio']),
         ]);
     }
 
@@ -63,12 +77,22 @@ class OdontogramaController extends Controller
             $odontograma->piezas = $this->piezasEnBlanco($odontograma->tipo);
         }
 
+        $anterior = $odontograma->paciente->odontogramas()
+            ->where('tipo', $odontograma->tipo)
+            ->where('id', '!=', $odontograma->id)
+            ->where(fn ($q) => $q->where('fecha', '<', $odontograma->fecha)
+                ->orWhere(fn ($r) => $r->where('fecha', $odontograma->fecha)->where('id', '<', $odontograma->id)))
+            ->orderByDesc('fecha')->orderByDesc('id')
+            ->first();
+
         return view('admin.odontogramas.form', [
             'paciente' => $odontograma->paciente,
             'odontograma' => $odontograma,
+            'anterior' => $anterior,
             'doctores' => Doctor::activos()->orderBy('apellidos')->get(),
             'citas' => Cita::where('paciente_id', $odontograma->paciente_id)
                 ->with('tratamiento')->orderByDesc('fecha')->limit(30)->get(),
+            'tratamientos' => Tratamiento::activos()->orderBy('nombre')->get(['id', 'nombre', 'precio']),
         ]);
     }
 
@@ -128,10 +152,14 @@ class OdontogramaController extends Controller
                 $caras[$cara] = in_array($valor, $validos, true) ? $valor : 'sano';
             }
 
+            $movilidad = (int) ($pieza['movilidad'] ?? 0);
+
             $limpio[(string) $numero] = [
                 'estado' => in_array($estado, $validos, true) ? $estado : 'sano',
                 'caras' => $caras,
-                'nota' => isset($pieza['nota']) ? mb_substr((string) $pieza['nota'], 0, 255) : null,
+                'nota' => isset($pieza['nota']) && $pieza['nota'] !== '' ? mb_substr((string) $pieza['nota'], 0, 255) : null,
+                'movilidad' => array_key_exists($movilidad, Odontograma::MOVILIDAD) ? $movilidad : 0,
+                'urgente' => ! empty($pieza['urgente']),
             ];
         }
 
@@ -145,6 +173,8 @@ class OdontogramaController extends Controller
                 'estado' => 'sano',
                 'caras' => array_fill_keys(Odontograma::CARAS, 'sano'),
                 'nota' => null,
+                'movilidad' => 0,
+                'urgente' => false,
             ]])
             ->all();
     }

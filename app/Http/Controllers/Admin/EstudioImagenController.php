@@ -164,7 +164,7 @@ class EstudioImagenController extends Controller
 
     private function validar(Request $request, bool $archivoObligatorio = false): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
@@ -180,5 +180,10 @@ class EstudioImagenController extends Controller
             'fecha_estudio' => 'fecha del estudio',
             'piezas_referidas' => 'piezas referidas',
         ]);
+
+        // El archivo subido se procesa aparte: nunca se guarda su ruta temporal.
+        unset($datos['archivo']);
+
+        return $datos;
     }
 }

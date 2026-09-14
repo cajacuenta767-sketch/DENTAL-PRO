@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Presupuesto extends Model
 {
@@ -194,7 +195,7 @@ class Presupuesto extends Model
         return self::ESTADOS[$this->estado] ?? $this->estado;
     }
 
-    public function getVenceElAttribute(): \Illuminate\Support\Carbon
+    public function getVenceElAttribute(): Carbon
     {
         return $this->fecha->copy()->addDays((int) $this->validez_dias);
     }

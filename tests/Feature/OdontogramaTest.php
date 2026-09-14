@@ -65,4 +65,54 @@ class OdontogramaTest extends CasoClinico
 
         $this->assertSame(3, Odontograma::first()->piezas_afectadas);
     }
+
+    public function test_registra_movilidad_urgencia_y_genera_el_resumen(): void
+    {
+        $this->post("/admin/pacientes/{$this->paciente->id}/odontograma", [
+            'tipo' => 'ADULTO',
+            'fecha' => now()->toDateString(),
+            'piezas' => json_encode([
+                '16' => ['estado' => 'sano', 'caras' => ['oclusal' => 'caries'], 'movilidad' => 2, 'urgente' => true, 'nota' => 'Dolor al frío'],
+                '26' => ['estado' => 'corona', 'caras' => [], 'movilidad' => 9],
+            ]),
+        ])->assertRedirect();
+
+        $odontograma = Odontograma::first();
+
+        $this->assertSame(2, $odontograma->piezas['16']['movilidad']);
+        $this->assertTrue($odontograma->piezas['16']['urgente']);
+        $this->assertSame(0, $odontograma->piezas['26']['movilidad'], 'Un grado inexistente se normaliza a cero.');
+        $this->assertFalse($odontograma->piezas['26']['urgente']);
+        $this->assertSame(['16'], $odontograma->piezas_urgentes);
+
+        $resumen = $odontograma->resumenTexto();
+        $this->assertStringContainsString('Pieza 16: caries (oclusal), movilidad Grado II [URGENTE] — Dolor al frío.', $resumen);
+        $this->assertStringContainsString('Pieza 26: corona.', $resumen);
+    }
+
+    public function test_un_control_puede_partir_del_ultimo_odontograma_y_marca_los_cambios(): void
+    {
+        $anterior = Odontograma::create([
+            'paciente_id' => $this->paciente->id,
+            'tipo' => 'ADULTO',
+            'fecha' => now()->subMonth()->toDateString(),
+            'piezas' => ['16' => ['estado' => 'sano', 'caras' => ['oclusal' => 'caries']]],
+        ]);
+
+        $this->get("/admin/pacientes/{$this->paciente->id}/odontograma/nuevo?desde=ultimo")
+            ->assertOk()
+            ->assertViewHas('odontograma', fn ($o) => $o->piezas['16']['caras']['oclusal'] === 'caries')
+            ->assertViewHas('anterior', fn ($a) => $a->is($anterior));
+
+        $nuevo = new Odontograma(['piezas' => [
+            '16' => ['estado' => 'sano', 'caras' => ['oclusal' => 'obturado']],
+            '21' => ['estado' => 'ausente', 'caras' => []],
+        ]]);
+
+        $cambios = $nuevo->cambiosRespectoA($anterior->piezas);
+
+        $this->assertCount(2, $cambios);
+        $this->assertSame(['pieza' => '16', 'cara' => 'oclusal', 'antes' => 'caries', 'despues' => 'obturado'], $cambios[0]);
+        $this->assertSame(['pieza' => '21', 'cara' => null, 'antes' => 'sano', 'despues' => 'ausente'], $cambios[1]);
+    }
 }

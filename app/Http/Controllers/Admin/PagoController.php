@@ -10,6 +10,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Paciente;
 use App\Models\Pago;
+use App\Models\PresupuestoDetalle;
 use App\Models\Tratamiento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -195,7 +196,7 @@ class PagoController extends Controller
             ]);
 
             // Las líneas del presupuesto vuelven a quedar pendientes de cobro.
-            \App\Models\PresupuestoDetalle::where('pago_id', $pago->id)->update(['pago_id' => null]);
+            PresupuestoDetalle::where('pago_id', $pago->id)->update(['pago_id' => null]);
         });
 
         Auditoria::registrar('ANULAR', $pago, "Anuló el recibo {$pago->codigo_recibo}: {$motivo}");

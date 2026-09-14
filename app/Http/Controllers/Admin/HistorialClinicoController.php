@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ajuste;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\HistorialClinico;
@@ -84,7 +85,7 @@ class HistorialClinicoController extends Controller
 
         return Pdf::loadView('pdf.historial', [
             'historial' => $historial,
-            'clinica' => \App\Models\Ajuste::actual(),
+            'clinica' => Ajuste::actual(),
         ])->setPaper('letter')
             ->download('historia-clinica-'.$historial->paciente->numero_documento.'-'.$historial->fecha->format('Ymd').'.pdf');
     }

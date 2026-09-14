@@ -8,6 +8,12 @@
     <div class="btn-list">
         <a href="{{ route('admin.pacientes.show', $paciente) }}" class="btn btn-link"><i class="ti ti-arrow-left me-1"></i>Ficha del paciente</a>
         @can('odontogramas.crear')
+            @if ($odontogramas->isNotEmpty())
+                <a href="{{ route('admin.odontogramas.create', ['paciente' => $paciente, 'tipo' => $odontogramas->first()->tipo, 'desde' => 'ultimo']) }}"
+                   class="btn btn-outline-primary" title="Nuevo odontograma a partir del último registrado">
+                    <i class="ti ti-copy me-1"></i>Control desde el último
+                </a>
+            @endif
             <a href="{{ route('admin.odontogramas.create', ['paciente' => $paciente, 'tipo' => 'INFANTIL']) }}" class="btn btn-outline-primary">
                 <i class="ti ti-mood-kid me-1"></i>Nuevo infantil
             </a>
@@ -63,11 +69,35 @@
             </div>
         </div>
         <div class="card-body">
-            @include('componentes.odontograma', [
-                'tipo' => $odontograma->tipo,
-                'piezas' => $odontograma->piezas ?? [],
-                'editable' => false,
-            ])
+            <div class="row g-3 align-items-start">
+                <div class="col-lg-7">
+                    @include('componentes.odontograma-arcada', [
+                        'tipo' => $odontograma->tipo,
+                        'piezas' => $odontograma->piezas ?? [],
+                        'editable' => false,
+                    ])
+                </div>
+                <div class="col-lg-5">
+                    @php($urgentes = $odontograma->piezas_urgentes)
+                    @if ($urgentes)
+                        <div class="alert alert-danger py-2 mb-2">
+                            <i class="ti ti-alert-triangle me-1"></i>Urgentes: piezas {{ implode(', ', $urgentes) }}
+                        </div>
+                    @endif
+                    <div class="text-secondary small text-uppercase mb-1">Resumen de diagnóstico</div>
+                    <pre class="small mb-2" style="white-space: pre-wrap;">{{ $odontograma->resumenTexto() }}</pre>
+                    <details>
+                        <summary class="small text-secondary">Ver cuadrícula clásica</summary>
+                        <div class="mt-2">
+                            @include('componentes.odontograma', [
+                                'tipo' => $odontograma->tipo,
+                                'piezas' => $odontograma->piezas ?? [],
+                                'editable' => false,
+                            ])
+                        </div>
+                    </details>
+                </div>
+            </div>
 
             @if ($odontograma->observaciones)
                 <div class="mt-3 border-top pt-3">

@@ -84,7 +84,7 @@ return new class extends Migration
                 ->comment('Documento al que corrige una nota de crédito o débito');
         });
         DB::statement(
-            "CREATE UNIQUE INDEX documentos_fiscales_pago_vigente ON documentos_fiscales (pago_id) "
+            'CREATE UNIQUE INDEX documentos_fiscales_pago_vigente ON documentos_fiscales (pago_id) '
             ."WHERE estado <> 'ANULADO' AND tipo IN ('FACTURA', 'CREDITO_FISCAL')"
         );
 

@@ -227,3 +227,172 @@ body {
         display: none !important;
     }
 }
+
+/* Odontograma: vista de arcada (desde arriba) y 3D ------------ */
+
+.odontograma-arcada-contenedor {
+    max-width: 520px;
+    margin: 0 auto;
+    perspective: 1200px;
+}
+
+.odontograma-arcada-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.45s ease, filter 0.45s ease;
+    transform-origin: 50% 55%;
+}
+
+/* Modo 3D: la arcada se inclina como si se mirara al paciente sentado. */
+.odontograma-3d .odontograma-arcada-svg {
+    transform: rotateX(52deg) scale(1.12);
+    filter: drop-shadow(0 16px 12px rgba(0, 0, 0, 0.3));
+}
+
+.odontograma-3d .pieza-arcada .pieza-cara {
+    stroke-width: 1.4;
+}
+
+.arcada-fondo {
+    fill: rgba(220, 120, 130, 0.13);
+    stroke: rgba(220, 120, 130, 0.4);
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+}
+
+.arcada-etiqueta,
+.arcada-lado {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-arcada {
+    cursor: pointer;
+    outline: none;
+}
+
+.pieza-arcada .pieza-cara {
+    stroke: #8a929a;
+    stroke-width: 1;
+    transition: fill 0.12s ease, stroke 0.12s ease;
+}
+
+.pieza-arcada .pieza-cara:hover,
+.pieza-arcada:focus-visible .pieza-cara {
+    stroke: var(--os-brand);
+    stroke-width: 2;
+}
+
+.pieza-surco {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.pieza-anillo {
+    fill: none;
+    stroke: var(--os-brand);
+    stroke-width: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.pieza-arcada.pieza-activa .pieza-anillo {
+    opacity: 1;
+}
+
+.pieza-tachado {
+    stroke: #d63939;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pieza-arcada.pieza-extraccion .pieza-tachado {
+    opacity: 1;
+}
+
+.pieza-arcada.pieza-ausente .pieza-cara,
+.pieza-arcada.pieza-ausente .pieza-surco {
+    opacity: 0.3;
+}
+
+.pieza-arcada.pieza-atenuada,
+.pieza.pieza-atenuada .pieza-svg {
+    opacity: 0.22;
+}
+
+.pieza-urgente .pieza-anillo {
+    opacity: 1;
+    stroke: #d63939;
+    stroke-dasharray: 4 3;
+}
+
+.pieza-etiqueta {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-etiqueta-activa {
+    fill: var(--os-brand);
+    font-weight: 800;
+}
+
+[data-bs-theme="dark"] .pieza-arcada .pieza-cara {
+    stroke: #5c6470;
+}
+
+/* Pieza ampliada del panel lateral. */
+.pieza-detalle {
+    width: 100%;
+    max-width: 210px;
+    margin: 0 auto;
+    display: block;
+}
+
+.pieza-detalle .pieza-cara {
+    stroke: #6c757d;
+    stroke-width: 1.2;
+    cursor: pointer;
+}
+
+.pieza-detalle .pieza-cara:hover {
+    stroke: var(--os-brand);
+    stroke-width: 2.5;
+}
+
+.pieza-detalle .detalle-etiqueta {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+    text-anchor: middle;
+}
+
+/* Chips de hallazgo del panel. */
+.os-chip-hallazgo {
+    border-width: 1px;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+}
+
+.os-chip-hallazgo.active {
+    color: #fff !important;
+}
+
+.os-atajo {
+    font-size: 0.62rem;
+    opacity: 0.65;
+    margin-left: 0.25rem;
+}

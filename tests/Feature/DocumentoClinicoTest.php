@@ -34,9 +34,10 @@ class DocumentoClinicoTest extends CasoClinico
 
         $anio = now()->year;
 
-        $this->assertSame("REC-{$anio}-00001", DocumentoClinico::find(1)->folio);
-        $this->assertSame("REC-{$anio}-00002", DocumentoClinico::find(2)->folio);
-        $this->assertSame("CER-{$anio}-00001", DocumentoClinico::find(3)->folio);
+        // Las secuencias de PostgreSQL no se rebobinan entre pruebas: se ordena por id en vez de fijarlo.
+        $folios = DocumentoClinico::orderBy('id')->pluck('folio')->all();
+
+        $this->assertSame(["REC-{$anio}-00001", "REC-{$anio}-00002", "CER-{$anio}-00001"], $folios);
     }
 
     public function test_la_vigencia_se_calcula_desde_la_emision(): void
