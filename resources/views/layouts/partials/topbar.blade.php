@@ -1,44 +1,32 @@
-@php
-    $modulos = collect(config('odontosuite.modulos'))
-        ->reject(fn ($m) => ($m['oculto_en_menu'] ?? false) || blank($m['ruta'] ?? null));
-@endphp
-
-<header class="navbar navbar-expand-md d-print-none sticky-top">
+<header class="navbar navbar-expand-md d-none d-lg-flex d-print-none os-topbar">
     <div class="container-xl">
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
-                aria-label="Abrir menú">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <a href="{{ route('admin.home') }}" class="navbar-brand navbar-brand-autodark d-flex align-items-center gap-2 me-3">
-            @if ($ajustes?->logo)
-                <img src="{{ Storage::url($ajustes->logo) }}" alt="{{ $ajustes->nombre }}" height="32">
-            @else
-                <span class="text-brand fs-2"><i class="ti ti-dental"></i></span>
-            @endif
-            <span class="fw-bold">{{ $ajustes->nombre ?? 'OdontoSuite' }}</span>
-        </a>
-
         {{-- Búsqueda global --}}
-        <div class="flex-fill d-none d-lg-block px-3" style="max-width: 28rem;">
+        <div class="flex-fill" style="max-width: 30rem;">
             <form action="{{ route('admin.buscar') }}" method="GET" class="position-relative" autocomplete="off">
                 <div class="input-icon">
                     <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                    <input type="search" name="q" value="{{ request('q') }}" class="form-control"
-                           placeholder="Barra de búsqueda..." data-os-buscador
+                    <input type="search" name="q" value="{{ request('q') }}" class="form-control os-topbar-search"
+                           placeholder="Buscar pacientes, citas, recibos…" data-os-buscador
                            aria-label="Buscar en el sistema">
+                    <span class="input-icon-addon d-none d-xl-flex"><kbd class="os-kbd">/</kbd></span>
                 </div>
                 <div class="dropdown-menu w-100 mt-1 d-none" data-os-resultados style="max-height: 24rem; overflow-y: auto;"></div>
             </form>
         </div>
 
-        <div class="navbar-nav flex-row order-md-last align-items-center">
-            <a href="#" class="nav-link px-2" data-os-theme-toggle title="Cambiar tema">
+        <div class="navbar-nav flex-row order-md-last align-items-center ms-auto gap-1">
+            @can('citas.crear')
+                <a href="{{ route('admin.citas.create') }}" class="btn btn-brand btn-sm d-none d-xl-inline-flex me-2">
+                    <i class="ti ti-plus me-1"></i>Nueva cita
+                </a>
+            @endcan
+
+            <a href="#" class="nav-link px-2 os-topbar-icon" data-os-theme-toggle title="Cambiar tema" aria-label="Cambiar tema">
                 <i class="ti ti-moon fs-3"></i>
             </a>
 
-            <div class="nav-item dropdown d-none d-md-flex me-2">
-                <a href="#" class="nav-link px-2" data-bs-toggle="dropdown" title="Citas de hoy">
+            <div class="nav-item dropdown">
+                <a href="#" class="nav-link px-2 os-topbar-icon" data-bs-toggle="dropdown" title="Citas de hoy" aria-label="Citas de hoy">
                     <i class="ti ti-bell fs-3"></i>
                     @if ($citasHoy > 0)
                         <span class="badge bg-red badge-notification badge-blink"></span>
@@ -46,7 +34,12 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-card">
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title">Citas de hoy</h3></div>
+                        <div class="card-header">
+                            <h3 class="card-title">Citas de hoy</h3>
+                            @if ($citasHoy > 0)
+                                <span class="badge bg-brand ms-auto">{{ $citasHoy }}</span>
+                            @endif
+                        </div>
                         <div class="list-group list-group-flush list-group-hoverable">
                             @forelse ($agendaHoy as $cita)
                                 <div class="list-group-item">
@@ -75,8 +68,8 @@
                 </div>
             </div>
 
-            <div class="nav-item dropdown">
-                <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Menú de usuario">
+            <div class="nav-item dropdown ms-1">
+                <a href="#" class="nav-link d-flex lh-1 p-0 ps-2" data-bs-toggle="dropdown" aria-label="Menú de usuario">
                     @if (auth()->user()->avatar)
                         <span class="avatar avatar-sm" style="background-image: url({{ auth()->user()->avatar }})"></span>
                     @else
@@ -84,64 +77,17 @@
                     @endif
                     <div class="d-none d-xl-block ps-2">
                         <div>{{ auth()->user()->nombre }}</div>
-                        <div class="mt-1 small text-secondary">Rol: {{ auth()->user()->rol_principal }}</div>
+                        <div class="mt-1 small text-secondary">{{ auth()->user()->rol_principal }}</div>
                     </div>
+                    <i class="ti ti-chevron-down ms-2 text-secondary d-none d-xl-block"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <a href="{{ route('perfil.edit') }}" class="dropdown-item">
-                        <i class="ti ti-user me-2"></i>Mi perfil
-                    </a>
-                    @can('ajustes.ver')
-                        <a href="{{ route('admin.ajustes.edit') }}" class="dropdown-item">
-                            <i class="ti ti-settings me-2"></i>Ajustes de la clínica
-                        </a>
-                    @endcan
-                    @can('ajustes.reservas')
-                        <a href="{{ route('admin.reservas.edit') }}" class="dropdown-item">
-                            <i class="ti ti-qrcode me-2"></i>Turnos online
-                        </a>
-                    @endcan
-                    <div class="dropdown-divider"></div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="dropdown-item text-danger">
-                            <i class="ti ti-logout me-2"></i>Cerrar sesión
-                        </button>
-                    </form>
+                    @include('layouts.partials.menu-usuario')
                 </div>
             </div>
         </div>
     </div>
 </header>
-
-<header class="navbar-expand-md">
-    <div class="collapse navbar-collapse" id="menu-principal">
-        <div class="navbar">
-            <div class="container-xl">
-                <ul class="navbar-nav">
-                    @foreach ($modulos as $clave => $modulo)
-                        @can("{$clave}.ver")
-                            @php
-                                $patron = $modulo['ruta'] === 'admin.home'
-                                    ? 'admin.home'
-                                    : Str::beforeLast($modulo['ruta'], '.').'.*';
-                            @endphp
-                            <li class="nav-item {{ request()->routeIs($patron) ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route($modulo['ruta']) }}">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <i class="{{ $modulo['icono'] }}"></i>
-                                    </span>
-                                    <span class="nav-link-title">{{ $modulo['etiqueta'] }}</span>
-                                </a>
-                            </li>
-                        @endcan
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-</header>
-
 
 @once
     @push('scripts')
@@ -204,6 +150,16 @@
 
             campo.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') cerrar();
+            });
+
+            // Atajo: "/" enfoca el buscador desde cualquier pantalla.
+            document.addEventListener('keydown', (e) => {
+                const enCampo = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)
+                    || document.activeElement?.isContentEditable;
+                if (e.key === '/' && !enCampo) {
+                    e.preventDefault();
+                    campo.focus();
+                }
             });
         })();
         </script>

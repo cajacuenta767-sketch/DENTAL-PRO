@@ -12,15 +12,18 @@
         try {
             const t = localStorage.getItem('odontosuite-tema');
             if (t) document.documentElement.setAttribute('data-bs-theme', t);
+            const m = localStorage.getItem('tabler-sidebar');
+            if (m && m.startsWith('folded')) document.documentElement.setAttribute('data-bs-sidebar', m);
         } catch (e) {}
     </script>
     @stack('head')
 </head>
 <body class="layout-fluid">
 <div class="page">
-    @include('layouts.partials.navbar')
+    @include('layouts.partials.sidebar')
 
     <div class="page-wrapper">
+        @include('layouts.partials.topbar')
         <div class="page-header d-print-none">
             <div class="container-xl">
                 <div class="row g-2 align-items-center">
@@ -35,7 +38,7 @@
                             @endif
                         </h2>
                     </div>
-                    <div class="col-auto ms-auto d-print-none">
+                    <div class="col-12 col-md-auto ms-md-auto d-print-none">
                         @yield('acciones')
                     </div>
                 </div>

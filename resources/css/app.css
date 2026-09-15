@@ -227,3 +227,252 @@ body {
         display: none !important;
     }
 }
+
+/* ---------------------------------------------------------------
+   Menú lateral y barra superior del panel
+   --------------------------------------------------------------- */
+
+:root {
+    --tblr-sidebar-width: 16.5rem;
+    --tblr-sidebar-folded-width: 4.25rem;
+}
+
+.os-sidebar {
+    --tblr-navbar-bg: #0b3d3a;
+    --tblr-navbar-border-color: rgba(255, 255, 255, 0.06);
+    --tblr-navbar-color: rgba(230, 255, 251, 0.72);
+    --tblr-navbar-hover-color: #ffffff;
+    --tblr-navbar-active-color: #ffffff;
+    --tblr-navbar-active-bg: rgba(45, 212, 191, 0.16);
+    --tblr-nav-link-icon-color: rgba(230, 255, 251, 0.6);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
+        var(--tblr-navbar-bg);
+}
+
+.os-sidebar .navbar-collapse {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Marca ------------------------------------------------------- */
+
+.os-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 3.75rem;
+    padding-block: 0.75rem;
+    border-bottom: 1px solid var(--tblr-navbar-border-color);
+}
+
+.os-sidebar-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    color: #fff;
+    text-decoration: none;
+}
+
+.os-sidebar-logo {
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    object-fit: contain;
+    border-radius: 0.6rem;
+}
+
+.os-sidebar-logo-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: #fff;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    box-shadow: 0 0.35rem 0.9rem rgba(13, 148, 136, 0.45);
+}
+
+.os-sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.15;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.os-sidebar-brand-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-wrap: balance;
+}
+
+.os-sidebar-brand-sub {
+    white-space: nowrap;
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: rgba(94, 234, 212, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.os-sidebar-fold {
+    margin-inline-start: auto;
+    padding: 0.25rem;
+    font-size: 1.15rem;
+    line-height: 1;
+    color: var(--tblr-navbar-color);
+    background: transparent;
+    border: 0;
+    border-radius: 0.4rem;
+    cursor: pointer;
+}
+
+.os-sidebar-fold:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Navegación --------------------------------------------------- */
+
+@media (min-width: 992px) {
+    .os-sidebar .navbar-nav {
+        --tblr-sidebar-inset: 0.75rem;
+        --tblr-sidebar-nav-padding-y: 0.55rem;
+        --tblr-sidebar-nav-padding-x: 0.75rem;
+    }
+
+    .os-sidebar .os-sidebar-nav {
+        padding-block: 0.5rem 1rem;
+    }
+
+    .os-sidebar .navbar-nav .nav-link {
+        border-radius: 0.5rem;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .os-sidebar .navbar-nav .nav-link:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    .os-sidebar .navbar-nav .nav-item.active > .nav-link {
+        position: relative;
+        color: #fff;
+        box-shadow: inset 3px 0 0 #2dd4bf;
+    }
+
+    .os-sidebar .navbar-nav .nav-section-title {
+        color: rgba(94, 234, 212, 0.7);
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+    }
+
+    .os-sidebar .navbar-footer {
+        border-top-color: var(--tblr-navbar-border-color);
+    }
+
+    .os-sidebar-ext {
+        font-size: 0.8rem;
+        opacity: 0.5;
+    }
+
+    /* Estado plegado: sólo iconos, se despliega al pasar el ratón. */
+    :where([data-bs-sidebar^=folded]) .os-sidebar:not(:hover):not(:has(:focus-visible)) .os-sidebar-brand-text,
+    :where([data-bs-sidebar^=folded]) .os-sidebar:not(:hover):not(:has(:focus-visible)) .os-sidebar-ext {
+        width: 0;
+        opacity: 0;
+    }
+
+    :where([data-bs-sidebar^=folded]) .os-sidebar:not(:hover):not(:has(:focus-visible)) .os-sidebar-brand {
+        justify-content: center;
+    }
+
+    :where([data-bs-sidebar^=folded]) .os-sidebar:not(:hover):not(:has(:focus-visible)) .os-sidebar-brand-link {
+        gap: 0;
+    }
+}
+
+/* Barra superior ----------------------------------------------- */
+
+.os-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    min-height: 3.75rem;
+    background: color-mix(in srgb, var(--tblr-bg-surface) 88%, transparent);
+    backdrop-filter: saturate(160%) blur(10px);
+    -webkit-backdrop-filter: saturate(160%) blur(10px);
+    box-shadow: inset 0 -1px 0 var(--tblr-border-color);
+}
+
+.os-topbar-search {
+    background: var(--tblr-bg-surface-secondary);
+    border-color: transparent;
+}
+
+.os-topbar-search:focus {
+    background: var(--tblr-bg-surface);
+    border-color: var(--os-brand);
+    box-shadow: 0 0 0 0.2rem var(--os-brand-soft);
+}
+
+.os-kbd {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+    color: var(--tblr-secondary);
+    background: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color);
+    border-radius: 0.3rem;
+}
+
+.os-topbar-icon {
+    color: var(--tblr-secondary);
+    border-radius: 0.5rem;
+}
+
+.os-topbar-icon:hover {
+    color: var(--tblr-body-color);
+    background: var(--tblr-bg-surface-secondary);
+}
+
+/* Cabecera de página bajo la barra superior. */
+.page-header {
+    padding-top: 1.25rem;
+}
+
+@media print {
+    .page-wrapper {
+        margin-inline-start: 0 !important;
+    }
+}
+
+/* Cabecera del menú en móvil y tableta: una sola fila. */
+@media (max-width: 991.98px) {
+    .os-sidebar .container-fluid {
+        gap: 0 0.5rem;
+    }
+
+    .os-sidebar-brand {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 0;
+        padding-block: 0.5rem;
+        border-bottom: 0;
+    }
+
+    .os-sidebar-brand-name {
+        display: block;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .os-sidebar .navbar-collapse {
+        padding-bottom: 0.75rem;
+    }
+}
