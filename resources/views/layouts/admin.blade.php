@@ -44,6 +44,18 @@
 
         <div class="page-body">
             <div class="container-xl">
+                @if (! empty($licenciaAviso))
+                    <div class="alert alert-warning" role="alert">
+                        <div class="d-flex align-items-center">
+                            <div class="me-2"><i class="ti ti-key fs-2"></i></div>
+                            <div>
+                                <strong>{{ $licenciaAviso }}</strong>
+                                Escribe a {{ config('licencia.contacto_nombre') }} para pedir tu PIN de renovación.
+                            </div>
+                            <a href="{{ route('licencia.ver') }}" class="btn btn-sm btn-warning ms-auto">Ver licencia</a>
+                        </div>
+                    </div>
+                @endif
                 @include('componentes.alertas')
                 @yield('contenido')
             </div>

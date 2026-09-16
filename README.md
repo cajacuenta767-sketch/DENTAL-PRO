@@ -201,6 +201,68 @@ php artisan db:seed --class=RolPermisoSeeder
 
 ---
 
+## Licencias y PIN de activación
+
+El sistema se entrega con un **PIN de activación** y luego se renueva con
+PINes cortos que emite el proveedor. Sin licencia vigente el panel y las
+reservas en línea quedan cerrados; la clínica solo ve la pantalla **Licencia**,
+con su código de instalación y el contacto para pedir un PIN.
+
+### Cómo funciona
+
+- **Código de activación** (largo, se usa una sola vez): va firmado con la
+  clave privada del proveedor. Lleva el tipo de licencia, la fecha de
+  vencimiento y el ancla de la cadena de renovación de ese cliente.
+- **PIN de renovación** (20 caracteres): un eslabón de una cadena de hashes
+  que solo el proveedor puede calcular. Va ligado al **código de instalación**
+  de la clínica, así que no sirve en otra.
+- La clínica ingresa cualquiera de los dos en **Menú de usuario → Licencia**.
+  No importan mayúsculas, guiones ni espacios.
+- Tres días antes del vencimiento aparece un aviso en el panel.
+
+### Instalación del proveedor
+
+```bash
+php artisan licencia:claves          # una sola vez
+```
+
+Copia `LICENCIA_CLAVE_PRIVADA` al `.env` de **tu** instalación y
+`LICENCIA_CLAVE_PUBLICA` a `config/licencia.php` (es la que verifica los
+códigos en las copias entregadas). Con la clave privada configurada tu
+instalación nunca se bloquea y en el menú de usuario aparece
+**Licencias emitidas**, donde registras clientes y generas códigos con un clic.
+
+Desde la terminal:
+
+```bash
+php artisan licencia:emitir "Clínica Sonrisa" --dias=7            # prueba gratuita
+php artisan licencia:emitir "Clínica Sonrisa" --vitalicia         # sin vencimiento
+php artisan licencia:renovar "Clínica Sonrisa" 7K3M-9P2Q --dias=365
+php artisan licencia:listar
+```
+
+`7K3M-9P2Q` es el código de instalación que el cliente ve en su pantalla
+Licencia y te envía al pedir la renovación.
+
+### Instalación del cliente
+
+En su `.env` solo necesita el contacto que verá para pedir su PIN:
+
+```dotenv
+LICENCIA_ACTIVA=true
+LICENCIA_CONTACTO_NOMBRE="Tu nombre o marca"
+LICENCIA_CONTACTO_WHATSAPP=59170000000
+```
+
+`LICENCIA_ACTIVA=false` apaga la verificación (útil en desarrollo; las
+pruebas automatizadas ya corren así).
+
+> Guarda la clave privada y una copia de la base de datos de tu instalación:
+> la tabla `licencias_emitidas` contiene la semilla de cada cliente. Si la
+> pierdes, puedes emitirle un **nuevo código de activación** desde el panel.
+
+---
+
 ## Estructura
 
 ```

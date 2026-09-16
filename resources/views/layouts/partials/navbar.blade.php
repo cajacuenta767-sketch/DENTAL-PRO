@@ -101,6 +101,16 @@
                             <i class="ti ti-qrcode me-2"></i>Turnos online
                         </a>
                     @endcan
+                    @if (config('licencia.activa') && blank(config('licencia.clave_privada')))
+                        <a href="{{ route('licencia.ver') }}" class="dropdown-item">
+                            <i class="ti ti-key me-2"></i>Licencia
+                        </a>
+                    @endif
+                    @if (filled(config('licencia.clave_privada')) && auth()->user()->hasRole('SUPER ADMINISTRADOR'))
+                        <a href="{{ route('admin.licencias.index') }}" class="dropdown-item">
+                            <i class="ti ti-key me-2"></i>Licencias emitidas
+                        </a>
+                    @endif
                     <div class="dropdown-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

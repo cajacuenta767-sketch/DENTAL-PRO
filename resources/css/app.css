@@ -169,7 +169,7 @@ body {
 }
 
 .pieza-cara {
-    fill: #fff;
+    /* El color de cada cara lo pone el atributo fill del SVG; aquí no se fija. */
     stroke: #adb5bd;
     stroke-width: 1;
     transition: fill 0.12s ease;

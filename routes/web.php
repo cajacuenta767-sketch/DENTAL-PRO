@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\EspecialidadController;
 use App\Http\Controllers\Admin\FacturacionController;
 use App\Http\Controllers\Admin\HistorialClinicoController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\LicenciaEmitidaController;
 use App\Http\Controllers\Admin\HorarioController;
 use App\Http\Controllers\Admin\InventarioController;
 use App\Http\Controllers\Admin\OdontogramaController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\VerificacionEmailController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\LicenciaController;
 use App\Http\Controllers\PublicoController;
 use App\Http\Controllers\ReservaPublicaController;
 use Illuminate\Support\Facades\Route;
@@ -47,7 +49,7 @@ Route::get('/', [PublicoController::class, 'inicio'])->name('publico.inicio');
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
+Route::prefix('reservar/{token}')->middleware('licencia')->name('reservas.')->group(function () {
     Route::get('/', [ReservaPublicaController::class, 'formulario'])->name('formulario');
     Route::get('opciones', [ReservaPublicaController::class, 'opciones'])->name('opciones');
     Route::get('horas', [ReservaPublicaController::class, 'horas'])->name('horas');
@@ -89,6 +91,11 @@ Route::middleware('auth')->group(function () {
     Route::post('verificar-email/reenviar', [VerificacionEmailController::class, 'reenviar'])
         ->middleware('throttle:6,1')->name('verification.send');
 
+    // Estado de la licencia y entrada del PIN. Accesible aunque esté vencida.
+    Route::get('licencia', [LicenciaController::class, 'ver'])->name('licencia.ver');
+    Route::post('licencia/activar', [LicenciaController::class, 'activar'])
+        ->middleware('throttle:10,1')->name('licencia.activar');
+
     Route::get('perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::put('perfil/password', [PerfilController::class, 'password'])->name('perfil.password');
@@ -100,9 +107,18 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'licencia'])->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('home', [HomeController::class, 'index'])->name('home');
+
+    // Emisión de licencias: solo en la instalación del proveedor (con clave privada).
+    Route::middleware('role:SUPER ADMINISTRADOR')->group(function () {
+        Route::get('licencias', [LicenciaEmitidaController::class, 'index'])->name('licencias.index');
+        Route::post('licencias', [LicenciaEmitidaController::class, 'store'])->name('licencias.store');
+        Route::post('licencias/{emitida}/renovar', [LicenciaEmitidaController::class, 'renovar'])->name('licencias.renovar');
+        Route::post('licencias/{emitida}/reactivar', [LicenciaEmitidaController::class, 'reactivar'])->name('licencias.reactivar');
+        Route::delete('licencias/{emitida}', [LicenciaEmitidaController::class, 'destroy'])->name('licencias.destroy');
+    });
 
     // --- Configuración -------------------------------------------------
     Route::get('ajustes', [AjusteController::class, 'edit'])
