@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 
 class Cita extends Model
 {
-    use Auditable, HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'citas';
 

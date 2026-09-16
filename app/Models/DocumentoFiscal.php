@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class DocumentoFiscal extends Model
 {
-    use Auditable, HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'documentos_fiscales';
 

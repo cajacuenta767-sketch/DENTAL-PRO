@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Intento de pago de un saldo desde el portal a través de una pasarela. */
 class PagoOnline extends Model
 {
+    use Concerns\BelongsToClinica;
+
     protected $table = 'pagos_online';
 
     protected $fillable = [
-        'pago_id', 'paciente_id', 'proveedor', 'referencia', 'monto', 'moneda',
+        'clinica_id', 'pago_id', 'paciente_id', 'proveedor', 'referencia', 'monto', 'moneda',
         'estado', 'url', 'respuesta', 'pagado_en',
     ];
 

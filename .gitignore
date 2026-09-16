@@ -36,3 +36,8 @@ Thumbs.db
 /escritorio/recursos
 /escritorio/dist
 /escritorio/node_modules
+
+composer.phar
+composer.bat
+*.sqlite
+

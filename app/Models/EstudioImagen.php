@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class EstudioImagen extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'estudios_imagen';
 

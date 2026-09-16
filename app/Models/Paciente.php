@@ -11,11 +11,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Paciente extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'pacientes';
 
     protected $fillable = [
+        'clinica_id',
         'usuario_id', 'aseguradora_id', 'numero_afiliado',
         'nombres', 'apellidos', 'tipo_documento', 'numero_documento',
         'fecha_nacimiento', 'genero', 'direccion', 'telefono', 'email',

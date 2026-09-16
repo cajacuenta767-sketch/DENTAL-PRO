@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ListaEspera extends Model
 {
-    use Auditable, HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'lista_espera';
 

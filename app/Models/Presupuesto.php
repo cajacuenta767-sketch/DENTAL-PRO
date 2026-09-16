@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class Presupuesto extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'presupuestos';
 

@@ -9,6 +9,7 @@ use App\Models\Usuario;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
@@ -21,6 +22,7 @@ class UsuarioController extends Controller
     {
         $usuarios = Usuario::query()
             ->with(['roles', 'sucursal'])
+            ->when(! $request->user()->esSuperAdministrador(), fn ($q) => $q->where('clinica_id', $request->user()->clinica_id))
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $t = '%'.$request->buscar.'%';
                 $q->where(fn ($s) => $s->where('nombre', 'ilike', $t)->orWhere('email', 'ilike', $t));
@@ -55,6 +57,7 @@ class UsuarioController extends Controller
         $temporal = filled($datos['password'] ?? null) ? null : Usuario::passwordTemporal();
 
         $usuario = Usuario::create(collect($datos)->except(['roles', 'password'])->all() + [
+            'clinica_id' => $request->user()->clinica_id,
             'password' => $temporal ?? $datos['password'],
             'debe_cambiar_password' => true,
         ]);
@@ -132,7 +135,7 @@ class UsuarioController extends Controller
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'.($usuario ? ",{$usuario->id}" : '')],
             'telefono' => ['nullable', 'string', 'max:50'],
             'estado' => ['required', 'in:activo,inactivo'],
-            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
+            'sucursal_id' => ['nullable', Rule::exists('sucursales', 'id')->where(fn ($q) => $q->where('clinica_id', $request->user()->clinica_id))],
             'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
             'roles' => ['array'],
             'roles.*' => ['exists:roles,name'],
@@ -166,6 +169,10 @@ class UsuarioController extends Controller
     /** No se administra a alguien con más privilegios que uno mismo. */
     private function comprobarAlcance(Usuario $actor, Usuario $objetivo): void
     {
+        if (! $this->esSuperAdministrador($actor)) {
+            abort_unless($actor->clinica_id && (int) $actor->clinica_id === (int) $objetivo->clinica_id, 404);
+        }
+
         if ($actor->is($objetivo) || $this->esSuperAdministrador($actor)) {
             return;
         }

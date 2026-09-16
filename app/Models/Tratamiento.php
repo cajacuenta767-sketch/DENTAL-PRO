@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tratamiento extends Model
 {
-    use Auditable, HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'tratamientos';
 

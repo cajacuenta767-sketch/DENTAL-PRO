@@ -21,6 +21,7 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     protected $table = 'usuarios';
 
     protected $fillable = [
+        'clinica_id',
         'nombre',
         'email',
         'password',
@@ -55,6 +56,16 @@ class Usuario extends Authenticatable implements MustVerifyEmail
     public function sucursal(): BelongsTo
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+
+    public function clinica(): BelongsTo
+    {
+        return $this->belongsTo(Clinica::class);
+    }
+
+    public function esSuperAdministrador(): bool
+    {
+        return $this->hasRole('SUPER ADMINISTRADOR');
     }
 
     public function doctor(): HasOne

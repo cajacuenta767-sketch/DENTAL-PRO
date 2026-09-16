@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Arqueo y cierre de la caja de un día (por sucursal). */
 class CierreCaja extends Model
 {
-    use Auditable, HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'cierres_caja';
 

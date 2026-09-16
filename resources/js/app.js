@@ -144,6 +144,52 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Navegación lateral: panel deslizable en móvil y modo compacto persistente.
+    const claveSidebar = 'odontosuite-sidebar-colapsada';
+    const botonAbrir = document.querySelector('[data-os-sidebar-open]');
+    const cerrarSidebar = () => {
+        document.body.classList.remove('os-sidebar-open');
+        botonAbrir?.setAttribute('aria-expanded', 'false');
+    };
+
+    try {
+        if (localStorage.getItem(claveSidebar) === 'true') {
+            document.documentElement.classList.add('os-sidebar-collapsed');
+        }
+    } catch {
+        /* La preferencia es opcional. */
+    }
+
+    botonAbrir?.addEventListener('click', () => {
+        document.body.classList.add('os-sidebar-open');
+        botonAbrir.setAttribute('aria-expanded', 'true');
+        document.querySelector('[data-os-sidebar-close]')?.focus();
+    });
+
+    document.querySelectorAll('[data-os-sidebar-close]').forEach((boton) => {
+        boton.addEventListener('click', cerrarSidebar);
+    });
+
+    document.querySelector('[data-os-sidebar-collapse]')?.addEventListener('click', () => {
+        const colapsada = document.documentElement.classList.toggle('os-sidebar-collapsed');
+        try {
+            localStorage.setItem(claveSidebar, String(colapsada));
+        } catch {
+            /* La preferencia es opcional. */
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarSidebar();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            const buscador = document.querySelector('[data-os-buscador]');
+            if (buscador) {
+                e.preventDefault();
+                buscador.focus();
+            }
+        }
+    });
+
     // Confirmación antes de enviar formularios destructivos.
     document.querySelectorAll('form[data-confirmar]').forEach((form) => {
         form.addEventListener('submit', (e) => {

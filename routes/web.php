@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AgendaController;
+use App\Http\Controllers\Admin\ActivacionController;
+use App\Http\Controllers\Admin\InvitacionController;
 use App\Http\Controllers\Admin\AjusteController;
 use App\Http\Controllers\Admin\AseguradoraController;
 use App\Http\Controllers\Admin\AuditoriaController;
@@ -146,7 +148,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified', 'paciente'])->prefix('portal')->name('portal.')->group(function () {
+Route::middleware(['auth', 'verified', 'paciente', 'clinica.activa'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/', [PortalController::class, 'inicio'])->name('inicio');
     Route::get('vincular', [PortalController::class, 'vincular'])->name('vincular');
     Route::post('vincular', [PortalController::class, 'guardarVinculo'])->middleware('throttle:5,1')->name('vincular.guardar');
@@ -180,7 +182,16 @@ Route::middleware(['auth', 'verified', 'paciente'])->prefix('portal')->name('por
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'clinica.activa'])->prefix('admin')->name('admin.')->group(function () {
+
+    Route::get('activaciones', [ActivacionController::class, 'index'])->name('activaciones.index');
+    Route::post('activaciones', [ActivacionController::class, 'store'])->middleware('throttle:10,1')->name('activaciones.store');
+    Route::patch('activaciones/{invitacion}/revocar', [ActivacionController::class, 'revocar'])->name('activaciones.revocar');
+    Route::patch('clinicas/{clinica}/estado', [ActivacionController::class, 'cambiarEstado'])->name('clinicas.estado');
+
+    Route::get('invitaciones', [InvitacionController::class, 'index'])->name('invitaciones.index');
+    Route::post('invitaciones', [InvitacionController::class, 'store'])->middleware('throttle:10,1')->name('invitaciones.store');
+    Route::patch('invitaciones/{invitacion}/revocar', [InvitacionController::class, 'revocar'])->name('invitaciones.revocar');
 
     Route::get('home', [HomeController::class, 'index'])
         ->middleware('permission:home.ver')->name('home');

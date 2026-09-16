@@ -35,31 +35,23 @@ RUN composer install \
 # ---------------------------------------------------------------
 # Etapa 3: imagen de ejecución
 # ---------------------------------------------------------------
-FROM php:8.4-cli-alpine AS app
+FROM php:8.4-apache-bookworm AS app
 
 ENV APP_ENV=production \
     APP_DEBUG=false \
     COMPOSER_ALLOW_SUPERUSER=1
 
-RUN apk add --no-cache \
-        bash \
-        postgresql-client \
-        postgresql-libs \
-        libpng \
-        libjpeg-turbo \
-        freetype \
-        libzip \
-        icu-libs \
-        oniguruma \
-    && apk add --no-cache --virtual .build-deps \
-        $PHPIZE_DEPS \
-        postgresql-dev \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        libfreetype6-dev \
+        libicu-dev \
+        libjpeg62-turbo-dev \
+        libonig-dev \
         libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
+        libpq-dev \
         libzip-dev \
-        icu-dev \
-        oniguruma-dev \
+        postgresql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql \
@@ -69,7 +61,8 @@ RUN apk add --no-cache \
         bcmath \
         opcache \
         mbstring \
-    && apk del .build-deps
+    && a2enmod rewrite headers expires \
+    && rm -rf /var/lib/apt/lists/*
 
 # Configuración de OPcache y PHP para producción
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
@@ -87,33 +80,32 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
         echo 'memory_limit=256M'; \
     } > "$PHP_INI_DIR/conf.d/odontosuite.ini"
 
-# Usuario no root
-RUN addgroup -g 1000 -S odonto \
-    && adduser -u 1000 -S -G odonto -h /var/www odonto
-
 WORKDIR /var/www/html
 
 # Código de la aplicación
-COPY --chown=odonto:odonto . .
+COPY --chown=www-data:www-data . .
 
 # Dependencias y assets compilados desde las etapas anteriores
-COPY --from=vendor --chown=odonto:odonto /app/vendor ./vendor
-COPY --from=assets --chown=odonto:odonto /app/public/build ./public/build
+COPY --from=vendor --chown=www-data:www-data /app/vendor ./vendor
+COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 
 # Composer (sólo para regenerar el autoloader con el código de la app)
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 # Entrypoint
-COPY --chown=odonto:odonto docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chown=www-data:www-data docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --no-dev --optimize --no-scripts --no-interaction \
-    && chown -R odonto:odonto storage bootstrap/cache vendor
-
-USER odonto
+    && chown -R www-data:www-data storage bootstrap/cache vendor \
+    && sed -ri 's!Listen 80!Listen 8000!g' /etc/apache2/ports.conf
 
 EXPOSE 8000
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl --fail --silent http://127.0.0.1:8000/up >/dev/null || exit 1
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["apache2-foreground"]

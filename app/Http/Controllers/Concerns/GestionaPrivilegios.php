@@ -36,6 +36,12 @@ trait GestionaPrivilegios
             return false;
         }
 
+        // El propietario de una clínica delega operación, pero no puede crear
+        // otros propietarios ni administradores paralelos.
+        if ($usuario->hasRole('ADMINISTRADOR') && ! in_array($rol->name, ['DOCTOR', 'RECEPCION', 'PACIENTE'], true)) {
+            return false;
+        }
+
         $propios = $this->permisosConcedibles($usuario);
 
         return $rol->permissions->pluck('name')->every(fn ($p) => $propios->contains($p));

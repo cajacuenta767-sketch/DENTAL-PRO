@@ -14,11 +14,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Sucursal extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'sucursales';
 
-    protected $fillable = ['nombre', 'codigo', 'direccion', 'telefono', 'email', 'color', 'principal', 'activo'];
+    protected $fillable = ['clinica_id', 'nombre', 'codigo', 'direccion', 'telefono', 'email', 'color', 'principal', 'activo'];
 
     protected function casts(): array
     {

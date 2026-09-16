@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Ajuste extends Model
 {
-    use Auditable;
+    use Auditable, Concerns\BelongsToClinica;
 
     protected $table = 'ajustes';
 
     protected $fillable = [
+        'clinica_id',
         'nombre', 'descripcion', 'direccion', 'telefono', 'email',
         'divisa', 'simbolo_divisa', 'nit', 'logo', 'web',
         'facebook', 'instagram', 'whatsapp',
@@ -38,8 +39,10 @@ class Ajuste extends Model
     /** Configuración activa de la clínica (siempre existe una sola fila). */
     public static function actual(): self
     {
+        $clinicaId = auth()->user()?->clinica_id;
+
         return static::query()->firstOrCreate(
-            ['id' => 1],
+            ['clinica_id' => $clinicaId],
             ['nombre' => 'OdontoSuite', 'divisa' => 'BOB', 'simbolo_divisa' => 'Bs']
         );
     }

@@ -147,6 +147,10 @@ docker compose up --build
 Levanta la aplicación, PostgreSQL, el worker de colas y el programador. El
 contenedor `app` ejecuta las migraciones al arrancar.
 
+Para publicar el sistema con HTTPS, secretos definitivos, comprobaciones de
+salud y copias externas, sigue la [guía de producción](docs/produccion.md).
+El flujo comercial y de incorporación está en la [guía multiclínica](docs/multiclinica.md).
+
 ### Integración continua
 
 `.github/workflows/ci.yml` ejecuta Pint y la suite completa contra PostgreSQL 16

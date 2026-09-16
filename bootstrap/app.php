@@ -5,6 +5,7 @@ use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\SoloPacientes;
 use App\Http\Middleware\VerificarLicencia;
 use App\Http\Middleware\VerificarUsuarioActivo;
+use App\Http\Middleware\VerificarClinicaActiva;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'paciente' => SoloPacientes::class,
+            'clinica.activa' => VerificarClinicaActiva::class,
         ]);
 
         // El webhook de la pasarela de pagos llega sin sesión ni token CSRF.

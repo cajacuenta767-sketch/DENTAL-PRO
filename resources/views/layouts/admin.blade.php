@@ -19,11 +19,14 @@
         try {
             const t = localStorage.getItem('odontosuite-tema');
             if (t) document.documentElement.setAttribute('data-bs-theme', t);
+            if (localStorage.getItem('odontosuite-sidebar-colapsada') === 'true') {
+                document.documentElement.classList.add('os-sidebar-collapsed');
+            }
         } catch (e) {}
     </script>
     @stack('head')
 </head>
-<body class="layout-fluid">
+<body class="layout-fluid os-admin-layout">
 <a href="#contenido-principal" class="os-saltar">Saltar al contenido</a>
 <div class="page">
     @include('layouts.partials.navbar')

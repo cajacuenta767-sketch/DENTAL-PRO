@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Odontograma extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'odontogramas';
 

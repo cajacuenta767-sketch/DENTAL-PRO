@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class DocumentoClinico extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'documentos_clinicos';
 

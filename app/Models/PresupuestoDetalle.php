@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PresupuestoDetalle extends Model
 {
-    use HasFactory;
+    use Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'presupuesto_detalles';
 

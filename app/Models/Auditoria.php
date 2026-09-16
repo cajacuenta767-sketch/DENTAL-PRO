@@ -12,12 +12,14 @@ use Illuminate\Support\Facades\Auth;
  */
 class Auditoria extends Model
 {
+    use Concerns\BelongsToClinica;
+
     protected $table = 'auditorias';
 
     public $timestamps = false;
 
     protected $fillable = [
-        'usuario_id', 'accion', 'modelo', 'modelo_id', 'descripcion', 'cambios', 'ip', 'user_agent', 'created_at',
+        'clinica_id', 'usuario_id', 'accion', 'modelo', 'modelo_id', 'descripcion', 'cambios', 'ip', 'user_agent', 'created_at',
     ];
 
     protected function casts(): array

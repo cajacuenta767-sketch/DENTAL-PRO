@@ -34,11 +34,21 @@ if [ "${DB_CONNECTION:-pgsql}" = "pgsql" ]; then
     esperar_bd
 fi
 
-if [ -z "${APP_KEY:-}" ]; then
-    echo "[entrypoint] AVISO: APP_KEY vacío. Define APP_KEY en el entorno (php artisan key:generate --show)." >&2
+if [ -z "${APP_KEY:-}" ] && [ "${APP_ENV:-production}" = "production" ]; then
+    echo "[entrypoint] ERROR: APP_KEY está vacío. Genera uno con: php artisan key:generate --show" >&2
+    exit 1
+elif [ -z "${APP_KEY:-}" ]; then
+    echo "[entrypoint] AVISO: APP_KEY vacío." >&2
 fi
 
 if [ "$RUN_MIGRATIONS" = "true" ]; then
+    # Los volúmenes Docker conservan propietario entre despliegues. Aseguramos
+    # que Apache y los workers puedan crear fotos, estudios, firmas y respaldos.
+    echo "[entrypoint] Preparando permisos de almacenamiento..."
+    mkdir -p storage/app/private storage/app/public storage/logs
+    chown -R www-data:www-data storage/app storage/logs
+    chmod -R u+rwX,g+rwX storage/app storage/logs
+
     echo "[entrypoint] Ejecutando migraciones..."
     php artisan migrate --force
 

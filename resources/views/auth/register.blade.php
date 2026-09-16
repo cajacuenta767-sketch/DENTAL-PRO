@@ -40,6 +40,23 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label" for="codigo">Código de invitación o activación <span class="text-secondary">(opcional)</span></label>
+            <input type="text" id="codigo" name="codigo" value="{{ old('codigo', $codigo ?? '') }}"
+                   class="form-control text-uppercase @error('codigo') is-invalid @enderror"
+                   placeholder="Ej. ADMIN-XXXX-XXXX" autocomplete="off">
+            <div class="form-hint">Si no tienes código, crearás una cuenta normal de paciente.</div>
+            @error('codigo')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="clinica_nombre">Nombre de la clínica</label>
+            <input type="text" id="clinica_nombre" name="clinica_nombre" value="{{ old('clinica_nombre') }}"
+                   class="form-control @error('clinica_nombre') is-invalid @enderror"
+                   placeholder="Solo si estás activando una clínica">
+            @error('clinica_nombre')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+
+        <div class="mb-3">
             <label class="form-label required" for="password">Contraseña</label>
             <input type="password" id="password" name="password"
                    class="form-control @error('password') is-invalid @enderror"
