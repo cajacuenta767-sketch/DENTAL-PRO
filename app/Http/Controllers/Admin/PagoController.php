@@ -92,6 +92,7 @@ class PagoController extends Controller
                 'sucursal_id' => $datos['sucursal_id'] ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
+                'desglose_metodos' => $datos['desglose_metodos'] ?? null,
                 'notas' => $datos['notas'] ?? null,
                 'fecha_pago' => $datos['fecha_pago'],
             ]);
@@ -152,6 +153,7 @@ class PagoController extends Controller
                 'sucursal_id' => $datos['sucursal_id'] ?? $pago->sucursal_id ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
+                'desglose_metodos' => $datos['desglose_metodos'] ?? null,
                 'notas' => $datos['notas'] ?? null,
                 'fecha_pago' => $datos['fecha_pago'],
             ]);
@@ -274,6 +276,27 @@ class PagoController extends Controller
 
         $total = round(collect($datos['detalles'])->sum(fn ($d) => $d['cantidad'] * $d['precio_unitario']), 2);
 
+        // Si el método es MIXTO, validar el desglose y su suma
+        if ($datos['metodo_pago'] === 'MIXTO') {
+            $desglose = $request->input('desglose_metodos', []);
+            if (!is_array($desglose) || empty($desglose)) {
+                throw ValidationException::withMessages([
+                    'desglose_metodos' => 'Para pagos mixtos debes especificar el desglose por método.',
+                    'metodo_pago' => 'Para pagos mixtos debes especificar el desglose por método.',
+                ]);
+            }
+            $sumaDesglose = round(collect($desglose)->sum(), 2);
+            if (abs($sumaDesglose - (float) $datos['monto_pagado']) > 0.01) {
+                throw ValidationException::withMessages([
+                    'desglose_metodos' => "La suma del desglose mixto ({$sumaDesglose}) debe coincidir con el monto pagado ({$datos['monto_pagado']}).",
+                    'metodo_pago' => "La suma del desglose mixto ({$sumaDesglose}) debe coincidir con el monto pagado ({$datos['monto_pagado']}).",
+                ]);
+            }
+            $datos['desglose_metodos'] = $desglose;
+        } else {
+            $datos['desglose_metodos'] = null;
+        }
+
         // Nunca se registra más dinero del que vale el recibo.
         if ((float) $datos['monto_pagado'] > $total + 0.005) {
             throw ValidationException::withMessages([
@@ -303,11 +326,28 @@ class PagoController extends Controller
         $vigentes = Pago::query()->vigentes()
             ->when($sede, fn ($q) => $q->where('sucursal_id', $sede));
 
+        $efectivo = 0.0;
+        $digital = 0.0;
+        $pagosLista = (clone $vigentes)->get();
+
+        foreach ($pagosLista as $p) {
+            if ($p->metodo_pago === 'MIXTO' && is_array($p->desglose_metodos)) {
+                $efectivo += (float) ($p->desglose_metodos['EFECTIVO'] ?? 0);
+                foreach (['TARJETA', 'QR', 'TRANSFERENCIA'] as $dig) {
+                    $digital += (float) ($p->desglose_metodos[$dig] ?? 0);
+                }
+            } elseif ($p->metodo_pago === 'EFECTIVO') {
+                $efectivo += (float) $p->monto_pagado;
+            } else {
+                $digital += (float) $p->monto_pagado;
+            }
+        }
+
         return [
-            'recaudado' => (float) (clone $vigentes)->sum('monto_pagado'),
-            'efectivo' => (float) (clone $vigentes)->where('metodo_pago', 'EFECTIVO')->sum('monto_pagado'),
-            'digital' => (float) (clone $vigentes)->whereIn('metodo_pago', ['TARJETA', 'QR', 'TRANSFERENCIA'])->sum('monto_pagado'),
-            'saldos' => (float) (clone $vigentes)->sum('monto_saldo'),
+            'recaudado' => round((float) $pagosLista->sum('monto_pagado'), 2),
+            'efectivo' => round($efectivo, 2),
+            'digital' => round($digital, 2),
+            'saldos' => round((float) $pagosLista->sum('monto_saldo'), 2),
         ];
     }
 

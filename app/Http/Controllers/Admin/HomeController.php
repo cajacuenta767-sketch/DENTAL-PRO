@@ -79,9 +79,16 @@ class HomeController extends Controller
     {
         $desde = now()->subMonths(5)->startOfMonth();
 
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateExpr = match ($driver) {
+            'sqlite' => "strftime('%Y-%m', fecha)",
+            'mysql', 'mariadb' => "DATE_FORMAT(fecha, '%Y-%m')",
+            default => "TO_CHAR(fecha, 'YYYY-MM')",
+        };
+
         $filas = Cita::query()
             ->where('fecha', '>=', $desde->toDateString())
-            ->selectRaw("TO_CHAR(fecha, 'YYYY-MM') AS periodo, COUNT(*) AS agendadas, COUNT(*) FILTER (WHERE estado = 'COMPLETADA') AS completadas")
+            ->selectRaw("{$dateExpr} AS periodo, COUNT(*) AS agendadas, SUM(CASE WHEN estado = 'COMPLETADA' THEN 1 ELSE 0 END) AS completadas")
             ->groupBy('periodo')
             ->orderBy('periodo')
             ->get()

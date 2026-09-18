@@ -8,6 +8,7 @@
 <div class="titulo-doc">CIERRE DE CAJA · {{ $cierre->fecha->format('d/m/Y') }}</div>
 <div class="subtitulo-doc">
     Sucursal: {{ $cierre->sucursal?->nombre ?? 'General' }} ·
+    Turno: {{ \App\Models\CierreCaja::TURNOS[$cierre->turno] ?? $cierre->turno }} ·
     Cerrada por: {{ $cierre->usuario?->nombre ?? '—' }} ·
     Cerrada el: {{ $cierre->cerrado_en?->format('d/m/Y H:i') ?? '—' }} · Estado: {{ $cierre->estado }}
 </div>
@@ -15,6 +16,7 @@
 <table class="tarjetas bloque">
     <tr>
         <td><div class="etiqueta">Total cobrado</div><div class="valor">{{ number_format($cierre->total_cobrado, 2) }} {{ $clinica->divisa }}</div></td>
+        <td><div class="etiqueta">Total egresos</div><div class="valor" style="color:#d63939;">-{{ number_format($cierre->total_egresos ?? 0, 2) }} {{ $clinica->divisa }}</div></td>
         <td><div class="etiqueta">Efectivo esperado</div><div class="valor">{{ number_format($cierre->efectivo_esperado, 2) }} {{ $clinica->divisa }}</div></td>
         <td><div class="etiqueta">Efectivo contado</div><div class="valor">{{ number_format($cierre->efectivo_contado, 2) }} {{ $clinica->divisa }}</div></td>
         <td>
@@ -56,13 +58,48 @@
     </tr>
 </table>
 
+@if ($cierre->egresos && $cierre->egresos->isNotEmpty())
+<div class="bloque">
+    <div class="titulo-doc" style="font-size:11px;">Egresos de caja chica vinculados</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Concepto</th>
+                <th>Categoría</th>
+                <th>Método</th>
+                <th class="der">Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($cierre->egresos as $egreso)
+                <tr>
+                    <td>{{ $egreso->fecha->format('H:i') }}</td>
+                    <td>{{ $egreso->concepto }}</td>
+                    <td>{{ \App\Models\EgresoCaja::CATEGORIAS[$egreso->categoria] ?? $egreso->categoria }}</td>
+                    <td>{{ $egreso->metodo_pago }}</td>
+                    <td class="der">-{{ number_format($egreso->monto, 2) }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="4" class="der">Total egresos de caja</th>
+                <th class="der">-{{ number_format($cierre->total_egresos, 2) }}</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@endif
+
 <div class="bloque caja">
     <table>
         <tr>
-            <td style="width:25%;"><div class="etiqueta-campo">Fondo inicial</div>{{ number_format($cierre->fondo_inicial, 2) }}</td>
-            <td style="width:25%;"><div class="etiqueta-campo">Efectivo cobrado</div>{{ number_format($totales['efectivo'] ?? 0, 2) }}</td>
-            <td style="width:25%;"><div class="etiqueta-campo">Recibos vigentes</div>{{ $cierre->recibos }}</td>
-            <td style="width:25%;"><div class="etiqueta-campo">Recibos anulados</div>{{ $totales['anulados'] ?? 0 }}</td>
+            <td style="width:20%;"><div class="etiqueta-campo">Fondo inicial</div>{{ number_format($cierre->fondo_inicial, 2) }}</td>
+            <td style="width:20%;"><div class="etiqueta-campo">Efectivo cobrado</div>{{ number_format($totales['efectivo'] ?? 0, 2) }}</td>
+            <td style="width:20%;"><div class="etiqueta-campo">Efectivo egresos</div>{{ number_format($cierre->efectivo_egresos ?? 0, 2) }}</td>
+            <td style="width:20%;"><div class="etiqueta-campo">Recibos vigentes</div>{{ $cierre->recibos }}</td>
+            <td style="width:20%;"><div class="etiqueta-campo">Recibos anulados</div>{{ $totales['anulados'] ?? 0 }}</td>
         </tr>
     </table>
     @if ($cierre->observaciones)

@@ -2,7 +2,7 @@
 
 @section('pretitulo', 'Administración Financiera')
 @section('titulo', 'Cierre de caja · '.$cierre->fecha->format('d/m/Y'))
-@section('subtitulo', ($cierre->sucursal?->nombre ?? 'Caja general').' · cerrada el '.($cierre->cerrado_en?->format('d/m/Y H:i') ?? '—'))
+@section('subtitulo', ($cierre->sucursal?->nombre ?? 'Caja general').' · Turno: '.(\App\Models\CierreCaja::TURNOS[$cierre->turno] ?? $cierre->turno).' · cerrada el '.($cierre->cerrado_en?->format('d/m/Y H:i') ?? '—'))
 
 @push('head')
 <style>
@@ -32,11 +32,12 @@
                :pie="$cierre->recibos.' recibo(s)'" />
     </div>
     <div class="col-sm-6 col-xl-3">
-        <x-kpi titulo="Efectivo esperado" :valor="number_format($cierre->efectivo_esperado, 2).' '.$ajustes->divisa" icono="ti ti-cash" color="azure"
-               :pie="'Fondo inicial '.number_format($cierre->fondo_inicial, 2)" />
+        <x-kpi titulo="Total egresos" :valor="number_format($cierre->total_egresos ?? 0, 2).' '.$ajustes->divisa" icono="ti ti-arrow-down-right" color="danger"
+               :pie="'Efectivo: '.number_format($cierre->efectivo_egresos ?? 0, 2).' '.$ajustes->divisa" />
     </div>
     <div class="col-sm-6 col-xl-3">
-        <x-kpi titulo="Efectivo contado" :valor="number_format($cierre->efectivo_contado, 2).' '.$ajustes->divisa" icono="ti ti-cash-banknote" color="indigo" />
+        <x-kpi titulo="Efectivo contado" :valor="number_format($cierre->efectivo_contado, 2).' '.$ajustes->divisa" icono="ti ti-cash-banknote" color="indigo"
+               :pie="'Esperado: '.number_format($cierre->efectivo_esperado, 2)" />
     </div>
     <div class="col-sm-6 col-xl-3">
         <x-kpi titulo="Diferencia" :valor="($cierre->diferencia > 0 ? '+' : '').number_format($cierre->diferencia, 2).' '.$ajustes->divisa"
@@ -95,12 +96,20 @@
                         <div class="datagrid-content">{{ $cierre->fecha->format('d/m/Y') }}</div>
                     </div>
                     <div class="datagrid-item">
+                        <div class="datagrid-title">Turno</div>
+                        <div class="datagrid-content"><span class="badge bg-purple-lt">{{ \App\Models\CierreCaja::TURNOS[$cierre->turno] ?? $cierre->turno }}</span></div>
+                    </div>
+                    <div class="datagrid-item">
                         <div class="datagrid-title">Sucursal</div>
                         <div class="datagrid-content">{{ $cierre->sucursal?->nombre ?? 'General' }}</div>
                     </div>
                     <div class="datagrid-item">
                         <div class="datagrid-title">Cerrada por</div>
                         <div class="datagrid-content">{{ $cierre->usuario?->nombre ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">Fondo inicial</div>
+                        <div class="datagrid-content">{{ number_format($cierre->fondo_inicial, 2) }} {{ $ajustes->divisa }}</div>
                     </div>
                     <div class="datagrid-item">
                         <div class="datagrid-title">Cerrada el</div>
@@ -125,4 +134,50 @@
         </div>
     </div>
 </div>
+
+@if ($cierre->egresos && $cierre->egresos->isNotEmpty())
+<div class="card mt-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-receipt-refund me-2"></i>Egresos de caja chica vinculados</h3></div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Concepto</th>
+                    <th>Categoría</th>
+                    <th>Método</th>
+                    <th>Comprobante</th>
+                    <th>Registrado por</th>
+                    <th class="text-end">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($cierre->egresos as $egreso)
+                    <tr>
+                        <td>{{ $egreso->fecha->format('H:i') }}</td>
+                        <td class="fw-medium">{{ $egreso->concepto }}</td>
+                        <td><span class="badge bg-secondary-lt">{{ \App\Models\EgresoCaja::CATEGORIAS[$egreso->categoria] ?? $egreso->categoria }}</span></td>
+                        <td><span class="badge bg-azure-lt">{{ $egreso->metodo_pago }}</span></td>
+                        <td>
+                            @if ($egreso->comprobante_tipo)
+                                <span class="small">{{ $egreso->comprobante_tipo }} {{ $egreso->comprobante_numero }}</span>
+                            @else
+                                <span class="text-secondary">—</span>
+                            @endif
+                        </td>
+                        <td>{{ $egreso->usuario?->name ?? '—' }}</td>
+                        <td class="text-end fw-bold text-danger">-{{ number_format($egreso->monto, 2) }} {{ $ajustes->divisa }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="6" class="text-end">Total egresos</th>
+                    <th class="text-end text-danger fw-bold">-{{ number_format($cierre->total_egresos, 2) }} {{ $ajustes->divisa }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+@endif
 @endsection

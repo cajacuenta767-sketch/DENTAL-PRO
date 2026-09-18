@@ -79,11 +79,13 @@ class ReservaPublicaController extends Controller
         $datos = $request->validate([
             'doctor_id' => ['required', 'exists:doctores,id'],
             'fecha' => ['required', 'date'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
         ]);
 
         $doctor = Doctor::activos()->findOrFail($datos['doctor_id']);
         $duracion = $request->filled('tratamiento_id') ? Tratamiento::find($request->tratamiento_id)?->duracion : null;
-        $horas = $this->agenda->horasLibres($doctor, $datos['fecha'], null, $duracion);
+        $sucursalId = $request->filled('sucursal_id') ? (int) $request->sucursal_id : null;
+        $horas = $this->agenda->horasLibres($doctor, $datos['fecha'], null, $duracion, $sucursalId);
 
         return response()->json([
             'dia' => $this->agenda->nombreDia($datos['fecha']),
@@ -105,6 +107,7 @@ class ReservaPublicaController extends Controller
             'fecha_nacimiento' => ['nullable', 'date', 'before:today'],
             'doctor_id' => ['required', 'exists:doctores,id'],
             'tratamiento_id' => ['required', 'exists:tratamientos,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'fecha' => ['required', 'date'],
             'hora' => ['required', 'date_format:H:i'],
             'motivo' => ['nullable', 'string', 'max:500'],
@@ -118,6 +121,7 @@ class ReservaPublicaController extends Controller
 
         $doctor = Doctor::activos()->findOrFail($datos['doctor_id']);
         $tratamiento = Tratamiento::activos()->findOrFail($datos['tratamiento_id']);
+        $sucursalId = $datos['sucursal_id'] ?? null;
 
         if ((int) $tratamiento->especialidad_id !== (int) $doctor->especialidad_id) {
             throw ValidationException::withMessages([
@@ -125,13 +129,13 @@ class ReservaPublicaController extends Controller
             ]);
         }
 
-        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion)) {
+        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion, $sucursalId)) {
             throw ValidationException::withMessages([
                 'hora' => 'Ese profesional no atiende en el horario elegido.',
             ]);
         }
 
-        $cita = DB::transaction(function () use ($datos, $doctor, $tratamiento) {
+        $cita = DB::transaction(function () use ($datos, $doctor, $tratamiento, $sucursalId) {
             // Comprobación de cruce dentro de la transacción; el índice único
             // de la agenda es la última barrera si dos reservas coinciden.
             if ($this->agenda->conflicto($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion)) {
@@ -173,6 +177,7 @@ class ReservaPublicaController extends Controller
                 'tratamiento_id' => $datos['tratamiento_id'],
                 'fecha' => $datos['fecha'],
                 'hora' => $datos['hora'],
+                'sucursal_id' => $sucursalId,
                 'estado' => 'PENDIENTE',
                 'origen' => 'ONLINE',
                 'motivo' => $datos['motivo'] ?? null,

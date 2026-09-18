@@ -73,6 +73,10 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <x-alerta-medica :paciente="$paciente" />
+</div>
+
 @include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'ficha'])
 
 <div class="row g-3">

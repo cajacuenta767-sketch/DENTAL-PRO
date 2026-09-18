@@ -13,17 +13,22 @@
 @endpush
 
 @section('acciones')
-    @can('caja.cerrar')
-        @if ($cierreHoy)
-            <a href="{{ route('admin.caja.show', $cierreHoy) }}" class="btn btn-outline-success">
-                <i class="ti ti-lock me-1"></i>Ver cierre de hoy
-            </a>
-        @else
-            <a href="{{ route('admin.caja.arqueo') }}" class="btn btn-primary">
-                <i class="ti ti-cash-register me-1"></i>Arquear y cerrar hoy
-            </a>
-        @endif
-    @endcan
+    <div class="btn-list">
+        <a href="{{ route('admin.egresos.index') }}" class="btn btn-outline-danger">
+            <i class="ti ti-receipt-refund me-1"></i>Egresos de caja chica
+        </a>
+        @can('caja.cerrar')
+            @if ($cierreHoy)
+                <a href="{{ route('admin.caja.show', $cierreHoy) }}" class="btn btn-outline-success">
+                    <i class="ti ti-lock me-1"></i>Ver cierre de hoy
+                </a>
+            @else
+                <a href="{{ route('admin.caja.arqueo') }}" class="btn btn-primary">
+                    <i class="ti ti-cash-register me-1"></i>Arquear y cerrar hoy
+                </a>
+            @endif
+        @endcan
+    </div>
 @endsection
 
 @section('contenido')
@@ -81,10 +86,11 @@
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Sucursal</th>
+                    <th>Sucursal / Turno</th>
                     <th>Cerrado por</th>
                     <th class="text-center">Recibos</th>
                     <th class="text-end">Cobrado</th>
+                    <th class="text-end">Egresos</th>
                     <th class="text-end">Efectivo esperado</th>
                     <th class="text-end">Contado</th>
                     <th class="text-end">Diferencia</th>
@@ -98,10 +104,14 @@
                             <div class="fw-medium">{{ $cierre->fecha->format('d/m/Y') }}</div>
                             <div class="text-secondary small">Cerrada {{ $cierre->cerrado_en?->format('H:i') ?? '—' }}</div>
                         </td>
-                        <td>{{ $cierre->sucursal?->nombre ?? 'General' }}</td>
+                        <td>
+                            <div>{{ $cierre->sucursal?->nombre ?? 'General' }}</div>
+                            <span class="badge bg-purple-lt small">{{ $cierre->turno_legible ?? $cierre->turno }}</span>
+                        </td>
                         <td class="text-secondary">{{ $cierre->usuario?->nombre ?? '—' }}</td>
                         <td class="text-center">{{ $cierre->recibos }}</td>
-                        <td class="text-end">{{ number_format($cierre->total_cobrado, 2) }}</td>
+                        <td class="text-end text-success fw-medium">+{{ number_format($cierre->total_cobrado, 2) }}</td>
+                        <td class="text-end text-danger fw-medium">-{{ number_format((float)$cierre->total_egresos, 2) }}</td>
                         <td class="text-end">{{ number_format($cierre->efectivo_esperado, 2) }}</td>
                         <td class="text-end">{{ number_format($cierre->efectivo_contado, 2) }}</td>
                         <td class="text-end fw-medium {{ $cierre->diferencia < 0 ? 'caja-diferencia-negativa' : ($cierre->diferencia > 0 ? 'caja-diferencia-positiva' : 'text-secondary') }}">

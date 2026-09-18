@@ -358,7 +358,8 @@ class CitaController extends Controller
         $doctor = Doctor::findOrFail($datos['doctor_id']);
         $duracion = (int) (Tratamiento::find($datos['tratamiento_id'])?->duracion ?: $this->agenda->intervalo());
 
-        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $duracion)) {
+        $sucursalId = $cita?->sucursal_id ?? SucursalActiva::id();
+        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $duracion, $sucursalId)) {
             throw ValidationException::withMessages([
                 'hora' => "El doctor no atiende ese día a esa hora o el tratamiento ({$duracion} min) no cabe en su turno. Revisa sus horarios configurados.",
             ]);

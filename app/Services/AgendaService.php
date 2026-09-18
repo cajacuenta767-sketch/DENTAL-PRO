@@ -39,7 +39,7 @@ class AgendaService
      *
      * @return Collection<int, array{hora: string, turno: string, disponible: bool, cita: ?Cita}>
      */
-    public function cupos(Doctor $doctor, string $fecha, ?int $ignorarCitaId = null): Collection
+    public function cupos(Doctor $doctor, string $fecha, ?int $ignorarCitaId = null, ?int $sucursalId = null): Collection
     {
         $dia = CarbonImmutable::parse($fecha);
         $clave = self::DIAS[(int) $dia->dayOfWeek];
@@ -48,6 +48,9 @@ class AgendaService
         $turnos = $doctor->horarios()
             ->activos()
             ->where('dia_semana', $clave)
+            ->when($sucursalId, fn ($q) => $q->where(function ($sub) use ($sucursalId) {
+                $sub->where('sucursal_id', $sucursalId)->orWhereNull('sucursal_id');
+            }))
             ->orderBy('hora_inicio')
             ->get();
 
@@ -85,9 +88,9 @@ class AgendaService
      * y los siguientes que necesite deben estar libres y ser consecutivos
      * dentro del mismo turno.
      */
-    public function horasLibres(Doctor $doctor, string $fecha, ?int $ignorarCitaId = null, ?int $duracion = null): array
+    public function horasLibres(Doctor $doctor, string $fecha, ?int $ignorarCitaId = null, ?int $duracion = null, ?int $sucursalId = null): array
     {
-        $cupos = $this->cupos($doctor, $fecha, $ignorarCitaId)->values();
+        $cupos = $this->cupos($doctor, $fecha, $ignorarCitaId, $sucursalId)->values();
         $intervalo = $this->intervalo();
         $necesarios = max(1, (int) ceil(max(1, (int) $duracion) / $intervalo));
         $libres = [];
@@ -130,7 +133,7 @@ class AgendaService
      * Comprueba que el doctor atienda ese día y que la cita completa
      * (desde la hora hasta hora + duración) quepa dentro de un turno.
      */
-    public function horaValida(Doctor $doctor, string $fecha, string $hora, ?int $duracion = null): bool
+    public function horaValida(Doctor $doctor, string $fecha, string $hora, ?int $duracion = null, ?int $sucursalId = null): bool
     {
         $clave = self::DIAS[(int) CarbonImmutable::parse($fecha)->dayOfWeek];
         $inicio = CarbonImmutable::parse("{$fecha} {$hora}");
@@ -140,6 +143,9 @@ class AgendaService
             ->where('doctor_id', $doctor->id)
             ->where('dia_semana', $clave)
             ->where('activo', true)
+            ->when($sucursalId, fn ($q) => $q->where(function ($sub) use ($sucursalId) {
+                $sub->where('sucursal_id', $sucursalId)->orWhereNull('sucursal_id');
+            }))
             ->where('hora_inicio', '<=', $inicio->format('H:i:s'))
             ->where('hora_fin', '>=', $fin->format('H:i:s'))
             ->exists();

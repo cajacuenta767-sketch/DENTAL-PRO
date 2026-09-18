@@ -55,8 +55,8 @@ class AgendaController extends Controller
                 'profesionales' => $turnos->pluck('doctor_id')->unique()->count(),
                 'atendidos' => $turnos->where('estado', 'COMPLETADA')->count(),
             ],
-            // Los cupos solo tienen sentido mirando a un profesional concreto.
-            'cupos' => $doctorFiltro ? $this->agenda->cupos($doctorFiltro, $fecha) : collect(),
+            // Los cupos solo tienen sentido mirando a un profesional concreto y respetan la sede activa.
+            'cupos' => $doctorFiltro ? $this->agenda->cupos($doctorFiltro, $fecha, null, SucursalActiva::id()) : collect(),
             'esAgendaPropia' => $propio && $doctorFiltro && $propio->is($doctorFiltro),
             'puedeVerTodas' => $puedeVerTodas,
             'proximosDias' => $this->proximosDias($doctorFiltro),
@@ -94,7 +94,8 @@ class AgendaController extends Controller
 
         $citas = Cita::query()
             ->with(['paciente:id,nombres,apellidos', 'doctor:id,nombres,apellidos,genero', 'tratamiento:id,nombre,duracion'])
-            ->whereBetween('fecha', [$lunes->toDateString(), $fin->toDateString()])
+            ->whereDate('fecha', '>=', $lunes->toDateString())
+            ->whereDate('fecha', '<=', $fin->toDateString())
             ->when($doctorFiltro, fn ($q) => $q->where('doctor_id', $doctorFiltro->id))
             ->deSucursal(SucursalActiva::id())
             ->orderBy('fecha')->orderBy('hora')

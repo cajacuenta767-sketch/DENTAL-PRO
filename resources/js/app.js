@@ -128,10 +128,89 @@ window.OdontoSuite = Object.assign(window.OdontoSuite ?? {}, {
         return `${n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${simbolo}`;
     },
 
+    /** Muestra una notificación flotante Toast en la esquina inferior derecha. */
+    toast(mensaje, tipo = 'info', duracion = 4000, alHacerClic = null) {
+        let contenedor = document.getElementById('os-toast-container');
+        if (!contenedor) {
+            contenedor = document.createElement('div');
+            contenedor.id = 'os-toast-container';
+            contenedor.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            contenedor.style.zIndex = '1090';
+            document.body.appendChild(contenedor);
+        }
+
+        const iconos = {
+            success: 'ti-circle-check',
+            danger: 'ti-alert-circle',
+            warning: 'ti-alert-triangle',
+            info: 'ti-info-circle',
+            primary: 'ti-bell',
+        };
+
+        const icono = iconos[tipo] || 'ti-info-circle';
+        const color = ['success', 'danger', 'warning', 'info', 'primary'].includes(tipo) ? tipo : 'primary';
+
+        const elemento = document.createElement('div');
+        elemento.className = `toast align-items-center text-bg-${color} border-0 show shadow-lg mb-2`;
+        elemento.setAttribute('role', 'alert');
+        elemento.setAttribute('aria-live', 'assertive');
+        elemento.setAttribute('aria-atomic', 'true');
+        if (alHacerClic) elemento.style.cursor = 'pointer';
+
+        elemento.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="ti ${icono} fs-2 flex-shrink-0"></i>
+                    <div>${escapar(mensaje)}</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        `;
+
+        if (alHacerClic) {
+            elemento.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                alHacerClic();
+            });
+        }
+
+        contenedor.appendChild(elemento);
+
+        const timer = setTimeout(() => {
+            elemento.classList.remove('show');
+            setTimeout(() => elemento.remove(), 300);
+        }, duracion);
+
+        elemento.querySelector('.btn-close')?.addEventListener('click', () => {
+            clearTimeout(timer);
+            elemento.classList.remove('show');
+            setTimeout(() => elemento.remove(), 300);
+        });
+    },
+
     montarSelectorPaciente,
     montarSelectoresPaciente,
     hacerTablasResponsivas,
 });
+
+// Interceptor global para fetch nativo
+const originalFetch = window.fetch;
+window.fetch = async function (...args) {
+    try {
+        const respuesta = await originalFetch.apply(this, args);
+        if (respuesta.status === 419) {
+            window.OdontoSuite?.toast?.(
+                'Tu sesión ha expirado por inactividad. Haz clic aquí para recargar.',
+                'warning',
+                8000,
+                () => window.location.reload()
+            );
+        }
+        return respuesta;
+    } catch (err) {
+        throw err;
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     montarSelectoresPaciente();
@@ -141,6 +220,41 @@ document.addEventListener('DOMContentLoaded', () => {
         boton.addEventListener('click', (e) => {
             e.preventDefault();
             window.OdontoSuite.alternarTema();
+        });
+    });
+
+    // Protección global anti doble-clic y spinner de carga en formularios
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!form || !(form instanceof HTMLFormElement)) return;
+        if (form.hasAttribute('data-no-spinner') || form.hasAttribute('data-no-bloquear')) return;
+
+        // Si la validación nativa falla, el navegador muestra los globos nativos y no bloqueamos
+        if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+            return;
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]:not([disabled]), input[type="submit"]:not([disabled])');
+        if (!submitBtn) return;
+
+        submitBtn.dataset.osOriginalHtml = submitBtn.innerHTML;
+        submitBtn.dataset.osOriginalWidth = `${submitBtn.offsetWidth}px`;
+        submitBtn.style.minWidth = submitBtn.dataset.osOriginalWidth;
+
+        setTimeout(() => {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('disabled');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...';
+        }, 10);
+    });
+
+    // Restaurar botones deshabilitados al navegar hacia atrás (bfcache)
+    window.addEventListener('pageshow', () => {
+        document.querySelectorAll('button[data-os-original-html]').forEach((btn) => {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+            btn.innerHTML = btn.dataset.osOriginalHtml;
+            delete btn.dataset.osOriginalHtml;
         });
     });
 

@@ -138,6 +138,20 @@ return [
             'acciones' => ['ver', 'crear', 'editar', 'eliminar', 'descargar'],
             'grupo' => 'Clínica',
         ],
+        'laboratorio' => [
+            'etiqueta' => 'Laboratorio Dental',
+            'icono' => 'ti ti-flask',
+            'ruta' => 'admin.laboratorio.index',
+            'acciones' => ['ver', 'crear', 'editar', 'eliminar', 'estado'],
+            'grupo' => 'Clínica',
+        ],
+        'vademecum' => [
+            'etiqueta' => 'Vademécum Dental',
+            'icono' => 'ti ti-pill',
+            'ruta' => 'admin.vademecum.index',
+            'acciones' => ['ver', 'crear', 'editar', 'eliminar'],
+            'grupo' => 'Catálogos',
+        ],
         'documentos' => [
             'etiqueta' => 'Recetas y Certificados',
             'icono' => 'ti ti-prescription',

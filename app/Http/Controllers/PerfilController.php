@@ -177,4 +177,25 @@ class PerfilController extends Controller
     {
         return Password::min(8)->letters()->numbers();
     }
+
+    public function desbloquearSillon(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $usuario = $request->user();
+
+        if (! Hash::check($request->password, $usuario->password)) {
+            return response()->json([
+                'ok' => false,
+                'mensaje' => 'Contraseña incorrecta. Por favor intente nuevamente.',
+            ], 422);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Sillón clínico desbloqueado.',
+        ]);
+    }
 }

@@ -15,7 +15,7 @@ class Odontograma extends Model
     protected $table = 'odontogramas';
 
     protected $fillable = [
-        'paciente_id', 'doctor_id', 'cita_id', 'tipo', 'piezas', 'observaciones', 'fecha',
+        'paciente_id', 'doctor_id', 'cita_id', 'tipo', 'escala_frankl', 'piezas', 'observaciones', 'fecha',
     ];
 
     protected function casts(): array
@@ -23,8 +23,41 @@ class Odontograma extends Model
         return [
             'piezas' => 'array',
             'fecha' => 'date',
+            'escala_frankl' => 'integer',
         ];
     }
+
+    /** Escala de conducta de Frankl para odontopediatría */
+    public const ESCALA_FRANKL = [
+        1 => [
+            'etiqueta' => 'Definitivamente Negativo (--)',
+            'descripcion' => 'Rechazo al tratamiento, llanto fuerte, movimientos de defensa extremos.',
+            'color' => 'danger',
+            'icono' => 'ti-mood-sad',
+            'simbolo' => '--',
+        ],
+        2 => [
+            'etiqueta' => 'Negativo (-)',
+            'descripcion' => 'Renuente a aceptar el tratamiento, poco cooperador, retraído.',
+            'color' => 'warning',
+            'icono' => 'ti-mood-neutral',
+            'simbolo' => '-',
+        ],
+        3 => [
+            'etiqueta' => 'Positivo (+)',
+            'descripcion' => 'Acepta el tratamiento, cooperador con ciertas reservas, sigue instrucciones.',
+            'color' => 'info',
+            'icono' => 'ti-mood-smile',
+            'simbolo' => '+',
+        ],
+        4 => [
+            'etiqueta' => 'Definitivamente Positivo (++)',
+            'descripcion' => 'Excelente compenetración con el odontólogo, entusiasmo y cooperación activa.',
+            'color' => 'success',
+            'icono' => 'ti-mood-happy',
+            'simbolo' => '++',
+        ],
+    ];
 
     /** Numeración FDI: cuadrantes superiores e inferiores de la dentición permanente. */
     public const PIEZAS_ADULTO = [
@@ -40,6 +73,14 @@ class Odontograma extends Model
         'superior_izquierdo' => [61, 62, 63, 64, 65],
         'inferior_derecho' => [85, 84, 83, 82, 81],
         'inferior_izquierdo' => [71, 72, 73, 74, 75],
+    ];
+
+    /** Numeración FDI dentición mixta (adulto y decidua combinados por cuadrante) */
+    public const PIEZAS_MIXTO = [
+        'superior_derecho' => [18, 17, 16, 55, 54, 53, 52, 51, 11, 12, 13, 14, 15],
+        'superior_izquierdo' => [21, 22, 23, 24, 25, 61, 62, 63, 64, 65, 26, 27, 28],
+        'inferior_derecho' => [48, 47, 46, 85, 84, 83, 82, 81, 41, 42, 43, 44, 45],
+        'inferior_izquierdo' => [31, 32, 33, 34, 35, 71, 72, 73, 74, 75, 36, 37, 38],
     ];
 
     /** Caras registrables por pieza. */
@@ -88,7 +129,11 @@ class Odontograma extends Model
 
     public static function cuadrantes(string $tipo): array
     {
-        return $tipo === 'INFANTIL' ? self::PIEZAS_INFANTIL : self::PIEZAS_ADULTO;
+        return match ($tipo) {
+            'INFANTIL' => self::PIEZAS_INFANTIL,
+            'MIXTO' => self::PIEZAS_MIXTO,
+            default => self::PIEZAS_ADULTO,
+        };
     }
 
     /** Cuenta las piezas afectadas separadas por capa. */

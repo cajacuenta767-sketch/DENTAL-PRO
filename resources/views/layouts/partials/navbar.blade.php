@@ -143,6 +143,7 @@
                 </div>
             @endif
 
+            <button class="os-icon-button" type="button" onclick="activarBloqueoSillon()" title="Bloquear sillón clínico (Ctrl+L)" aria-label="Bloquear sillón clínico"><i class="ti ti-lock" aria-hidden="true"></i></button>
             <button class="os-icon-button" type="button" data-os-theme-toggle title="Cambiar tema" aria-label="Cambiar tema claro u oscuro"><i class="ti ti-moon" aria-hidden="true"></i></button>
             <div class="dropdown">
                 <button class="os-icon-button position-relative" type="button" data-bs-toggle="dropdown" title="Citas de hoy"

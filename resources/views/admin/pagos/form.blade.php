@@ -23,6 +23,16 @@
                         </div>
                     @endif
 
+                    @if ($pago->paciente && $pago->paciente->saldo_favor > 0)
+                        <div class="alert alert-success d-flex align-items-center mb-3">
+                            <i class="ti ti-wallet fs-2 me-2"></i>
+                            <div>
+                                <strong>Saldo a favor del paciente:</strong> {{ number_format($pago->paciente->saldo_favor, 2) }} {{ $ajustes->divisa }}.
+                                <span class="text-secondary small d-block">Puede aplicar este saldo o cobrar el restante.</span>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="row">
                         <div class="col-md-7">
                             <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
@@ -99,6 +109,42 @@
                         </div>
                     </x-campo>
 
+                    {{-- Panel interactivo de desglose para pago mixto --}}
+                    @php
+                        $desgloseActual = old('desglose_metodos', $pago->desglose_metodos ?? []);
+                    @endphp
+                    <div id="panel-pago-mixto" class="card bg-azure-lt mb-3 p-3" style="display: {{ old('metodo_pago', $pago->metodo_pago) === 'MIXTO' ? 'block' : 'none' }};">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold small text-uppercase"><i class="ti ti-layers-subtract me-1"></i>Desglose Pago Mixto</span>
+                            <span id="badge-balance-mixto" class="badge bg-secondary">0.00 / 0.00</span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Efectivo</label>
+                                <input type="number" step="0.01" min="0" name="desglose_metodos[EFECTIVO]" class="form-control form-control-sm input-desglose"
+                                       value="{{ $desgloseActual['EFECTIVO'] ?? '' }}" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Tarjeta</label>
+                                <input type="number" step="0.01" min="0" name="desglose_metodos[TARJETA]" class="form-control form-control-sm input-desglose"
+                                       value="{{ $desgloseActual['TARJETA'] ?? '' }}" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Transferencia</label>
+                                <input type="number" step="0.01" min="0" name="desglose_metodos[TRANSFERENCIA]" class="form-control form-control-sm input-desglose"
+                                       value="{{ $desgloseActual['TRANSFERENCIA'] ?? '' }}" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">QR / Billetera</label>
+                                <input type="number" step="0.01" min="0" name="desglose_metodos[QR]" class="form-control form-control-sm input-desglose"
+                                       value="{{ $desgloseActual['QR'] ?? '' }}" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div id="alerta-error-desglose" class="small text-danger fw-medium mt-2" style="display: none;">
+                            <i class="ti ti-alert-triangle me-1"></i>La suma del desglose no coincide con el monto recibido.
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <button type="button" class="btn btn-sm btn-outline-success w-100" data-os-pago-total>
                             <i class="ti ti-check me-1"></i>Cobrar el total
@@ -142,7 +188,7 @@
                 </div>
                 <div class="card-footer d-flex gap-2">
                     <a href="{{ route('admin.pagos.index') }}" class="btn btn-link">Cancelar</a>
-                    <button type="submit" class="btn btn-primary ms-auto">
+                    <button type="submit" class="btn btn-primary ms-auto" id="btn-submit-pago">
                         <i class="ti ti-device-floppy me-1"></i>{{ $pago->exists ? 'Guardar cambios' : 'Emitir recibo' }}
                     </button>
                 </div>
@@ -178,12 +224,48 @@
     const cuerpo = document.querySelector('#tabla-detalles tbody');
     const plantilla = document.getElementById('plantilla-linea');
     const montoPagado = document.getElementById('monto_pagado');
+    const metodoPago = document.getElementById('metodo_pago');
+    const panelMixto = document.getElementById('panel-pago-mixto');
+    const badgeBalance = document.getElementById('badge-balance-mixto');
+    const alertaDesglose = document.getElementById('alerta-error-desglose');
+    const btnSubmit = document.getElementById('btn-submit-pago');
+    const inputsDesglose = document.querySelectorAll('.input-desglose');
     const previos = @json(old('detalles', $detallesPrevios));
 
     let indice = 0;
 
     function formatear(n) {
         return Number(n || 0).toFixed(2);
+    }
+
+    function validarDesgloseMixto() {
+        if (metodoPago.value !== 'MIXTO') {
+            panelMixto.style.display = 'none';
+            if (alertaDesglose) alertaDesglose.style.display = 'none';
+            if (btnSubmit) btnSubmit.disabled = false;
+            return;
+        }
+
+        panelMixto.style.display = 'block';
+        let suma = 0;
+        inputsDesglose.forEach(inp => {
+            suma += Number(inp.value || 0);
+        });
+
+        const objetivo = Number(montoPagado.value || 0);
+        const diff = Math.abs(suma - objetivo);
+
+        badgeBalance.textContent = `${formatear(suma)} / ${formatear(objetivo)}`;
+
+        if (diff > 0.01 && objetivo > 0) {
+            badgeBalance.className = 'badge bg-danger';
+            alertaDesglose.style.display = 'block';
+            alertaDesglose.innerHTML = `<i class="ti ti-alert-triangle me-1"></i>Suma del desglose (${formatear(suma)}) difiere del monto recibido (${formatear(objetivo)}).`;
+        } else {
+            badgeBalance.className = 'badge bg-success';
+            alertaDesglose.style.display = 'none';
+            if (btnSubmit) btnSubmit.disabled = false;
+        }
     }
 
     function recalcular() {
@@ -206,6 +288,7 @@
         document.getElementById('resumen-saldo').textContent = formatear(Math.max(0, total - pagado));
 
         cuerpo.dataset.total = total;
+        validarDesgloseMixto();
     }
 
     function agregarLinea(datos = {}) {
@@ -218,7 +301,6 @@
             if (datos[nombre] !== undefined && datos[nombre] !== null) campo.value = datos[nombre];
         });
 
-        // Elegir un tratamiento rellena descripción y precio de catálogo.
         fila.querySelector('[data-campo="tratamiento_id"]').addEventListener('change', (e) => {
             const opcion = e.target.selectedOptions[0];
             if (!opcion.value) return;
@@ -242,6 +324,8 @@
 
     document.querySelector('[data-os-agregar-linea]').addEventListener('click', () => agregarLinea());
     montoPagado.addEventListener('input', recalcular);
+    metodoPago.addEventListener('change', validarDesgloseMixto);
+    inputsDesglose.forEach(inp => inp.addEventListener('input', validarDesgloseMixto));
 
     document.querySelector('[data-os-pago-total]').addEventListener('click', () => {
         montoPagado.value = formatear(cuerpo.dataset.total || 0);

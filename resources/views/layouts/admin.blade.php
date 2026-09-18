@@ -60,8 +60,9 @@
             </div>
         </main>
 
+        @include('layouts.partials.bloqueo-sillon')
         @include('layouts.partials.footer')
-    </div>
+    <div id="os-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;"></div>
 </div>
 @stack('scripts')
 </body>

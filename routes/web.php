@@ -11,13 +11,21 @@ use App\Http\Controllers\Admin\CajaController;
 use App\Http\Controllers\Admin\CitaController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DocumentoClinicoController;
+use App\Http\Controllers\Admin\EgresoCajaController;
 use App\Http\Controllers\Admin\EspecialidadController;
 use App\Http\Controllers\Admin\EstudioImagenController;
 use App\Http\Controllers\Admin\FacturacionController;
 use App\Http\Controllers\Admin\HistorialClinicoController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\CefalometriaController;
+use App\Http\Controllers\Admin\ConductometriaController;
+use App\Http\Controllers\Admin\CrmPostOpController;
+use App\Http\Controllers\Admin\EsterilizacionController;
 use App\Http\Controllers\Admin\HorarioController;
+use App\Http\Controllers\Admin\ImplanteController;
 use App\Http\Controllers\Admin\InventarioController;
+use App\Http\Controllers\Admin\TurneroController;
+use App\Http\Controllers\Admin\LaboratorioController;
 use App\Http\Controllers\Admin\ListaEsperaController;
 use App\Http\Controllers\Admin\MensajeriaController;
 use App\Http\Controllers\Admin\OdontogramaController;
@@ -32,6 +40,7 @@ use App\Http\Controllers\Admin\RolController;
 use App\Http\Controllers\Admin\SucursalController;
 use App\Http\Controllers\Admin\TratamientoController;
 use App\Http\Controllers\Admin\UsuarioController;
+use App\Http\Controllers\Admin\VademecumController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -80,6 +89,9 @@ Route::prefix('reservar/{token}')->name('reservas.')->group(function () {
 
 Route::get('citas/confirmar/{token}', [ConfirmacionCitaController::class, 'confirmar'])
     ->middleware(['signed', 'throttle:20,1'])->name('citas.confirmar-publica');
+
+Route::get('verificar-esterilizacion/{token}', [EsterilizacionController::class, 'verificarQr'])
+    ->name('esterilizacion.verificar-publica');
 
 Route::post('pagos-online/webhook/{proveedor}', [PagoOnlineController::class, 'webhook'])
     ->middleware('throttle:60,1')->name('pagos-online.webhook');
@@ -132,6 +144,7 @@ Route::middleware('auth')->group(function () {
     Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::put('perfil/password', [PerfilController::class, 'password'])->name('perfil.password');
     Route::put('perfil/dos-factores', [PerfilController::class, 'dosFactores'])->name('perfil.2fa');
+    Route::post('perfil/desbloquear-sillon', [PerfilController::class, 'desbloquearSillon'])->name('perfil.desbloquear-sillon');
     Route::post('perfil/tokens', [PerfilController::class, 'crearToken'])
         ->middleware('permission:api.usar')->name('perfil.tokens.crear');
     Route::delete('perfil/tokens/{tokenId}', [PerfilController::class, 'revocarToken'])
@@ -229,6 +242,14 @@ Route::middleware(['auth', 'clinica.activa'])->prefix('admin')->name('admin.')->
         ->middleware('permission:caja.ver')->name('caja.show');
     Route::get('caja/{cierre}/pdf', [CajaController::class, 'pdf'])
         ->middleware('permission:caja.ver')->name('caja.pdf');
+
+    // --- Egresos de caja chica --------------------------------------------
+    Route::patch('egresos/{egreso}/anular', [EgresoCajaController::class, 'anular'])
+        ->middleware('permission:caja.cerrar')->name('egresos.anular');
+    Route::resource('egresos', EgresoCajaController::class)->except(['create', 'show'])
+        ->parameters(['egresos' => 'egreso'])
+        ->middlewareFor(['index'], 'permission:caja.ver')
+        ->middlewareFor(['store', 'update', 'destroy'], 'permission:caja.cerrar');
 
     // --- Configuración -------------------------------------------------
     Route::get('ajustes', [AjusteController::class, 'edit'])
@@ -371,6 +392,40 @@ Route::middleware(['auth', 'clinica.activa'])->prefix('admin')->name('admin.')->
     Route::get('periodontogramas/{periodontograma}/pdf', [PeriodontogramaController::class, 'pdf'])
         ->middleware('permission:periodontogramas.ver')->name('periodontogramas.pdf');
 
+    // --- Endodoncia (Conductometría) ------------------------------------
+    Route::get('pacientes/{paciente}/endodoncia', [ConductometriaController::class, 'index'])
+        ->middleware('permission:odontogramas.ver')->name('conductometrias.index');
+    Route::get('pacientes/{paciente}/endodoncia/nuevo', [ConductometriaController::class, 'create'])
+        ->middleware('permission:odontogramas.crear')->name('conductometrias.create');
+    Route::post('pacientes/{paciente}/endodoncia', [ConductometriaController::class, 'store'])
+        ->middleware('permission:odontogramas.crear')->name('conductometrias.store');
+    Route::get('endodoncia/{conductometria}/editar', [ConductometriaController::class, 'edit'])
+        ->middleware('permission:odontogramas.editar')->name('conductometrias.edit');
+    Route::put('endodoncia/{conductometria}', [ConductometriaController::class, 'update'])
+        ->middleware('permission:odontogramas.editar')->name('conductometrias.update');
+    Route::delete('endodoncia/{conductometria}', [ConductometriaController::class, 'destroy'])
+        ->middleware('permission:odontogramas.eliminar')->name('conductometrias.destroy');
+    Route::get('endodoncia/{conductometria}/pdf', [ConductometriaController::class, 'pdf'])
+        ->middleware('permission:odontogramas.ver')->name('conductometrias.pdf');
+
+    // --- Ortodoncia (Trazado Cefalométrico) ------------------------------
+    Route::get('pacientes/{paciente}/ortodoncia', [CefalometriaController::class, 'index'])
+        ->middleware('permission:odontogramas.ver')->name('cefalometrias.index');
+    Route::get('pacientes/{paciente}/ortodoncia/nuevo', [CefalometriaController::class, 'create'])
+        ->middleware('permission:odontogramas.crear')->name('cefalometrias.create');
+    Route::post('pacientes/{paciente}/ortodoncia', [CefalometriaController::class, 'store'])
+        ->middleware('permission:odontogramas.crear')->name('cefalometrias.store');
+    Route::get('ortodoncia/{cefalometria}', [CefalometriaController::class, 'show'])
+        ->middleware('permission:odontogramas.ver')->name('cefalometrias.show');
+    Route::get('ortodoncia/{cefalometria}/editar', [CefalometriaController::class, 'edit'])
+        ->middleware('permission:odontogramas.editar')->name('cefalometrias.edit');
+    Route::put('ortodoncia/{cefalometria}', [CefalometriaController::class, 'update'])
+        ->middleware('permission:odontogramas.editar')->name('cefalometrias.update');
+    Route::delete('ortodoncia/{cefalometria}', [CefalometriaController::class, 'destroy'])
+        ->middleware('permission:odontogramas.eliminar')->name('cefalometrias.destroy');
+    Route::get('ortodoncia/{cefalometria}/pdf', [CefalometriaController::class, 'pdf'])
+        ->middleware('permission:odontogramas.ver')->name('cefalometrias.pdf');
+
     // --- Caja y pagos ---------------------------------------------------
     Route::resource('pagos', PagoController::class)
         ->middlewareFor(['index', 'show'], 'permission:pagos.ver')
@@ -509,6 +564,81 @@ Route::middleware(['auth', 'clinica.activa'])->prefix('admin')->name('admin.')->
         ->middleware('permission:facturacion.anular')->name('facturacion.anular');
     Route::get('facturacion/{documento}/pdf', [FacturacionController::class, 'pdf'])
         ->middleware('permission:facturacion.ver')->name('facturacion.pdf');
+
+    // --- Laboratorio Dental -------------------------------------------------
+    Route::get('laboratorio/catalogo', [LaboratorioController::class, 'catalogo'])
+        ->middleware('permission:laboratorio.ver')->name('laboratorio.catalogo');
+    Route::post('laboratorio/catalogo', [LaboratorioController::class, 'catalogoStore'])
+        ->middleware('permission:laboratorio.crear')->name('laboratorio.catalogo.store');
+    Route::put('laboratorio/catalogo/{laboratorio}', [LaboratorioController::class, 'catalogoUpdate'])
+        ->middleware('permission:laboratorio.editar')->name('laboratorio.catalogo.update');
+    Route::delete('laboratorio/catalogo/{laboratorio}', [LaboratorioController::class, 'catalogoDestroy'])
+        ->middleware('permission:laboratorio.eliminar')->name('laboratorio.catalogo.destroy');
+
+    Route::patch('laboratorio/{orden}/estado', [LaboratorioController::class, 'cambiarEstado'])
+        ->middleware('permission:laboratorio.editar')->name('laboratorio.estado');
+    Route::get('laboratorio/{orden}/pdf', [LaboratorioController::class, 'ticketPdf'])
+        ->middleware('permission:laboratorio.ver')->name('laboratorio.pdf');
+    Route::resource('laboratorio', LaboratorioController::class)
+        ->parameters(['laboratorio' => 'orden'])
+        ->middlewareFor(['index', 'show'], 'permission:laboratorio.ver')
+        ->middlewareFor(['create', 'store'], 'permission:laboratorio.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:laboratorio.editar')
+        ->middlewareFor(['destroy'], 'permission:laboratorio.eliminar');
+
+    // --- Vademécum Odontológico --------------------------------------------
+    Route::get('vademecum/buscar', [VademecumController::class, 'buscar'])
+        ->middleware('permission:vademecum.ver')->name('vademecum.buscar');
+    Route::resource('vademecum', VademecumController::class)->except('show')
+        ->parameters(['vademecum' => 'vademecum'])
+        ->middlewareFor(['index'], 'permission:vademecum.ver')
+        ->middlewareFor(['create', 'store'], 'permission:vademecum.crear')
+        ->middlewareFor(['edit', 'update'], 'permission:vademecum.editar')
+        ->middlewareFor(['destroy'], 'permission:vademecum.eliminar');
+
+    // --- Bioseguridad y Esterilización -----------------------------------
+    Route::get('esterilizacion', [EsterilizacionController::class, 'index'])
+        ->middleware('permission:inventario.ver')->name('esterilizacion.index');
+    Route::get('esterilizacion/nuevo', [EsterilizacionController::class, 'create'])
+        ->middleware('permission:inventario.crear')->name('esterilizacion.create');
+    Route::post('esterilizacion', [EsterilizacionController::class, 'store'])
+        ->middleware('permission:inventario.crear')->name('esterilizacion.store');
+    Route::get('esterilizacion/{ciclo}/etiquetas', [EsterilizacionController::class, 'etiquetas'])
+        ->middleware('permission:inventario.ver')->name('esterilizacion.etiquetas');
+    Route::get('esterilizacion/verificar/{token}', [EsterilizacionController::class, 'verificarQr'])
+        ->middleware('permission:inventario.ver')->name('esterilizacion.verificar');
+
+    // --- Pasaporte e Implantes Dentales ----------------------------------
+    Route::get('implantes', [ImplanteController::class, 'index'])
+        ->middleware('permission:odontogramas.ver')->name('implantes.index');
+    Route::get('pacientes/{paciente}/implantes', [ImplanteController::class, 'paciente'])
+        ->middleware('permission:odontogramas.ver')->name('implantes.paciente');
+    Route::get('pacientes/{paciente}/implantes/nuevo', [ImplanteController::class, 'create'])
+        ->middleware('permission:odontogramas.crear')->name('implantes.create');
+    Route::post('pacientes/{paciente}/implantes', [ImplanteController::class, 'store'])
+        ->middleware('permission:odontogramas.crear')->name('implantes.store');
+    Route::get('implantes/{implante}/editar', [ImplanteController::class, 'edit'])
+        ->middleware('permission:odontogramas.editar')->name('implantes.edit');
+    Route::put('implantes/{implante}', [ImplanteController::class, 'update'])
+        ->middleware('permission:odontogramas.editar')->name('implantes.update');
+    Route::delete('implantes/{implante}', [ImplanteController::class, 'destroy'])
+        ->middleware('permission:odontogramas.eliminar')->name('implantes.destroy');
+    Route::get('implantes/{implante}/pasaporte', [ImplanteController::class, 'pasaporte'])
+        ->middleware('permission:odontogramas.ver')->name('implantes.pasaporte');
+
+    // --- Sala de Espera / Turnero TV Digital ------------------------------
+    Route::get('turnero', [TurneroController::class, 'pantalla'])
+        ->middleware('permission:citas.ver')->name('turnero.pantalla');
+    Route::get('turnero/datos', [TurneroController::class, 'datos'])
+        ->middleware('permission:citas.ver')->name('turnero.datos');
+    Route::post('citas/{cita}/llamar', [TurneroController::class, 'llamar'])
+        ->middleware('permission:citas.editar')->name('turnero.llamar');
+
+    // --- CRM Clínico Post-Operatorio --------------------------------------
+    Route::get('crm-postop', [CrmPostOpController::class, 'index'])
+        ->middleware('permission:citas.ver')->name('crm-postop.index');
+    Route::post('citas/{cita}/postop-contactar', [CrmPostOpController::class, 'marcarContactado'])
+        ->middleware('permission:citas.editar')->name('crm-postop.contactar');
 });
 
 /*

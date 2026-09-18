@@ -17,6 +17,9 @@
             <a href="{{ route('admin.odontogramas.create', ['paciente' => $paciente, 'tipo' => 'INFANTIL']) }}" class="btn btn-outline-primary">
                 <i class="ti ti-mood-kid me-1"></i>Nuevo infantil
             </a>
+            <a href="{{ route('admin.odontogramas.create', ['paciente' => $paciente, 'tipo' => 'MIXTO']) }}" class="btn btn-outline-secondary">
+                <i class="ti ti-dental me-1"></i>Nuevo mixto
+            </a>
             <a href="{{ route('admin.odontogramas.create', $paciente) }}" class="btn btn-primary">
                 <i class="ti ti-plus me-1"></i>Nuevo Odontograma
             </a>
@@ -33,6 +36,7 @@
 @endpush
 
 @section('contenido')
+<x-alerta-medica :paciente="$paciente" />
 @include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'odontograma'])
 
 @forelse ($odontogramas as $odontograma)
@@ -41,7 +45,13 @@
             <div>
                 <h3 class="card-title mb-0">
                     {{ $odontograma->fecha->format('d/m/Y') }}
-                    <span class="badge bg-{{ $odontograma->tipo === 'INFANTIL' ? 'pink' : 'azure' }}-lt ms-2">{{ $odontograma->tipo }}</span>
+                    <span class="badge bg-{{ $odontograma->tipo === 'INFANTIL' ? 'pink' : ($odontograma->tipo === 'MIXTO' ? 'purple' : 'azure') }}-lt ms-2">{{ $odontograma->tipo }}</span>
+                    @if ($odontograma->escala_frankl && isset(\App\Models\Odontograma::ESCALA_FRANKL[$odontograma->escala_frankl]))
+                        @php $frankl = \App\Models\Odontograma::ESCALA_FRANKL[$odontograma->escala_frankl]; @endphp
+                        <span class="badge bg-{{ $frankl['color'] }}-lt ms-1" title="{{ $frankl['descripcion'] }}">
+                            Frankl {{ $frankl['simbolo'] }}: {{ $frankl['etiqueta'] }}
+                        </span>
+                    @endif
                 </h3>
                 <div class="text-secondary small">
                     {{ $odontograma->doctor?->nombre_profesional ?? 'Sin doctor asignado' }}

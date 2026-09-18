@@ -94,6 +94,7 @@ class DocumentoClinicoController extends Controller
                 ? Cita::where('paciente_id', $paciente->id)->with('tratamiento')->orderByDesc('fecha')->limit(30)->get()
                 : collect(),
             'plantillas' => self::PLANTILLAS,
+            'paciente' => $paciente,
         ]);
     }
 
@@ -126,6 +127,7 @@ class DocumentoClinicoController extends Controller
             'citas' => Cita::where('paciente_id', $documento->paciente_id)
                 ->with('tratamiento')->orderByDesc('fecha')->limit(30)->get(),
             'plantillas' => self::PLANTILLAS,
+            'paciente' => $documento->paciente,
         ]);
     }
 

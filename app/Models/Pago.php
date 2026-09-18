@@ -19,7 +19,7 @@ class Pago extends Model
     protected $fillable = [
         'codigo_recibo', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id', 'presupuesto_id', 'sucursal_id',
         'monto_total', 'monto_pagado', 'monto_saldo',
-        'metodo_pago', 'estado', 'notas', 'fecha_pago',
+        'metodo_pago', 'desglose_metodos', 'estado', 'notas', 'fecha_pago',
     ];
 
     protected function casts(): array
@@ -28,11 +28,12 @@ class Pago extends Model
             'monto_total' => 'decimal:2',
             'monto_pagado' => 'decimal:2',
             'monto_saldo' => 'decimal:2',
+            'desglose_metodos' => 'array',
             'fecha_pago' => 'datetime',
         ];
     }
 
-    public const METODOS = ['EFECTIVO', 'TARJETA', 'QR', 'TRANSFERENCIA'];
+    public const METODOS = ['EFECTIVO', 'TARJETA', 'QR', 'TRANSFERENCIA', 'MIXTO'];
 
     public const ESTADOS = ['PENDIENTE', 'PARCIAL', 'COMPLETADO', 'ANULADO'];
 

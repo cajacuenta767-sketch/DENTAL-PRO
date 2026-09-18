@@ -100,7 +100,7 @@ class AgendaDuracionTest extends CasoClinico
         $this->post('/admin/citas', $this->datos(['hora' => '10:00']))->assertRedirect();
 
         $this->assertSame(2, Cita::count());
-        $this->assertSame(1, Cita::vigentes()->where('hora', '10:00:00')->count());
+        $this->assertSame(1, Cita::vigentes()->where('hora', 'like', '10:00%')->count());
     }
 
     public function test_no_se_reactiva_una_cancelada_si_el_cupo_ya_fue_tomado(): void

@@ -197,6 +197,13 @@ class ReporteController extends Controller
         $total = $base()->count();
         $completadas = $base()->where('estado', 'COMPLETADA')->count();
 
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateExpr = match ($driver) {
+            'sqlite' => "strftime('%Y-%m', fecha)",
+            'mysql', 'mariadb' => "DATE_FORMAT(fecha, '%Y-%m')",
+            default => "TO_CHAR(fecha, 'YYYY-MM')",
+        };
+
         return [
             'citTotal' => $total,
             'citCompletadas' => $completadas,
@@ -208,13 +215,13 @@ class ReporteController extends Controller
                 ->orderByDesc('total')
                 ->get(),
             'citPorDoctor' => $base()
-                ->selectRaw('doctor_id, COUNT(*) AS total, COUNT(*) FILTER (WHERE estado = \'COMPLETADA\') AS completadas')
+                ->selectRaw("doctor_id, COUNT(*) AS total, SUM(CASE WHEN estado = 'COMPLETADA' THEN 1 ELSE 0 END) AS completadas")
                 ->groupBy('doctor_id')
                 ->with('doctor.especialidad')
                 ->orderByDesc('total')
                 ->get(),
             'citPorMes' => $base()
-                ->selectRaw("TO_CHAR(fecha, 'YYYY-MM') AS periodo, COUNT(*) AS agendadas, COUNT(*) FILTER (WHERE estado = 'COMPLETADA') AS completadas")
+                ->selectRaw("{$dateExpr} AS periodo, COUNT(*) AS agendadas, SUM(CASE WHEN estado = 'COMPLETADA' THEN 1 ELSE 0 END) AS completadas")
                 ->groupBy('periodo')
                 ->orderBy('periodo')
                 ->get(),

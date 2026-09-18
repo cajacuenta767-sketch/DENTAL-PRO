@@ -23,6 +23,7 @@ class Cita extends Model
         'fecha', 'hora', 'estado', 'origen', 'motivo', 'observacion',
         'recordatorio_enviado_en', 'sucursal_id', 'serie_id', 'confirmacion_token',
         'confirmada_en', 'confirmada_por', 'recordatorio_canal',
+        'llamado_en', 'consultorio', 'postop_contactado_en', 'postop_estado',
     ];
 
     protected function casts(): array
@@ -31,6 +32,8 @@ class Cita extends Model
             'fecha' => 'date',
             'recordatorio_enviado_en' => 'datetime',
             'confirmada_en' => 'datetime',
+            'llamado_en' => 'datetime',
+            'postop_contactado_en' => 'datetime',
         ];
     }
 

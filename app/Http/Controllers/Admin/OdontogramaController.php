@@ -45,7 +45,7 @@ class OdontogramaController extends Controller
 
     public function create(Request $request, Paciente $paciente): View
     {
-        $tipo = $request->query('tipo') === 'INFANTIL' ? 'INFANTIL' : 'ADULTO';
+        $tipo = in_array($request->query('tipo'), ['INFANTIL', 'MIXTO'], true) ? $request->query('tipo') : 'ADULTO';
 
         // El último odontograma del paciente sirve de punto de partida y de
         // referencia para marcar qué cambió desde entonces.
@@ -89,7 +89,7 @@ class OdontogramaController extends Controller
     {
         // Cambiar la dentición desde el formulario recarga con ?tipo=… y
         // repinta el mapa en blanco de esa numeración sin tocar lo guardado.
-        if (in_array($request->query('tipo'), ['ADULTO', 'INFANTIL'], true)
+        if (in_array($request->query('tipo'), ['ADULTO', 'INFANTIL', 'MIXTO'], true)
             && $request->query('tipo') !== $odontograma->tipo) {
             $odontograma->tipo = $request->query('tipo');
             $odontograma->piezas = $this->piezasEnBlanco($odontograma->tipo);
@@ -136,7 +136,8 @@ class OdontogramaController extends Controller
         $datos = $request->validate([
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
-            'tipo' => ['required', 'in:ADULTO,INFANTIL'],
+            'tipo' => ['required', 'in:ADULTO,INFANTIL,MIXTO'],
+            'escala_frankl' => ['nullable', 'integer', 'between:1,4'],
             'fecha' => ['required', 'date', 'before_or_equal:today'],
             'piezas' => ['required', 'string'],
             'observaciones' => ['nullable', 'string', 'max:2000'],

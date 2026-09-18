@@ -13,7 +13,8 @@ return new class extends Migration
             $table->foreignId('paciente_id')->constrained('pacientes')->cascadeOnDelete();
             $table->foreignId('doctor_id')->nullable()->constrained('doctores')->nullOnDelete();
             $table->foreignId('cita_id')->nullable()->constrained('citas')->nullOnDelete();
-            $table->enum('tipo', ['ADULTO', 'INFANTIL'])->default('ADULTO');
+            $table->string('tipo', 20)->default('ADULTO');
+            $table->unsignedTinyInteger('escala_frankl')->nullable();
             $table->json('piezas');
             $table->text('observaciones')->nullable();
             $table->date('fecha');

@@ -92,4 +92,26 @@ class CitaTest extends CasoClinico
         $this->assertNotContains('12:00', $horas, 'El cupo de cierre no debe ofrecerse.');
         $this->assertNotContains('07:30', $horas);
     }
+
+    public function test_se_puede_agendar_nueva_cita_en_el_mismo_slot_de_una_cita_cancelada(): void
+    {
+        Mail::fake();
+
+        // 1. Crear primera cita
+        $this->post('/admin/citas', $this->datos())->assertRedirect();
+        $cita1 = Cita::first();
+        $this->assertNotNull($cita1);
+
+        // 2. Cancelar la primera cita
+        $this->patch("/admin/citas/{$cita1->id}/estado", ['estado' => 'CANCELADA'])->assertRedirect();
+        $this->assertSame('CANCELADA', $cita1->fresh()->estado);
+
+        // 3. Crear segunda cita en el mismo slot exacto
+        $this->post('/admin/citas', $this->datos())->assertRedirect();
+
+        $this->assertSame(2, Cita::count());
+        $citasActivas = Cita::vigentes()->get();
+        $this->assertCount(1, $citasActivas);
+        $this->assertStringStartsWith('09:00', (string) $citasActivas->first()->hora);
+    }
 }

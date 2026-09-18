@@ -55,12 +55,12 @@ trait ReservaCitas
     }
 
     /** Cupos libres de un doctor en una fecha, descartando los que caen dentro de la anticipación mínima. */
-    protected function cuposReservables(AgendaService $agenda, Doctor $doctor, string $fecha, ?int $duracion, Ajuste $ajustes): array
+    protected function cuposReservables(AgendaService $agenda, Doctor $doctor, string $fecha, ?int $duracion, Ajuste $ajustes, ?int $sucursalId = null): array
     {
         $limite = now()->addHours((int) $ajustes->reservas_minimo_horas);
 
         return array_values(array_filter(
-            $agenda->horasLibres($doctor, $fecha, null, $duracion),
+            $agenda->horasLibres($doctor, $fecha, null, $duracion, $sucursalId),
             fn ($hora) => Carbon::parse("{$fecha} {$hora}")->greaterThanOrEqualTo($limite)
         ));
     }
@@ -102,6 +102,7 @@ trait ReservaCitas
 
         $doctor = Doctor::activos()->findOrFail($datos['doctor_id']);
         $tratamiento = Tratamiento::activos()->findOrFail($datos['tratamiento_id']);
+        $sucursalId = $datos['sucursal_id'] ?? null;
 
         if ((int) $tratamiento->especialidad_id !== (int) $doctor->especialidad_id) {
             throw ValidationException::withMessages([
@@ -109,13 +110,13 @@ trait ReservaCitas
             ]);
         }
 
-        if (! $agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion)) {
+        if (! $agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion, $sucursalId)) {
             throw ValidationException::withMessages([
                 'hora' => 'Ese profesional no atiende en el horario elegido.',
             ]);
         }
 
-        return DB::transaction(function () use ($agenda, $paciente, $datos, $doctor, $tratamiento) {
+        return DB::transaction(function () use ($agenda, $paciente, $datos, $doctor, $tratamiento, $sucursalId) {
             if ($agenda->conflicto($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion)) {
                 throw ValidationException::withMessages([
                     'hora' => 'Alguien tomó ese horario mientras completabas el formulario. Elige otro, por favor.',
@@ -128,6 +129,7 @@ trait ReservaCitas
                 'tratamiento_id' => $tratamiento->id,
                 'fecha' => $datos['fecha'],
                 'hora' => $datos['hora'],
+                'sucursal_id' => $sucursalId,
                 'estado' => 'PENDIENTE',
                 'origen' => 'ONLINE',
                 'motivo' => $datos['motivo'] ?? null,

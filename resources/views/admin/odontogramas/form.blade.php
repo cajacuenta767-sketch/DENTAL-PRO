@@ -19,6 +19,8 @@
     $atajos = array_values(array_keys(array_filter($estados, fn ($e, $k) => $k !== 'sano', ARRAY_FILTER_USE_BOTH)));
 @endphp
 
+<x-alerta-medica :paciente="$paciente" />
+
 <form method="POST" id="form-odontograma"
       action="{{ $odontograma->exists ? route('admin.odontogramas.update', $odontograma) : route('admin.odontogramas.store', $paciente) }}">
     @csrf
@@ -55,6 +57,8 @@
                                 data-os-denticion="ADULTO">Permanente</button>
                         <button type="button" class="btn btn-sm {{ old('tipo', $odontograma->tipo) === 'INFANTIL' ? 'active' : '' }}"
                                 data-os-denticion="INFANTIL">Temporal</button>
+                        <button type="button" class="btn btn-sm {{ old('tipo', $odontograma->tipo) === 'MIXTO' ? 'active' : '' }}"
+                                data-os-denticion="MIXTO">Mixta</button>
                     </div>
                 </div>
 
@@ -294,6 +298,18 @@
                             @foreach ($citas as $cita)
                                 <option value="{{ $cita->id }}" @selected(old('cita_id', $odontograma->cita_id) == $cita->id)>
                                     {{ $cita->fecha->format('d/m/Y') }} · {{ $cita->tratamiento->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </x-campo>
+
+                    <x-campo nombre="escala_frankl" etiqueta="Escala de Conducta de Frankl (Odontopediatría)"
+                             ayuda="Comportamiento del paciente pediátrico.">
+                        <select id="escala_frankl" name="escala_frankl" class="form-select">
+                            <option value="">— No evaluada / Adulto —</option>
+                            @foreach (\App\Models\Odontograma::ESCALA_FRANKL as $nivel => $info)
+                                <option value="{{ $nivel }}" @selected(old('escala_frankl', $odontograma->escala_frankl) == $nivel)>
+                                    {{ $info['simbolo'] }} {{ $info['etiqueta'] }}
                                 </option>
                             @endforeach
                         </select>

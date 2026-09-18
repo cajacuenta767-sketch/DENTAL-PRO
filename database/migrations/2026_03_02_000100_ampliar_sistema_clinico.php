@@ -154,18 +154,20 @@ return new class extends Migration
             $table->timestamp('transmitido_en')->nullable();
         });
 
-        // --- Búsqueda por trigramas (opcional: requiere pg_trgm) ------------
-        try {
-            DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+        // --- Búsqueda por trigramas (opcional: requiere pg_trgm en PostgreSQL) ------------
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            try {
+                DB::statement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
 
-            foreach (self::TRIGRAMAS as $tabla => $columnas) {
-                foreach ($columnas as $columna) {
-                    DB::statement("CREATE INDEX IF NOT EXISTS {$tabla}_{$columna}_trgm ON {$tabla} USING gin ({$columna} gin_trgm_ops)");
+                foreach (self::TRIGRAMAS as $tabla => $columnas) {
+                    foreach ($columnas as $columna) {
+                        DB::statement("CREATE INDEX IF NOT EXISTS {$tabla}_{$columna}_trgm ON {$tabla} USING gin ({$columna} gin_trgm_ops)");
+                    }
                 }
+            } catch (Throwable $e) {
+                // Sin permisos para crear la extensión: las búsquedas siguen funcionando, solo sin índice.
+                report($e);
             }
-        } catch (Throwable $e) {
-            // Sin permisos para crear la extensión: las búsquedas siguen funcionando, solo sin índice.
-            report($e);
         }
     }
 
