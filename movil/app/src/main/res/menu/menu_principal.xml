@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/accion_recargar"
+        android:icon="@drawable/ic_recargar"
+        android:title="@string/menu_recargar"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/accion_inicio"
+        android:title="@string/menu_inicio"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/accion_navegador"
+        android:title="@string/menu_navegador"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/accion_ajustes"
+        android:title="@string/menu_ajustes"
+        app:showAsAction="never" />
+</menu>

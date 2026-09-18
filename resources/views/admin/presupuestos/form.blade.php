@@ -35,6 +35,7 @@
                                 <th style="width: 8rem;">Cara</th>
                                 <th style="width: 5rem;">Cant.</th>
                                 <th style="width: 8rem;">Precio</th>
+                                <th style="width: 5.5rem;" title="Sesión del plan en la que se realizará">Sesión</th>
                                 <th style="width: 8rem;" class="text-end">Subtotal</th>
                                 <th class="w-1"></th>
                             </tr>
@@ -42,7 +43,7 @@
                         <tbody></tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="6" class="text-end">Subtotal del plan</th>
+                                <th colspan="7" class="text-end">Subtotal del plan</th>
                                 <th class="text-end h3 mb-0" id="subtotal-plan">0.00</th>
                                 <th></th>
                             </tr>
@@ -58,17 +59,8 @@
                 <div class="card-header"><h3 class="card-title">Datos del presupuesto</h3></div>
                 <div class="card-body">
                     <x-campo nombre="paciente_id" etiqueta="Paciente" requerido>
-                        <select id="paciente_id" name="paciente_id" class="form-select" required>
-                            <option value="">— Selecciona —</option>
-                            @foreach ($pacientes as $paciente)
-                                <option value="{{ $paciente->id }}"
-                                        data-cobertura="{{ $paciente->aseguradora?->porcentaje_cobertura ?? 0 }}"
-                                        data-aseguradora="{{ $paciente->aseguradora?->nombre ?? '' }}"
-                                        @selected(old('paciente_id', $presupuesto->paciente_id) == $paciente->id)>
-                                    {{ $paciente->nombre_completo }} · {{ $paciente->numero_documento }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-selector-paciente nombre="paciente_id" :seleccionado="$presupuesto->paciente_id" requerido
+                                             :datos="['cobertura' => $presupuesto->paciente?->aseguradora?->porcentaje_cobertura ?? 0, 'aseguradora' => $presupuesto->paciente?->aseguradora?->nombre ?? '']" />
                     </x-campo>
 
                     <x-campo nombre="doctor_id" etiqueta="Doctor responsable">
@@ -177,6 +169,7 @@
         </td>
         <td><input type="number" class="form-control form-control-sm" data-campo="cantidad" min="1" max="999" value="1" required></td>
         <td><input type="number" class="form-control form-control-sm" data-campo="precio_unitario" step="0.01" min="0" value="0" required></td>
+        <td><input type="number" class="form-control form-control-sm" data-campo="sesion" min="1" max="50" value="1" required title="Sesión"></td>
         <td class="text-end fw-medium" data-subtotal>0.00</td>
         <td><button type="button" class="btn btn-sm btn-outline-danger" data-os-quitar><i class="ti ti-trash"></i></button></td>
     </tr>

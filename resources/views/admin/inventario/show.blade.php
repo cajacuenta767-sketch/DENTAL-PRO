@@ -141,7 +141,7 @@
                                 <td class="text-secondary small">{{ $movimiento->fecha->format('d/m/Y H:i') }}</td>
                                 <td><span class="badge bg-{{ $movimiento->color }}-lt">{{ $movimiento->tipo }}</span></td>
                                 <td class="text-end fw-medium text-{{ $movimiento->signo > 0 ? 'success' : 'danger' }}">
-                                    {{ $movimiento->signo > 0 ? '+' : '−' }}{{ (float) $movimiento->cantidad }}
+                                    {{ $movimiento->signo > 0 ? '+' : '−' }}{{ $movimiento->cantidad_absoluta }}
                                 </td>
                                 <td class="text-end">{{ (float) $movimiento->stock_resultante }}</td>
                                 <td class="text-secondary small">

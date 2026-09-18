@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rutas que el FileProvider puede compartir: las fotos tomadas con la cámara. -->
+<paths>
+    <cache-path
+        name="fotos"
+        path="fotos/" />
+</paths>

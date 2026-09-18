@@ -44,6 +44,7 @@ class EquipoSeeder extends Seeder
                     'password' => 'doctor123',
                     'estado' => 'activo',
                     'email_verified_at' => now(),
+                    'debe_cambiar_password' => true,
                 ]
             );
             $usuario->syncRoles(['DOCTOR']);

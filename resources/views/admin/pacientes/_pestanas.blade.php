@@ -1,11 +1,16 @@
-{{-- Pestañas de la ficha del paciente. $activa: ficha|historial|odontograma|panoramicas|documentos|presupuestos --}}
+{{-- Pestañas de la ficha del paciente. $activa: ficha|historial|odontograma|periodontograma|panoramicas|documentos|presupuestos --}}
 @php
     $pestanas = [
         'ficha' => ['Ficha del paciente', 'ti ti-id', 'pacientes.ver', route('admin.pacientes.show', $paciente)],
         'historial' => ['Historial clínica', 'ti ti-notes-medical', 'historiales.ver', route('admin.historiales.index', $paciente)],
         'odontograma' => ['Odontograma', 'ti ti-dental', 'odontogramas.ver', route('admin.odontogramas.index', $paciente)],
+        'periodontograma' => ['Periodontograma', 'ti ti-dental-broken', 'periodontogramas.ver', route('admin.periodontogramas.index', $paciente)],
+        'endodoncia' => ['Endodoncia', 'ti ti-needle', 'odontogramas.ver', route('admin.conductometrias.index', $paciente)],
+        'ortodoncia' => ['Ortodoncia', 'ti ti-scan', 'odontogramas.ver', route('admin.cefalometrias.index', $paciente)],
+        'implantes' => ['Implantes', 'ti ti-needle', 'odontogramas.ver', route('admin.implantes.paciente', $paciente)],
         'panoramicas' => ['Panorámicas', 'ti ti-photo-scan', 'imagenologia.ver', route('admin.estudios.paciente', $paciente)],
         'documentos' => ['Recetas y certificados', 'ti ti-prescription', 'documentos.ver', route('admin.documentos.paciente', $paciente)],
+        'laboratorio' => ['Laboratorio', 'ti ti-building-warehouse', 'laboratorio.ver', route('admin.laboratorio.index', ['q' => $paciente->numero_documento])],
         'presupuestos' => ['Presupuestos', 'ti ti-file-invoice', 'presupuestos.ver', route('admin.presupuestos.index', ['buscar' => $paciente->numero_documento])],
     ];
 @endphp

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ajuste;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\HistorialClinico;
@@ -37,6 +38,8 @@ class HistorialClinicoController extends Controller
             ]),
             'doctores' => Doctor::activos()->orderBy('apellidos')->get(),
             'citas' => $this->citasDisponibles($paciente),
+            'plantillas' => config('evolucion.plantillas', []),
+            'anestesicos' => config('evolucion.anestesicos', []),
         ]);
     }
 
@@ -58,6 +61,8 @@ class HistorialClinicoController extends Controller
             'historial' => $historial,
             'doctores' => Doctor::activos()->orderBy('apellidos')->get(),
             'citas' => $this->citasDisponibles($historial->paciente, $historial),
+            'plantillas' => config('evolucion.plantillas', []),
+            'anestesicos' => config('evolucion.anestesicos', []),
         ]);
     }
 
@@ -84,7 +89,7 @@ class HistorialClinicoController extends Controller
 
         return Pdf::loadView('pdf.historial', [
             'historial' => $historial,
-            'clinica' => \App\Models\Ajuste::actual(),
+            'clinica' => Ajuste::actual(),
         ])->setPaper('letter')
             ->download('historia-clinica-'.$historial->paciente->numero_documento.'-'.$historial->fecha->format('Ymd').'.pdf');
     }
@@ -101,6 +106,11 @@ class HistorialClinicoController extends Controller
             'tratamiento_realizado' => ['nullable', 'string', 'max:2000'],
             'prescripcion_receta' => ['nullable', 'string', 'max:2000'],
             'observaciones' => ['nullable', 'string', 'max:2000'],
+            'plantilla' => ['nullable', 'string', 'in:'.implode(',', array_keys(config('evolucion.plantillas', [])))],
+            'anestesia' => ['nullable', 'string', 'max:120'],
+            'anestesia_cantidad' => ['nullable', 'string', 'max:40'],
+            'medicacion' => ['nullable', 'string', 'max:2000'],
+            'proxima_cita_indicaciones' => ['nullable', 'string', 'max:2000'],
         ], [], [
             'doctor_id' => 'doctor',
             'cita_id' => 'cita',
@@ -108,6 +118,11 @@ class HistorialClinicoController extends Controller
             'diagnostico' => 'diagnóstico',
             'tratamiento_realizado' => 'tratamiento realizado',
             'prescripcion_receta' => 'prescripción',
+            'plantilla' => 'plantilla de nota',
+            'anestesia' => 'anestésico',
+            'anestesia_cantidad' => 'cantidad de anestésico',
+            'medicacion' => 'medicación',
+            'proxima_cita_indicaciones' => 'indicaciones para la próxima cita',
         ]);
     }
 

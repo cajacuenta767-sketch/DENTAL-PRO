@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Especialidad;
+use App\Models\Horario;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\Tratamiento;
@@ -39,8 +40,8 @@ class HomeController extends Controller
                 'especialidades' => Especialidad::count(),
                 'tratamientos' => Tratamiento::count(),
                 'tratamientosActivos' => Tratamiento::activos()->count(),
-                'horarios' => \App\Models\Horario::count(),
-                'horariosActivos' => \App\Models\Horario::activos()->count(),
+                'horarios' => Horario::count(),
+                'horariosActivos' => Horario::activos()->count(),
                 'usuarios' => Usuario::count(),
                 'roles' => Role::count(),
                 'permisos' => Permission::count(),
@@ -78,9 +79,16 @@ class HomeController extends Controller
     {
         $desde = now()->subMonths(5)->startOfMonth();
 
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateExpr = match ($driver) {
+            'sqlite' => "strftime('%Y-%m', fecha)",
+            'mysql', 'mariadb' => "DATE_FORMAT(fecha, '%Y-%m')",
+            default => "TO_CHAR(fecha, 'YYYY-MM')",
+        };
+
         $filas = Cita::query()
             ->where('fecha', '>=', $desde->toDateString())
-            ->selectRaw("TO_CHAR(fecha, 'YYYY-MM') AS periodo, COUNT(*) AS agendadas, COUNT(*) FILTER (WHERE estado = 'COMPLETADA') AS completadas")
+            ->selectRaw("{$dateExpr} AS periodo, COUNT(*) AS agendadas, SUM(CASE WHEN estado = 'COMPLETADA' THEN 1 ELSE 0 END) AS completadas")
             ->groupBy('periodo')
             ->orderBy('periodo')
             ->get()
@@ -124,7 +132,7 @@ class HomeController extends Controller
         foreach (Cita::ESTADOS as $estado) {
             $etiquetas[] = ucfirst(mb_strtolower(str_replace('_', ' ', $estado)));
             $series[] = (int) ($conteos[$estado] ?? 0);
-            $colores[] = $paleta[$estado];
+            $colores[] = $paleta[$estado] ?? '#adb5bd';
         }
 
         return [

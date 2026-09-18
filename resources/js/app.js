@@ -1,9 +1,100 @@
 import './bootstrap';
 
-import '@tabler/core/dist/js/tabler.min.js';
+import * as tabler from '@tabler/core/dist/js/tabler.min.js';
 import ApexCharts from 'apexcharts';
+import TomSelect from 'tom-select';
+import 'tom-select/dist/css/tom-select.bootstrap5.css';
+import './odontograma';
 
+// Tabler empaqueta Bootstrap en formato UMD: al importarlo como módulo no deja el global
+// `bootstrap` que usan los visores (modales abiertos por script). Se expone aquí.
+window.bootstrap = window.bootstrap ?? tabler.default ?? tabler;
 window.ApexCharts = ApexCharts;
+window.TomSelect = TomSelect;
+
+/**
+ * Selectores de paciente con búsqueda remota. En lugar de volcar todos los
+ * pacientes en el <select>, se consultan a medida que el usuario escribe.
+ */
+function escapar(texto) {
+    return String(texto ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+}
+
+function montarSelectorPaciente(select) {
+    if (select.tomselect) return select.tomselect;
+
+    const url = select.dataset.url;
+
+    // La <option> preseleccionada (si la hay) la lee Tom Select del propio DOM.
+    const ts = new TomSelect(select, {
+        valueField: 'id',
+        labelField: 'texto',
+        searchField: ['texto'],
+        placeholder: select.dataset.placeholder || 'Escribe nombre o documento',
+        maxOptions: 20,
+        loadThrottle: 300,
+        preload: false,
+        allowEmptyOption: false,
+        closeAfterSelect: true,
+        shouldLoad: (consulta) => consulta.trim().length >= 2,
+        load(consulta, callback) {
+            const destino = new URL(url, window.location.origin);
+            destino.searchParams.set('q', consulta.trim());
+
+            fetch(destino, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+                .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
+                .then((datos) => callback(Array.isArray(datos) ? datos : []))
+                .catch(() => callback());
+        },
+        render: {
+            option: (d) => `<div>
+                <div>${escapar(d.texto)}</div>
+                ${d.telefono ? `<div class="text-secondary small"><i class="ti ti-phone me-1"></i>${escapar(d.telefono)}</div>` : ''}
+            </div>`,
+            item: (d) => `<div>${escapar(d.texto)}</div>`,
+            no_results: () => '<div class="no-results">Sin coincidencias.</div>',
+            loading: () => '<div class="spinner"></div>',
+            not_loading: (data) => (data.input.trim().length < 2
+                ? '<div class="no-results text-secondary">Escribe al menos 2 caracteres.</div>'
+                : ''),
+        },
+    });
+
+    // Copia los datos extra (cobertura, aseguradora…) a la <option> real para
+    // que los scripts de cada formulario sigan leyendo option.dataset.
+    // Se registra en fase de captura para adelantarse a los demás oyentes.
+    select.addEventListener('change', () => {
+        const opcion = select.selectedOptions[0];
+        const datos = opcion ? ts.options[opcion.value] : null;
+        if (!opcion || !datos) return;
+
+        Object.entries(datos).forEach(([clave, valor]) => {
+            if (['id', 'texto', '$order', '$id', '$option', '$div'].includes(clave)) return;
+            if (valor === null || typeof valor === 'object') return;
+            opcion.dataset[clave] = valor;
+        });
+    }, true);
+
+    return ts;
+}
+
+function montarSelectoresPaciente(raiz = document) {
+    raiz.querySelectorAll('select[data-selector-paciente]').forEach(montarSelectorPaciente);
+}
+
+/** Envuelve en .table-responsive las tablas que no lo estén (scroll horizontal en móvil). */
+function hacerTablasResponsivas(raiz = document) {
+    raiz.querySelectorAll('table.table').forEach((tabla) => {
+        if (tabla.closest('.table-responsive') || tabla.closest('.dataTables_wrapper')) return;
+
+        const envoltorio = document.createElement('div');
+        envoltorio.className = 'table-responsive';
+        tabla.parentNode.insertBefore(envoltorio, tabla);
+        envoltorio.appendChild(tabla);
+    });
+}
 
 /**
  * Conmutador de tema claro / oscuro. Tabler lee el atributo
@@ -20,7 +111,7 @@ function aplicarTema(tema) {
     }
 }
 
-window.OdontoSuite = {
+window.OdontoSuite = Object.assign(window.OdontoSuite ?? {}, {
     aplicarTema,
 
     temaActual() {
@@ -36,14 +127,181 @@ window.OdontoSuite = {
         const n = Number(valor || 0);
         return `${n.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${simbolo}`;
     },
+
+    /** Muestra una notificación flotante Toast en la esquina inferior derecha. */
+    toast(mensaje, tipo = 'info', duracion = 4000, alHacerClic = null) {
+        let contenedor = document.getElementById('os-toast-container');
+        if (!contenedor) {
+            contenedor = document.createElement('div');
+            contenedor.id = 'os-toast-container';
+            contenedor.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            contenedor.style.zIndex = '1090';
+            document.body.appendChild(contenedor);
+        }
+
+        const iconos = {
+            success: 'ti-circle-check',
+            danger: 'ti-alert-circle',
+            warning: 'ti-alert-triangle',
+            info: 'ti-info-circle',
+            primary: 'ti-bell',
+        };
+
+        const icono = iconos[tipo] || 'ti-info-circle';
+        const color = ['success', 'danger', 'warning', 'info', 'primary'].includes(tipo) ? tipo : 'primary';
+
+        const elemento = document.createElement('div');
+        elemento.className = `toast align-items-center text-bg-${color} border-0 show shadow-lg mb-2`;
+        elemento.setAttribute('role', 'alert');
+        elemento.setAttribute('aria-live', 'assertive');
+        elemento.setAttribute('aria-atomic', 'true');
+        if (alHacerClic) elemento.style.cursor = 'pointer';
+
+        elemento.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="ti ${icono} fs-2 flex-shrink-0"></i>
+                    <div>${escapar(mensaje)}</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        `;
+
+        if (alHacerClic) {
+            elemento.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                alHacerClic();
+            });
+        }
+
+        contenedor.appendChild(elemento);
+
+        const timer = setTimeout(() => {
+            elemento.classList.remove('show');
+            setTimeout(() => elemento.remove(), 300);
+        }, duracion);
+
+        elemento.querySelector('.btn-close')?.addEventListener('click', () => {
+            clearTimeout(timer);
+            elemento.classList.remove('show');
+            setTimeout(() => elemento.remove(), 300);
+        });
+    },
+
+    montarSelectorPaciente,
+    montarSelectoresPaciente,
+    hacerTablasResponsivas,
+});
+
+// Interceptor global para fetch nativo
+const originalFetch = window.fetch;
+window.fetch = async function (...args) {
+    try {
+        const respuesta = await originalFetch.apply(this, args);
+        if (respuesta.status === 419) {
+            window.OdontoSuite?.toast?.(
+                'Tu sesión ha expirado por inactividad. Haz clic aquí para recargar.',
+                'warning',
+                8000,
+                () => window.location.reload()
+            );
+        }
+        return respuesta;
+    } catch (err) {
+        throw err;
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    montarSelectoresPaciente();
+    hacerTablasResponsivas();
+
     document.querySelectorAll('[data-os-theme-toggle]').forEach((boton) => {
         boton.addEventListener('click', (e) => {
             e.preventDefault();
             window.OdontoSuite.alternarTema();
         });
+    });
+
+    // Protección global anti doble-clic y spinner de carga en formularios
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!form || !(form instanceof HTMLFormElement)) return;
+        if (form.hasAttribute('data-no-spinner') || form.hasAttribute('data-no-bloquear')) return;
+
+        // Si la validación nativa falla, el navegador muestra los globos nativos y no bloqueamos
+        if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+            return;
+        }
+
+        const submitBtn = form.querySelector('button[type="submit"]:not([disabled]), input[type="submit"]:not([disabled])');
+        if (!submitBtn) return;
+
+        submitBtn.dataset.osOriginalHtml = submitBtn.innerHTML;
+        submitBtn.dataset.osOriginalWidth = `${submitBtn.offsetWidth}px`;
+        submitBtn.style.minWidth = submitBtn.dataset.osOriginalWidth;
+
+        setTimeout(() => {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('disabled');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...';
+        }, 10);
+    });
+
+    // Restaurar botones deshabilitados al navegar hacia atrás (bfcache)
+    window.addEventListener('pageshow', () => {
+        document.querySelectorAll('button[data-os-original-html]').forEach((btn) => {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+            btn.innerHTML = btn.dataset.osOriginalHtml;
+            delete btn.dataset.osOriginalHtml;
+        });
+    });
+
+    // Navegación lateral: panel deslizable en móvil y modo compacto persistente.
+    const claveSidebar = 'odontosuite-sidebar-colapsada';
+    const botonAbrir = document.querySelector('[data-os-sidebar-open]');
+    const cerrarSidebar = () => {
+        document.body.classList.remove('os-sidebar-open');
+        botonAbrir?.setAttribute('aria-expanded', 'false');
+    };
+
+    try {
+        if (localStorage.getItem(claveSidebar) === 'true') {
+            document.documentElement.classList.add('os-sidebar-collapsed');
+        }
+    } catch {
+        /* La preferencia es opcional. */
+    }
+
+    botonAbrir?.addEventListener('click', () => {
+        document.body.classList.add('os-sidebar-open');
+        botonAbrir.setAttribute('aria-expanded', 'true');
+        document.querySelector('[data-os-sidebar-close]')?.focus();
+    });
+
+    document.querySelectorAll('[data-os-sidebar-close]').forEach((boton) => {
+        boton.addEventListener('click', cerrarSidebar);
+    });
+
+    document.querySelector('[data-os-sidebar-collapse]')?.addEventListener('click', () => {
+        const colapsada = document.documentElement.classList.toggle('os-sidebar-collapsed');
+        try {
+            localStorage.setItem(claveSidebar, String(colapsada));
+        } catch {
+            /* La preferencia es opcional. */
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarSidebar();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            const buscador = document.querySelector('[data-os-buscador]');
+            if (buscador) {
+                e.preventDefault();
+                buscador.focus();
+            }
+        }
     });
 
     // Confirmación antes de enviar formularios destructivos.
@@ -60,3 +318,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => alerta.classList.add('d-none'), 6000);
     });
 });
+
+/**
+ * PWA: registra el service worker (public/sw.js) para que el sistema pueda
+ * instalarse desde el navegador y muestre una página propia sin conexión.
+ * Sólo en contextos seguros (https o localhost), que es donde el navegador
+ * permite service workers.
+ */
+if ('serviceWorker' in navigator
+    && (window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+            /* sin service worker la aplicación funciona igual */
+        });
+    });
+}

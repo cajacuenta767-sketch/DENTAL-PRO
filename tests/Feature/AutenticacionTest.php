@@ -58,8 +58,16 @@ class AutenticacionTest extends CasoClinico
             'email' => 'nueva@pruebas.test',
             'password' => 'clavelarga123',
             'password_confirmation' => 'clavelarga123',
-        ])->assertRedirect(route('admin.home'));
+        ])->assertRedirect(route('portal.inicio'));
 
-        $this->assertTrue(Usuario::whereEmail('nueva@pruebas.test')->first()->hasRole('PACIENTE'));
+        $usuario = Usuario::whereEmail('nueva@pruebas.test')->first();
+
+        $this->assertTrue($usuario->hasRole('PACIENTE'));
+        $this->assertFalse($usuario->accedeAlPanel());
+
+        // El paciente nunca entra al panel de la clínica.
+        $this->actingAs($usuario)->get('/admin/home')->assertForbidden();
+        $this->actingAs($usuario)->get('/admin/citas')->assertForbidden();
+        $this->actingAs($usuario)->get('/admin/buscar/sugerencias?q=an')->assertForbidden();
     }
 }

@@ -47,6 +47,19 @@ return [
             'report' => false,
         ],
 
+        // Copias de seguridad (ZIP con volcado de PostgreSQL + archivos privados).
+        'respaldos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/respaldos'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+            // Cuántos respaldos se conservan al aplicar la retención.
+            'conservar' => (int) env('RESPALDOS_CONSERVAR', 14),
+            // Carpeta con pg_dump/pg_restore si no están en el PATH (opcional).
+            'ruta_pg' => env('RESPALDOS_RUTA_PG'),
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

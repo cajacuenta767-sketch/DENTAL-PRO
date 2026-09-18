@@ -70,6 +70,16 @@
                 <input type="search" name="buscar" value="{{ request('buscar') }}" class="form-control"
                        placeholder="Nombre, código o proveedor">
             </div>
+            @if (($sucursales ?? collect())->count() > 1 && ! $sucursalActiva)
+                <div class="col-md-2">
+                    <select name="sucursal_id" class="form-select">
+                        <option value="">— Todas las sedes —</option>
+                        @foreach ($sucursales as $sede)
+                            <option value="{{ $sede->id }}" @selected(request('sucursal_id') == $sede->id)>{{ $sede->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
             <div class="col-md-3">
                 <select name="categoria" class="form-select">
                     <option value="">— Todas las categorías —</option>
@@ -98,6 +108,9 @@
                 <tr>
                     <th>Insumo</th>
                     <th>Categoría</th>
+                    @if ($sedes->count() > 1)
+                        <th>Sede</th>
+                    @endif
                     <th class="text-center">Existencias</th>
                     <th class="text-center">Mínimo</th>
                     <th class="text-end">Costo unit.</th>
@@ -117,6 +130,15 @@
                             </div>
                         </td>
                         <td><span class="badge bg-azure-lt">{{ $insumo->categoria }}</span></td>
+                        @if ($sedes->count() > 1)
+                            <td>
+                                @if ($sede = $sedes->get($insumo->sucursal_id))
+                                    <span class="badge" style="background-color: {{ $sede->color }}20; color: {{ $sede->color }}">{{ $sede->nombre }}</span>
+                                @else
+                                    <span class="text-secondary small">Todas</span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="text-center">
                             <span class="badge bg-{{ $insumo->color_stock }}">
                                 {{ (float) $insumo->stock_actual }} {{ $insumo->unidad_medida }}
@@ -149,7 +171,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8">
+                        <td colspan="{{ $sedes->count() > 1 ? 9 : 8 }}">
                             <x-vacio icono="ti ti-package-off" titulo="Sin insumos"
                                      texto="Registra el catálogo de insumos para controlar tus existencias." />
                         </td>

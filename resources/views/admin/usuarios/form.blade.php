@@ -32,26 +32,52 @@
 
                     <div class="row">
                         <div class="col-md-6">
-                            <x-campo nombre="password" etiqueta="Contraseña" :requerido="! $usuario->exists"
-                                     :ayuda="$usuario->exists ? 'Déjala vacía para conservar la actual.' : 'Mínimo 8 caracteres.'">
+                            <x-campo nombre="password" etiqueta="Contraseña"
+                                     :ayuda="$usuario->exists
+                                         ? 'Déjala vacía para conservar la actual.'
+                                         : 'Déjalo vacío para generar una contraseña temporal que se mostrará una sola vez; el usuario deberá cambiarla al entrar. Si la escribes, mínimo 8 caracteres.'">
                                 <input type="password" id="password" name="password" class="form-control"
-                                       autocomplete="new-password" {{ $usuario->exists ? '' : 'required' }}>
+                                       autocomplete="new-password">
                             </x-campo>
                         </div>
                         <div class="col-md-6">
-                            <x-campo nombre="password_confirmation" etiqueta="Confirmar contraseña" :requerido="! $usuario->exists">
+                            <x-campo nombre="password_confirmation" etiqueta="Confirmar contraseña">
                                 <input type="password" id="password_confirmation" name="password_confirmation" class="form-control"
-                                       autocomplete="new-password" {{ $usuario->exists ? '' : 'required' }}>
+                                       autocomplete="new-password">
                             </x-campo>
                         </div>
                     </div>
 
-                    <x-campo nombre="estado" etiqueta="Estado" requerido>
-                        <select id="estado" name="estado" class="form-select" required>
-                            <option value="activo" @selected(old('estado', $usuario->estado) === 'activo')>Activo</option>
-                            <option value="inactivo" @selected(old('estado', $usuario->estado) === 'inactivo')>Inactivo</option>
-                        </select>
-                    </x-campo>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <x-campo nombre="estado" etiqueta="Estado" requerido>
+                                <select id="estado" name="estado" class="form-select" required>
+                                    <option value="activo" @selected(old('estado', $usuario->estado) === 'activo')>Activo</option>
+                                    <option value="inactivo" @selected(old('estado', $usuario->estado) === 'inactivo')>Inactivo</option>
+                                </select>
+                            </x-campo>
+                        </div>
+                        @if (($sucursales ?? collect())->count() > 1)
+                            <div class="col-md-6">
+                                @if ($puedeAsignarSede ?? false)
+                                    <x-campo nombre="sucursal_id" etiqueta="Sucursal" ayuda="Vacío = puede trabajar en todas las sedes y elegirla desde el navbar.">
+                                        <select id="sucursal_id" name="sucursal_id" class="form-select">
+                                            <option value="">— Todas las sedes —</option>
+                                            @foreach ($sucursales as $sede)
+                                                <option value="{{ $sede->id }}" @selected(old('sucursal_id', $usuario->sucursal_id) == $sede->id)>{{ $sede->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </x-campo>
+                                @else
+                                    <div class="mb-3">
+                                        <label class="form-label">Sucursal</label>
+                                        <div class="form-control-plaintext">{{ $usuario->sucursal?->nombre ?? 'Todas las sedes' }}</div>
+                                        <small class="form-hint">Solo quien administra las sedes puede cambiarla.</small>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

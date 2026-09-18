@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PagoDetalle extends Model
 {
-    use HasFactory;
+    use Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'pago_detalles';
 

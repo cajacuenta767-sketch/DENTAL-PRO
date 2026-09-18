@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentoClinico extends Model
 {
-    use HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'documentos_clinicos';
 
     protected $fillable = [
         'folio', 'paciente_id', 'doctor_id', 'cita_id', 'usuario_id',
         'tipo', 'titulo', 'contenido', 'indicaciones',
-        'vigencia_dias', 'fecha_emision', 'estado',
+        'vigencia_dias', 'fecha_emision', 'estado', 'firma_archivo', 'firmado_en',
     ];
 
     protected function casts(): array
@@ -23,6 +27,7 @@ class DocumentoClinico extends Model
         return [
             'fecha_emision' => 'date',
             'vigencia_dias' => 'integer',
+            'firmado_en' => 'datetime',
         ];
     }
 
@@ -75,14 +80,34 @@ class DocumentoClinico extends Model
         $prefijo = self::PREFIJOS[$tipo] ?? 'DOC';
         $anio = now()->year;
 
-        $ultimo = static::query()
-            ->where('folio', 'like', "{$prefijo}-{$anio}-%")
-            ->orderByDesc('id')
-            ->value('folio');
+        $correlativo = Secuencia::siguiente("documento-{$prefijo}-{$anio}", function () use ($prefijo, $anio) {
+            $ultimo = static::withTrashed()
+                ->where('folio', 'like', "{$prefijo}-{$anio}-%")
+                ->orderByDesc('folio')
+                ->value('folio');
 
-        $correlativo = $ultimo ? ((int) substr($ultimo, -5)) + 1 : 1;
+            return $ultimo ? (int) substr($ultimo, -5) : 0;
+        });
 
         return sprintf('%s-%d-%05d', $prefijo, $anio, $correlativo);
+    }
+
+    /** Disco privado donde se guardan las firmas. */
+    public const DISCO_FIRMAS = 'local';
+
+    public function getEstaFirmadoAttribute(): bool
+    {
+        return filled($this->firma_archivo) && $this->firmado_en !== null;
+    }
+
+    /** Firma como data URI para incrustarla en el PDF. */
+    public function getFirmaDataUriAttribute(): ?string
+    {
+        if (! $this->esta_firmado || ! Storage::disk(self::DISCO_FIRMAS)->exists($this->firma_archivo)) {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode(Storage::disk(self::DISCO_FIRMAS)->get($this->firma_archivo));
     }
 
     public function getTipoLegibleAttribute(): string
@@ -95,7 +120,7 @@ class DocumentoClinico extends Model
         return self::ICONOS[$this->tipo] ?? 'ti ti-file-text';
     }
 
-    public function getVenceElAttribute(): ?\Illuminate\Support\Carbon
+    public function getVenceElAttribute(): ?Carbon
     {
         return $this->vigencia_dias ? $this->fecha_emision->copy()->addDays($this->vigencia_dias) : null;
     }

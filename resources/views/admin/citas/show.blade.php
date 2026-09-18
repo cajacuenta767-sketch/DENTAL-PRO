@@ -21,6 +21,11 @@
                 </a>
             @endunless
         @endcan
+        @if ($cita->whatsapp_url)
+            <a href="{{ $cita->whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success">
+                <i class="ti ti-brand-whatsapp me-1"></i>WhatsApp
+            </a>
+        @endif
         @can('citas.editar')
             <a href="{{ route('admin.citas.edit', $cita) }}" class="btn btn-primary"><i class="ti ti-edit me-1"></i>Editar</a>
         @endcan
@@ -78,12 +83,41 @@
                         <div class="datagrid-content">{{ $cita->origen === 'ONLINE' ? 'Reserva en línea' : 'Recepción' }}</div>
                     </div>
                     <div class="datagrid-item">
+                        <div class="datagrid-title">Confirmación</div>
+                        <div class="datagrid-content">
+                            @if ($cita->confirmada_en)
+                                {{ $cita->confirmada_en->format('d/m/Y H:i') }}
+                                <span class="text-secondary small">({{ $cita->confirmada_por ?: 'sin origen' }})</span>
+                            @else
+                                Sin confirmar por el paciente
+                            @endif
+                        </div>
+                    </div>
+                    <div class="datagrid-item">
                         <div class="datagrid-title">Recordatorio</div>
                         <div class="datagrid-content">
                             {{ $cita->recordatorio_enviado_en?->format('d/m/Y H:i') ?? 'No enviado' }}
                         </div>
                     </div>
                 </div>
+
+                @if ($cita->serie_id && ($serie ?? collect())->isNotEmpty())
+                    <div class="mt-3">
+                        <div class="text-secondary small text-uppercase">
+                            <i class="ti ti-repeat me-1"></i>Serie de {{ $serie->count() }} citas
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @foreach ($serie as $otra)
+                                @if ($otra->is($cita))
+                                    <span class="badge bg-primary">{{ $otra->fecha->format('d/m/Y') }} {{ substr($otra->hora, 0, 5) }}</span>
+                                @else
+                                    <a href="{{ route('admin.citas.show', $otra) }}" class="badge bg-{{ $otra->color_estado }}-lt"
+                                       title="{{ $otra->estado_legible }}">{{ $otra->fecha->format('d/m/Y') }} {{ substr($otra->hora, 0, 5) }}</a>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 @if ($cita->motivo)
                     <div class="mt-3">
@@ -95,7 +129,7 @@
                 @if ($cita->observacion)
                     <div class="mt-3">
                         <div class="text-secondary small text-uppercase">Observaciones</div>
-                        <div>{{ $cita->observacion }}</div>
+                        <div style="white-space: pre-line;">{{ $cita->observacion }}</div>
                     </div>
                 @endif
             </div>
@@ -136,7 +170,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     @if ($cita->paciente->fotografia)
-                        <span class="avatar avatar-lg" style="background-image: url({{ Storage::url($cita->paciente->fotografia) }})"></span>
+                        <span class="avatar avatar-lg" style="background-image: url({{ $cita->paciente->foto_url }})"></span>
                     @else
                         <span class="avatar avatar-lg bg-blue-lt">
                             {{ mb_substr($cita->paciente->nombres, 0, 1) }}{{ mb_substr($cita->paciente->apellidos, 0, 1) }}

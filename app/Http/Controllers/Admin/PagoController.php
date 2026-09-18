@@ -5,16 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\PagoComprobanteMail;
 use App\Models\Ajuste;
+use App\Models\Auditoria;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Paciente;
 use App\Models\Pago;
+use App\Models\PresupuestoDetalle;
+use App\Models\Sucursal;
 use App\Models\Tratamiento;
+use App\Support\SucursalActiva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,8 +27,11 @@ class PagoController extends Controller
 {
     public function index(Request $request): View
     {
+        $sede = $this->sedeFiltrada($request);
+
         $consulta = Pago::query()
-            ->with(['paciente', 'doctor', 'cajero'])
+            ->with(['paciente', 'doctor', 'cajero', 'sucursal'])
+            ->when($sede, fn ($q) => $q->where('sucursal_id', $sede))
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $t = '%'.$request->buscar.'%';
                 $q->where(fn ($s) => $s->where('codigo_recibo', 'ilike', $t)
@@ -37,7 +45,7 @@ class PagoController extends Controller
 
         return view('admin.pagos.index', [
             'pagos' => (clone $consulta)->orderByDesc('fecha_pago')->paginate(15)->withQueryString(),
-            'totales' => $this->totalesCaja(),
+            'totales' => $this->totalesCaja($sede),
         ]);
     }
 
@@ -55,6 +63,7 @@ class PagoController extends Controller
                 'paciente_id' => $cita?->paciente_id ?? $request->query('paciente_id'),
                 'doctor_id' => $cita?->doctor_id,
                 'cita_id' => $cita?->id,
+                'sucursal_id' => $cita?->sucursal_id ?? SucursalActiva::id(),
             ]),
             'cita' => $cita,
             'pacientes' => Paciente::activos()->orderBy('apellidos')->get(),
@@ -80,8 +89,10 @@ class PagoController extends Controller
                 'doctor_id' => $datos['doctor_id'] ?? null,
                 'cita_id' => $datos['cita_id'] ?? null,
                 'usuario_id' => $request->user()->id,
+                'sucursal_id' => $datos['sucursal_id'] ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
+                'desglose_metodos' => $datos['desglose_metodos'] ?? null,
                 'notas' => $datos['notas'] ?? null,
                 'fecha_pago' => $datos['fecha_pago'],
             ]);
@@ -139,8 +150,10 @@ class PagoController extends Controller
                 'paciente_id' => $datos['paciente_id'],
                 'doctor_id' => $datos['doctor_id'] ?? null,
                 'cita_id' => $datos['cita_id'] ?? null,
+                'sucursal_id' => $datos['sucursal_id'] ?? $pago->sucursal_id ?? $this->sedePorDefecto(),
                 'monto_pagado' => $datos['monto_pagado'],
                 'metodo_pago' => $datos['metodo_pago'],
+                'desglose_metodos' => $datos['desglose_metodos'] ?? null,
                 'notas' => $datos['notas'] ?? null,
                 'fecha_pago' => $datos['fecha_pago'],
             ]);
@@ -156,6 +169,14 @@ class PagoController extends Controller
 
     public function destroy(Pago $pago): RedirectResponse
     {
+        if ($pago->tiene_documentos_fiscales) {
+            return back()->with('error', 'Este recibo tiene documentos fiscales asociados. Anúlalo en lugar de eliminarlo.');
+        }
+
+        if ((float) $pago->monto_pagado > 0 && $pago->estado !== 'ANULADO') {
+            return back()->with('error', 'Un recibo con dinero cobrado no se elimina: anúlalo para conservar el rastro en caja.');
+        }
+
         $codigo = $pago->codigo_recibo;
         $pago->delete();
 
@@ -174,10 +195,21 @@ class PagoController extends Controller
             'motivo' => ['required', 'string', 'max:500'],
         ])['motivo'];
 
-        $pago->update([
-            'estado' => 'ANULADO',
-            'notas' => trim($pago->notas."\nANULADO el ".now()->format('d/m/Y H:i').' por '.$request->user()->nombre.': '.$motivo),
-        ]);
+        if ($pago->documentoFiscal()->exists()) {
+            return back()->with('error', 'Anula primero el documento fiscal vigente de este recibo.');
+        }
+
+        DB::transaction(function () use ($pago, $request, $motivo) {
+            $pago->update([
+                'estado' => 'ANULADO',
+                'notas' => trim($pago->notas."\nANULADO el ".now()->format('d/m/Y H:i').' por '.$request->user()->nombre.': '.$motivo),
+            ]);
+
+            // Las líneas del presupuesto vuelven a quedar pendientes de cobro.
+            PresupuestoDetalle::where('pago_id', $pago->id)->update(['pago_id' => null]);
+        });
+
+        Auditoria::registrar('ANULAR', $pago, "Anuló el recibo {$pago->codigo_recibo}: {$motivo}");
 
         return back()->with('exito', "El recibo {$pago->codigo_recibo} fue anulado.");
     }
@@ -206,17 +238,24 @@ class PagoController extends Controller
             'clinica' => Ajuste::actual(),
         ])->setPaper('letter')->output();
 
-        Mail::to($pago->paciente->email)->send(new PagoComprobanteMail($pago, $pdf));
+        try {
+            Mail::to($pago->paciente->email)->send(new PagoComprobanteMail($pago, $pdf));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'No pudimos enviar el comprobante. Revisa la configuración de correo del servidor.');
+        }
 
         return back()->with('exito', 'El comprobante fue enviado al correo del paciente.');
     }
 
     private function validar(Request $request): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'metodo_pago' => ['required', 'in:'.implode(',', Pago::METODOS)],
             'monto_pagado' => ['required', 'numeric', 'min:0'],
             'fecha_pago' => ['required', 'date'],
@@ -228,11 +267,44 @@ class PagoController extends Controller
             'detalles.*.precio_unitario' => ['required', 'numeric', 'min:0'],
         ], [], [
             'paciente_id' => 'paciente',
+            'sucursal_id' => 'sede',
             'metodo_pago' => 'método de pago',
             'monto_pagado' => 'monto pagado',
             'fecha_pago' => 'fecha del pago',
             'detalles' => 'detalle del recibo',
         ]);
+
+        $total = round(collect($datos['detalles'])->sum(fn ($d) => $d['cantidad'] * $d['precio_unitario']), 2);
+
+        // Si el método es MIXTO, validar el desglose y su suma
+        if ($datos['metodo_pago'] === 'MIXTO') {
+            $desglose = $request->input('desglose_metodos', []);
+            if (!is_array($desglose) || empty($desglose)) {
+                throw ValidationException::withMessages([
+                    'desglose_metodos' => 'Para pagos mixtos debes especificar el desglose por método.',
+                    'metodo_pago' => 'Para pagos mixtos debes especificar el desglose por método.',
+                ]);
+            }
+            $sumaDesglose = round(collect($desglose)->sum(), 2);
+            if (abs($sumaDesglose - (float) $datos['monto_pagado']) > 0.01) {
+                throw ValidationException::withMessages([
+                    'desglose_metodos' => "La suma del desglose mixto ({$sumaDesglose}) debe coincidir con el monto pagado ({$datos['monto_pagado']}).",
+                    'metodo_pago' => "La suma del desglose mixto ({$sumaDesglose}) debe coincidir con el monto pagado ({$datos['monto_pagado']}).",
+                ]);
+            }
+            $datos['desglose_metodos'] = $desglose;
+        } else {
+            $datos['desglose_metodos'] = null;
+        }
+
+        // Nunca se registra más dinero del que vale el recibo.
+        if ((float) $datos['monto_pagado'] > $total + 0.005) {
+            throw ValidationException::withMessages([
+                'monto_pagado' => "El monto pagado ({$datos['monto_pagado']}) supera el total del recibo ({$total}).",
+            ]);
+        }
+
+        return $datos;
     }
 
     private function guardarDetalles(Pago $pago, array $detalles): void
@@ -248,16 +320,46 @@ class PagoController extends Controller
         }
     }
 
-    /** Indicadores de la cabecera de caja. */
-    private function totalesCaja(): array
+    /** Indicadores de la cabecera de caja, acotados a la sede si hay una activa. */
+    private function totalesCaja(?int $sede = null): array
     {
-        $vigentes = Pago::query()->vigentes();
+        $vigentes = Pago::query()->vigentes()
+            ->when($sede, fn ($q) => $q->where('sucursal_id', $sede));
+
+        $efectivo = 0.0;
+        $digital = 0.0;
+        $pagosLista = (clone $vigentes)->get();
+
+        foreach ($pagosLista as $p) {
+            if ($p->metodo_pago === 'MIXTO' && is_array($p->desglose_metodos)) {
+                $efectivo += (float) ($p->desglose_metodos['EFECTIVO'] ?? 0);
+                foreach (['TARJETA', 'QR', 'TRANSFERENCIA'] as $dig) {
+                    $digital += (float) ($p->desglose_metodos[$dig] ?? 0);
+                }
+            } elseif ($p->metodo_pago === 'EFECTIVO') {
+                $efectivo += (float) $p->monto_pagado;
+            } else {
+                $digital += (float) $p->monto_pagado;
+            }
+        }
 
         return [
-            'recaudado' => (float) (clone $vigentes)->sum('monto_pagado'),
-            'efectivo' => (float) (clone $vigentes)->where('metodo_pago', 'EFECTIVO')->sum('monto_pagado'),
-            'digital' => (float) (clone $vigentes)->whereIn('metodo_pago', ['TARJETA', 'QR', 'TRANSFERENCIA'])->sum('monto_pagado'),
-            'saldos' => (float) (clone $vigentes)->sum('monto_saldo'),
+            'recaudado' => round((float) $pagosLista->sum('monto_pagado'), 2),
+            'efectivo' => round($efectivo, 2),
+            'digital' => round($digital, 2),
+            'saldos' => round((float) $pagosLista->sum('monto_saldo'), 2),
         ];
+    }
+
+    /** Sin sede elegida se usa la activa; con una sola sede, la principal. */
+    private function sedePorDefecto(): ?int
+    {
+        return SucursalActiva::id() ?? (Sucursal::activas()->count() === 1 ? Sucursal::principal()?->id : null);
+    }
+
+    /** La sede activa manda; si se ven todas, aplica el filtro elegido en el listado. */
+    private function sedeFiltrada(Request $request): ?int
+    {
+        return SucursalActiva::id() ?? ($request->filled('sucursal_id') ? (int) $request->sucursal_id : null);
     }
 }

@@ -13,6 +13,7 @@ use App\Services\AgendaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -78,10 +79,13 @@ class ReservaPublicaController extends Controller
         $datos = $request->validate([
             'doctor_id' => ['required', 'exists:doctores,id'],
             'fecha' => ['required', 'date'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
         ]);
 
         $doctor = Doctor::activos()->findOrFail($datos['doctor_id']);
-        $horas = $this->agenda->horasLibres($doctor, $datos['fecha']);
+        $duracion = $request->filled('tratamiento_id') ? Tratamiento::find($request->tratamiento_id)?->duracion : null;
+        $sucursalId = $request->filled('sucursal_id') ? (int) $request->sucursal_id : null;
+        $horas = $this->agenda->horasLibres($doctor, $datos['fecha'], null, $duracion, $sucursalId);
 
         return response()->json([
             'dia' => $this->agenda->nombreDia($datos['fecha']),
@@ -103,6 +107,7 @@ class ReservaPublicaController extends Controller
             'fecha_nacimiento' => ['nullable', 'date', 'before:today'],
             'doctor_id' => ['required', 'exists:doctores,id'],
             'tratamiento_id' => ['required', 'exists:tratamientos,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'fecha' => ['required', 'date'],
             'hora' => ['required', 'date_format:H:i'],
             'motivo' => ['nullable', 'string', 'max:500'],
@@ -115,41 +120,56 @@ class ReservaPublicaController extends Controller
         $this->verificarVentana($datos['fecha'], $datos['hora'], $ajustes);
 
         $doctor = Doctor::activos()->findOrFail($datos['doctor_id']);
+        $tratamiento = Tratamiento::activos()->findOrFail($datos['tratamiento_id']);
+        $sucursalId = $datos['sucursal_id'] ?? null;
 
-        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'])) {
+        if ((int) $tratamiento->especialidad_id !== (int) $doctor->especialidad_id) {
+            throw ValidationException::withMessages([
+                'tratamiento_id' => 'Ese profesional no realiza el tratamiento elegido.',
+            ]);
+        }
+
+        if (! $this->agenda->horaValida($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion, $sucursalId)) {
             throw ValidationException::withMessages([
                 'hora' => 'Ese profesional no atiende en el horario elegido.',
             ]);
         }
 
-        $cita = DB::transaction(function () use ($datos, $doctor) {
-            // Dentro de la transacción para que dos reservas simultáneas
-            // no puedan tomar el mismo cupo.
-            $ocupado = Cita::where('doctor_id', $doctor->id)
-                ->whereDate('fecha', $datos['fecha'])
-                ->where('hora', $datos['hora'])
-                ->vigentes()
-                ->lockForUpdate()
-                ->exists();
-
-            if ($ocupado) {
+        $cita = DB::transaction(function () use ($datos, $doctor, $tratamiento, $sucursalId) {
+            // Comprobación de cruce dentro de la transacción; el índice único
+            // de la agenda es la última barrera si dos reservas coinciden.
+            if ($this->agenda->conflicto($doctor, $datos['fecha'], $datos['hora'], $tratamiento->duracion)) {
                 throw ValidationException::withMessages([
                     'hora' => 'Alguien tomó ese horario mientras completabas el formulario. Elige otro, por favor.',
                 ]);
             }
 
-            $paciente = Paciente::firstOrNew(['numero_documento' => $datos['numero_documento']]);
+            $paciente = Paciente::withTrashed()->firstOrNew(['numero_documento' => $datos['numero_documento']]);
 
-            // A un paciente ya registrado solo le completamos lo que falte.
-            $paciente->fill([
-                'nombres' => $paciente->exists ? $paciente->nombres : $datos['nombres'],
-                'apellidos' => $paciente->exists ? $paciente->apellidos : $datos['apellidos'],
-                'tipo_documento' => $datos['tipo_documento'],
-                'telefono' => $datos['telefono'] ?: $paciente->telefono,
-                'email' => $datos['email'] ?: $paciente->email,
-                'fecha_nacimiento' => $datos['fecha_nacimiento'] ?? $paciente->fecha_nacimiento,
-                'activo' => true,
-            ])->save();
+            if ($paciente->exists) {
+                // Una ficha existente no se sobrescribe desde un formulario
+                // anónimo: solo se completa lo que esté vacío.
+                if ($paciente->trashed()) {
+                    $paciente->restore();
+                }
+
+                $paciente->fill([
+                    'telefono' => $paciente->telefono ?: $datos['telefono'],
+                    'email' => $paciente->email ?: $datos['email'],
+                    'fecha_nacimiento' => $paciente->fecha_nacimiento ?? ($datos['fecha_nacimiento'] ?? null),
+                    'activo' => true,
+                ])->save();
+            } else {
+                $paciente->fill([
+                    'nombres' => $datos['nombres'],
+                    'apellidos' => $datos['apellidos'],
+                    'tipo_documento' => $datos['tipo_documento'],
+                    'telefono' => $datos['telefono'],
+                    'email' => $datos['email'],
+                    'fecha_nacimiento' => $datos['fecha_nacimiento'] ?? null,
+                    'activo' => true,
+                ])->save();
+            }
 
             return Cita::create([
                 'paciente_id' => $paciente->id,
@@ -157,6 +177,7 @@ class ReservaPublicaController extends Controller
                 'tratamiento_id' => $datos['tratamiento_id'],
                 'fecha' => $datos['fecha'],
                 'hora' => $datos['hora'],
+                'sucursal_id' => $sucursalId,
                 'estado' => 'PENDIENTE',
                 'origen' => 'ONLINE',
                 'motivo' => $datos['motivo'] ?? null,
@@ -199,13 +220,13 @@ class ReservaPublicaController extends Controller
 
         return array_values(array_filter(
             $horas,
-            fn ($hora) => \Illuminate\Support\Carbon::parse("{$fecha} {$hora}")->greaterThanOrEqualTo($limite)
+            fn ($hora) => Carbon::parse("{$fecha} {$hora}")->greaterThanOrEqualTo($limite)
         ));
     }
 
     private function verificarVentana(string $fecha, string $hora, Ajuste $ajustes): void
     {
-        $momento = \Illuminate\Support\Carbon::parse("{$fecha} {$hora}");
+        $momento = Carbon::parse("{$fecha} {$hora}");
 
         if ($momento->lessThan(now()->addHours((int) $ajustes->reservas_minimo_horas))) {
             throw ValidationException::withMessages([

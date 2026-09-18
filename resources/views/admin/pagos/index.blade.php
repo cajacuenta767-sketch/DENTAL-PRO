@@ -39,6 +39,16 @@
                 <input type="search" name="buscar" value="{{ request('buscar') }}" class="form-control"
                        placeholder="Buscar por N° recibo, paciente, documento…">
             </div>
+            @if (($sucursales ?? collect())->count() > 1 && ! $sucursalActiva)
+                <div class="col-md-2">
+                    <select name="sucursal_id" class="form-select">
+                        <option value="">— Todas las sedes —</option>
+                        @foreach ($sucursales as $sede)
+                            <option value="{{ $sede->id }}" @selected(request('sucursal_id') == $sede->id)>{{ $sede->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
             <div class="col-md-2">
                 <select name="metodo" class="form-select">
                     <option value="">— Todos los métodos —</option>
@@ -72,6 +82,9 @@
                     <th>Recibo</th>
                     <th>Paciente</th>
                     <th>Doctor / Responsable</th>
+                    @if (($sucursales ?? collect())->count() > 1)
+                        <th>Sede</th>
+                    @endif
                     <th>Fecha</th>
                     <th class="text-center">Método</th>
                     <th class="text-end">Total</th>
@@ -93,6 +106,15 @@
                             <div>{{ $pago->doctor?->nombre_profesional ?? '—' }}</div>
                             <div class="text-secondary small">Cajero: {{ $pago->cajero?->nombre ?? '—' }}</div>
                         </td>
+                        @if (($sucursales ?? collect())->count() > 1)
+                            <td>
+                                @if ($pago->sucursal)
+                                    <span class="badge" style="background-color: {{ $pago->sucursal->color }}20; color: {{ $pago->sucursal->color }}">{{ $pago->sucursal->nombre }}</span>
+                                @else
+                                    <span class="text-secondary">—</span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="text-secondary">{{ $pago->fecha_pago->format('d/m/Y H:i') }}</td>
                         <td class="text-center"><span class="badge bg-azure-lt">{{ $pago->metodo_pago }}</span></td>
                         <td class="text-end">{{ number_format($pago->monto_total, 2) }}</td>
@@ -122,7 +144,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10">
+                        <td colspan="{{ ($sucursales ?? collect())->count() > 1 ? 11 : 10 }}">
                             <x-vacio icono="ti ti-receipt-off" titulo="Sin recibos"
                                      texto="Ningún cobro coincide con los filtros aplicados." />
                         </td>

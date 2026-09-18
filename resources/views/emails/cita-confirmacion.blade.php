@@ -1,5 +1,5 @@
 @component('mail::message')
-# {{ $esRecordatorio ? '¡Te esperamos mañana!' : '¡Tu cita quedó registrada!' }}
+# {{ $esRecordatorio ? 'Te recordamos tu cita' : 'Tu cita quedó registrada' }}
 
 Hola **{{ $cita->paciente->nombres }}**,
 
@@ -16,6 +16,14 @@ Registramos tu cita en {{ $clinica->nombre }}. Estos son los datos:
 **Duración estimada:** {{ $cita->tratamiento->duracion }} minutos
 **Código de cita:** {{ $cita->token }}
 @endcomponent
+
+@if (! in_array($cita->estado, ['CONFIRMADA', 'CANCELADA'], true))
+Por favor confírmanos tu asistencia con un clic:
+
+<x-mail::button :url="$cita->url_confirmacion">
+Confirmar asistencia
+</x-mail::button>
+@endif
 
 Presenta el código **{{ $cita->token }}** en recepción el día de tu atención.
 

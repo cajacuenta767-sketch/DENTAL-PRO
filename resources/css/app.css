@@ -17,6 +17,126 @@ body {
     font-feature-settings: 'cv03', 'cv04', 'cv11';
 }
 
+/* Panel administrativo: navegación lateral -------------------- */
+
+.os-admin-layout {
+    --os-sidebar-width: 17.5rem;
+    --os-sidebar-collapsed-width: 5rem;
+    --os-topbar-height: 4.5rem;
+    background: var(--tblr-bg-surface-secondary, #f6f8fb);
+}
+
+.os-admin-layout .page { min-height: 100vh; }
+.os-admin-layout .page-wrapper { min-height: 100vh; margin-left: var(--os-sidebar-width); padding-top: var(--os-topbar-height); transition: margin-left 0.22s ease; }
+
+.os-sidebar {
+    position: fixed; inset: 0 auto 0 0; z-index: 1040; display: flex; width: var(--os-sidebar-width); flex-direction: column;
+    color: #d9e6e5;
+    background: radial-gradient(circle at 0 0, rgba(45, 212, 191, 0.15), transparent 16rem), linear-gradient(180deg, #0d2628 0%, #091c1e 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0.5rem 0 2rem rgba(4, 47, 46, 0.08);
+    transition: width 0.22s ease, transform 0.22s ease;
+}
+
+.os-sidebar-brand { display: flex; min-height: var(--os-topbar-height); align-items: center; gap: 0.75rem; padding: 0 1.1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.os-brand { display: flex; min-width: 0; flex: 1; align-items: center; gap: 0.75rem; color: #fff; text-decoration: none; }
+.os-brand:hover { color: #fff; }
+.os-brand-mark { display: grid; width: 2.5rem; height: 2.5rem; flex: 0 0 2.5rem; place-items: center; overflow: hidden; border: 1px solid rgba(94, 234, 212, 0.25); border-radius: 0.8rem; background: linear-gradient(145deg, #14b8a6, #0f766e); box-shadow: 0 0.5rem 1.25rem rgba(13, 148, 136, 0.3); font-size: 1.45rem; }
+.os-brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+.os-brand-copy, .os-sidebar-label, .os-collapse-button span, .os-nav-link span { min-width: 0; overflow: hidden; white-space: nowrap; }
+.os-brand-copy { display: flex; flex-direction: column; line-height: 1.15; }
+.os-brand-copy strong { overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; }
+.os-brand-copy small { margin-top: 0.25rem; color: #83aaa7; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.os-sidebar-nav { flex: 1; padding: 1rem 0.75rem 2rem; overflow-x: hidden; overflow-y: auto; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; scrollbar-width: thin; }
+.os-nav-section + .os-nav-section { margin-top: 1rem; }
+.os-nav-heading { display: flex; align-items: center; gap: 0.6rem; min-height: 1.5rem; padding: 0 0.75rem 0.35rem; color: #6f9996; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.os-nav-heading i { display: none; font-size: 1.05rem; }
+.os-nav-list { margin: 0; padding: 0; list-style: none; }
+.os-nav-list li + li { margin-top: 0.18rem; }
+.os-nav-link { position: relative; display: flex; min-height: 2.65rem; align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: 0.65rem; color: #b9cecc; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease; }
+.os-nav-link > i { width: 1.4rem; flex: 0 0 1.4rem; text-align: center; font-size: 1.2rem; }
+.os-nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.07); transform: translateX(2px); }
+.os-nav-link.active { color: #fff; background: linear-gradient(90deg, rgba(20, 184, 166, 0.28), rgba(20, 184, 166, 0.13)); box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.12); }
+.os-nav-link.active::before { content: ''; position: absolute; inset: 0 auto 0 -0.75rem; width: 3px; border-radius: 0 3px 3px 0; background: #2dd4bf; box-shadow: 0 0 0.75rem #2dd4bf; }
+
+.os-sidebar-footer { padding: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.os-clinic-status { display: flex; align-items: center; gap: 0.7rem; min-height: 3.1rem; padding: 0.55rem 0.75rem; border-radius: 0.65rem; background: rgba(255, 255, 255, 0.045); }
+.os-clinic-status small, .os-clinic-status strong { display: block; overflow: hidden; text-overflow: ellipsis; }
+.os-clinic-status small { color: #83aaa7; font-size: 0.68rem; }
+.os-clinic-status strong { color: #eaf4f3; font-size: 0.8rem; }
+.os-status-dot { width: 0.65rem; height: 0.65rem; flex: 0 0 0.65rem; border: 2px solid rgba(255,255,255,.25); border-radius: 50%; background: var(--os-sede-color, #2dd4bf); box-shadow: 0 0 0.65rem var(--os-sede-color, #2dd4bf); }
+.os-collapse-button { width: 100%; min-height: 2.55rem; align-items: center; gap: 0.75rem; margin-top: 0.45rem; padding: 0.5rem 0.75rem; border: 0; border-radius: 0.65rem; color: #83aaa7; background: transparent; font-size: 0.8rem; text-align: left; }
+.os-collapse-button:hover { color: #fff; background: rgba(255,255,255,.06); }
+.os-collapse-button i { width: 1.4rem; flex: 0 0 1.4rem; text-align: center; font-size: 1.15rem; }
+
+.os-topbar { position: fixed; inset: 0 0 auto var(--os-sidebar-width); z-index: 1030; min-height: var(--os-topbar-height); border-bottom: 1px solid var(--tblr-border-color); background: color-mix(in srgb, var(--tblr-bg-surface) 92%, transparent); backdrop-filter: blur(14px); transition: left 0.22s ease; }
+.os-topbar-inner { display: flex; width: 100%; min-height: var(--os-topbar-height); align-items: center; gap: 1rem; padding: 0 1.5rem; }
+.os-topbar-actions { display: flex; align-items: center; gap: 0.45rem; margin-left: auto; }
+.os-search { position: relative; display: flex; width: min(31rem, 42vw); height: 2.65rem; align-items: center; gap: 0.65rem; padding: 0 0.8rem; border: 1px solid var(--tblr-border-color); border-radius: 0.75rem; background: var(--tblr-bg-surface-secondary); transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+.os-search:focus-within { border-color: var(--os-brand); background: var(--tblr-bg-surface); box-shadow: 0 0 0 0.2rem var(--os-brand-soft); }
+.os-search > i { color: var(--tblr-secondary); font-size: 1.1rem; }
+.os-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--tblr-body-color); background: transparent; font-size: 0.85rem; }
+.os-search input::placeholder { color: var(--tblr-secondary); }
+.os-search kbd { align-items: center; height: 1.45rem; padding: 0 .4rem; border: 1px solid var(--tblr-border-color); border-radius: .35rem; color: var(--tblr-secondary); background: var(--tblr-bg-surface); box-shadow: none; font: 600 .65rem/1 inherit; white-space: nowrap; }
+.os-search [data-os-resultados] { top: 100%; max-height: 24rem; overflow-y: auto; }
+.os-icon-button, .os-sede-pill, .os-user-trigger { border: 1px solid transparent; color: var(--tblr-body-color); background: transparent; }
+.os-icon-button { display: inline-grid; width: 2.65rem; height: 2.65rem; flex: 0 0 2.65rem; place-items: center; border-radius: 0.7rem; font-size: 1.25rem; }
+.os-icon-button:hover, .os-sede-pill:hover, .os-user-trigger:hover { border-color: var(--tblr-border-color); background: var(--tblr-bg-surface-secondary); }
+.os-sidebar .os-icon-button { color: #b9cecc; }
+.os-sidebar .os-icon-button:hover { color: #fff; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.07); }
+.os-sede-pill { display: flex; min-height: 2.65rem; align-items: center; gap: .45rem; padding: 0 .7rem; border-radius: .7rem; font-size: .8rem; }
+.os-sede-pill i { font-size: 1.1rem; }
+.os-user-trigger { display: flex; min-height: 2.9rem; align-items: center; gap: .6rem; padding: .25rem .4rem; border-radius: .75rem; text-align: left; }
+.os-user-copy { max-width: 10rem; line-height: 1.12; }
+.os-user-copy strong, .os-user-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.os-user-copy strong { font-size: .8rem; }
+.os-user-copy small { margin-top: .2rem; color: var(--tblr-secondary); font-size: .67rem; }
+.os-notification-dot { position: absolute; top: .55rem; right: .55rem; width: .48rem; height: .48rem; border: 2px solid var(--tblr-bg-surface); border-radius: 50%; background: #ef4444; box-sizing: content-box; }
+.os-notifications { width: min(22rem, calc(100vw - 2rem)); }
+.os-sidebar-backdrop { display: none; }
+.os-admin-layout .page-header { padding: 1.5rem 0 .5rem; }
+.os-admin-layout .page-header .page-pretitle { color: var(--os-brand); font-weight: 700; letter-spacing: .08em; }
+.os-admin-layout .page-title { font-size: clamp(1.35rem, 2vw, 1.75rem); letter-spacing: -.025em; }
+.os-admin-layout .card { border-color: color-mix(in srgb, var(--tblr-border-color) 82%, transparent); box-shadow: 0 .15rem .75rem rgba(15, 23, 42, .035); }
+
+@media (min-width: 992px) {
+    .os-sidebar-collapsed .os-sidebar { width: var(--os-sidebar-collapsed-width); }
+    .os-sidebar-collapsed .os-topbar { left: var(--os-sidebar-collapsed-width); }
+    .os-sidebar-collapsed .page-wrapper { margin-left: var(--os-sidebar-collapsed-width); }
+    .os-sidebar-collapsed .os-brand-copy, .os-sidebar-collapsed .os-nav-heading span, .os-sidebar-collapsed .os-nav-link span, .os-sidebar-collapsed .os-sidebar-label, .os-sidebar-collapsed .os-collapse-button span { display: none; }
+    .os-sidebar-collapsed .os-sidebar-brand { padding-inline: 1.25rem; }
+    .os-sidebar-collapsed .os-sidebar-nav, .os-sidebar-collapsed .os-sidebar-footer { padding-inline: .75rem; }
+    .os-sidebar-collapsed .os-nav-heading { justify-content: center; padding-inline: 0; }
+    .os-sidebar-collapsed .os-nav-heading i { display: block; }
+    .os-sidebar-collapsed .os-nav-link, .os-sidebar-collapsed .os-collapse-button, .os-sidebar-collapsed .os-clinic-status { justify-content: center; padding-inline: .55rem; }
+    .os-sidebar-collapsed .os-nav-link:hover { transform: none; }
+    .os-sidebar-collapsed .os-collapse-button i { transform: rotate(180deg); }
+}
+
+@media (max-width: 991.98px) {
+    .os-admin-layout .page-wrapper { margin-left: 0; }
+    .os-sidebar { width: min(18rem, calc(100vw - 3rem)); transform: translateX(-105%); box-shadow: 1rem 0 3rem rgba(0,0,0,.28); }
+    .os-topbar { left: 0; }
+    .os-sidebar-open { overflow: hidden; }
+    .os-sidebar-open .os-sidebar { transform: translateX(0); }
+    .os-sidebar-backdrop { position: fixed; inset: 0; z-index: 1035; border: 0; background: rgba(2, 19, 20, .58); opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+    .os-sidebar-open .os-sidebar-backdrop { display: block; opacity: 1; pointer-events: auto; }
+    .os-topbar-inner { gap: .65rem; padding-inline: .85rem; }
+    .os-search { width: min(25rem, 48vw); }
+}
+
+@media (max-width: 575.98px) {
+    .os-admin-layout { --os-topbar-height: 4rem; }
+    .os-search { flex: 1; width: auto; height: 2.5rem; }
+    .os-search input::placeholder { color: transparent; }
+    .os-topbar-actions { gap: .1rem; }
+    .os-topbar-actions .os-icon-button { width: 2.5rem; height: 2.5rem; flex-basis: 2.5rem; }
+    .os-sede-pill { min-width: 2.5rem; height: 2.5rem; justify-content: center; padding: 0 .45rem; }
+    .os-user-trigger { padding: .2rem; }
+    .os-user-trigger > i { display: none; }
+    .os-admin-layout .page-header { padding-top: 1rem; }
+}
+
 /* Marca ------------------------------------------------------- */
 
 .os-brand-text {
@@ -169,7 +289,7 @@ body {
 }
 
 .pieza-cara {
-    fill: #fff;
+    /* El color lo pone cada cara con style="fill: …"; aquí solo el trazo. */
     stroke: #adb5bd;
     stroke-width: 1;
     transition: fill 0.12s ease;
@@ -182,6 +302,17 @@ body {
 
 .pieza.pieza-ausente .pieza-svg {
     opacity: 0.35;
+}
+
+/* Cuadrícula: extracción indicada y urgencia. */
+.pieza.pieza-extraccion .pieza-svg {
+    outline: 2px solid #d63939;
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+.pieza.pieza-urgente .pieza-numero {
+    color: #d63939;
 }
 
 /* Pieza abierta en el panel lateral. */
@@ -222,8 +353,442 @@ body {
 
 @media print {
     .navbar,
+    .os-sidebar,
+    .os-topbar,
+    .os-sidebar-backdrop,
     .page-header .btn,
     .no-print {
         display: none !important;
+    }
+
+    .os-admin-layout .page-wrapper { margin-left: 0 !important; padding-top: 0 !important; }
+}
+
+/* Odontograma: vista de arcada (desde arriba) y 3D ------------ */
+
+.odontograma-arcada-contenedor {
+    max-width: 520px;
+    margin: 0 auto;
+    perspective: 1200px;
+}
+
+.odontograma-arcada-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.45s ease, filter 0.45s ease;
+    transform-origin: 50% 55%;
+}
+
+/* Modo 3D: la arcada se inclina como si se mirara al paciente sentado. */
+.odontograma-3d .odontograma-arcada-svg {
+    transform: rotateX(52deg) scale(1.12);
+    filter: drop-shadow(0 16px 12px rgba(0, 0, 0, 0.3));
+}
+
+.odontograma-3d .pieza-arcada .pieza-cara {
+    stroke-width: 1.4;
+}
+
+.arcada-fondo {
+    fill: rgba(220, 120, 130, 0.13);
+    stroke: rgba(220, 120, 130, 0.4);
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+}
+
+.arcada-etiqueta,
+.arcada-lado {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-arcada {
+    cursor: pointer;
+    outline: none;
+}
+
+.pieza-arcada .pieza-cara {
+    stroke: #8a929a;
+    stroke-width: 1;
+    transition: fill 0.12s ease, stroke 0.12s ease;
+}
+
+.pieza-arcada .pieza-cara:hover,
+.pieza-arcada:focus-visible .pieza-cara {
+    stroke: var(--os-brand);
+    stroke-width: 2;
+}
+
+.pieza-surco {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.pieza-anillo {
+    fill: none;
+    stroke: var(--os-brand);
+    stroke-width: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.pieza-arcada.pieza-activa .pieza-anillo {
+    opacity: 1;
+}
+
+.pieza-tachado {
+    stroke: #d63939;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pieza-arcada.pieza-extraccion .pieza-tachado {
+    opacity: 1;
+}
+
+.pieza-arcada.pieza-ausente .pieza-cara,
+.pieza-arcada.pieza-ausente .pieza-surco {
+    opacity: 0.3;
+}
+
+.pieza-arcada.pieza-atenuada,
+.pieza.pieza-atenuada .pieza-svg {
+    opacity: 0.22;
+}
+
+.pieza-urgente .pieza-anillo {
+    opacity: 1;
+    stroke: #d63939;
+    stroke-dasharray: 4 3;
+}
+
+.pieza-etiqueta {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+}
+
+.pieza-etiqueta-activa {
+    fill: var(--os-brand);
+    font-weight: 800;
+}
+
+[data-bs-theme="dark"] .pieza-arcada .pieza-cara {
+    stroke: #5c6470;
+}
+
+/* Pieza ampliada del panel lateral. */
+.pieza-detalle {
+    width: 100%;
+    max-width: 210px;
+    margin: 0 auto;
+    display: block;
+}
+
+.pieza-detalle .pieza-cara {
+    stroke: #6c757d;
+    stroke-width: 1.2;
+    cursor: pointer;
+}
+
+.pieza-detalle .pieza-cara:hover {
+    stroke: var(--os-brand);
+    stroke-width: 2.5;
+}
+
+.pieza-detalle .detalle-etiqueta {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    fill: var(--tblr-secondary);
+    pointer-events: none;
+    text-anchor: middle;
+}
+
+/* Chips de hallazgo del panel. */
+.os-chip-hallazgo {
+    border-width: 1px;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+}
+
+.os-chip-hallazgo.active {
+    color: #fff !important;
+}
+
+.os-atajo {
+    font-size: 0.62rem;
+    opacity: 0.65;
+    margin-left: 0.25rem;
+}
+
+/* ---------------------------------------------------------------
+   Selector de paciente (Tom Select) integrado con Tabler
+   --------------------------------------------------------------- */
+
+.ts-wrapper.form-select {
+    padding: 0;
+    border: 0;
+    background-image: none;
+}
+
+.ts-wrapper .ts-control {
+    min-height: calc(1.4285714286em + 0.875rem + 2px);
+    padding: 0.4375rem 0.75rem;
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    font-size: 0.875rem;
+    line-height: 1.4285714286;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.ts-wrapper.focus .ts-control {
+    border-color: var(--os-brand);
+    box-shadow: 0 0 0 0.25rem var(--os-brand-soft);
+}
+
+.ts-wrapper .ts-control > input,
+.ts-wrapper .ts-control > input::placeholder {
+    color: var(--tblr-body-color);
+}
+
+.ts-wrapper .ts-control > input::placeholder {
+    color: var(--tblr-secondary);
+    opacity: 1;
+}
+
+.ts-wrapper .ts-dropdown {
+    border: var(--tblr-border-width) solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    background: var(--tblr-bg-surface);
+    color: var(--tblr-body-color);
+    box-shadow: var(--tblr-box-shadow-dropdown, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
+    font-size: 0.875rem;
+}
+
+.ts-wrapper .ts-dropdown .option {
+    padding: 0.5rem 0.75rem;
+}
+
+.ts-wrapper .ts-dropdown .option.active {
+    background: var(--os-brand-soft);
+    color: var(--tblr-body-color);
+}
+
+.ts-wrapper .ts-dropdown .no-results,
+.ts-wrapper .ts-dropdown .spinner {
+    padding: 0.5rem 0.75rem;
+}
+
+.ts-wrapper.single .ts-control::after {
+    border-color: var(--tblr-secondary) transparent transparent;
+}
+
+.ts-wrapper.single.dropdown-active .ts-control::after {
+    border-color: transparent transparent var(--tblr-secondary);
+}
+
+.is-invalid + .ts-wrapper .ts-control,
+.ts-wrapper.is-invalid .ts-control {
+    border-color: var(--tblr-danger);
+}
+
+/* ---------------------------------------------------------------
+   Accesibilidad
+   --------------------------------------------------------------- */
+
+/* Foco visible con el color de marca (sólo al navegar con teclado). */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+    outline: 2px solid var(--os-brand) !important;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.pieza-arcada:focus-visible,
+.pieza-svg:focus-visible {
+    outline: 2px solid var(--os-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Enlace "saltar al contenido": visible sólo al enfocarlo. */
+.os-saltar {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 1100;
+    padding: 0.5rem 1rem;
+    background: var(--os-brand);
+    color: #fff;
+    border-radius: 0 0 var(--tblr-border-radius) var(--tblr-border-radius);
+}
+
+.os-saltar:focus {
+    top: 0;
+    color: #fff;
+}
+
+/* Reduce el movimiento cuando el usuario lo pide en su sistema. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .odontograma-arcada-svg,
+    .odontograma-3d .odontograma-arcada-svg,
+    .pieza-cara,
+    .pieza-arcada .pieza-cara,
+    .pieza-anillo,
+    .os-module-card {
+        transition: none !important;
+    }
+
+    .odontograma-3d .odontograma-arcada-svg {
+        filter: none;
+    }
+
+    .badge-blink {
+        animation: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   Móvil y pantallas táctiles
+   --------------------------------------------------------------- */
+
+/* Tablas: desplazamiento horizontal dentro de las tarjetas. */
+.card .table-responsive,
+.card > .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.card > .table-responsive > .table {
+    margin-bottom: 0;
+}
+
+/* Elementos interactivos del odontograma: sin doble-toque para zoom. */
+.pieza-arcada,
+.pieza-svg,
+.pieza-detalle,
+.os-chip-hallazgo,
+.os-hallazgo {
+    touch-action: manipulation;
+}
+
+@media (pointer: coarse) {
+    /* Objetivos táctiles más amplios en la arcada y los chips de hallazgo. */
+    .pieza-arcada .pieza-cara {
+        stroke-width: 1.6;
+    }
+
+    .pieza-arcada .pieza-cara:hover,
+    .pieza-arcada:focus-visible .pieza-cara {
+        stroke-width: 2.6;
+    }
+
+    .os-chip-hallazgo {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .os-hallazgo {
+        min-height: 44px;
+    }
+
+    .navbar .nav-link,
+    .navbar .btn-icon,
+    .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .dropdown-item {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+    }
+}
+
+/* Odontograma: por debajo de 1200px el panel de la pieza se fija al pie
+   de la pantalla para no perder de vista la arcada al marcar hallazgos. */
+@media (max-width: 1199.98px) {
+    #panel-pieza {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        max-height: 45vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        margin-bottom: 0 !important;
+        border-radius: var(--tblr-border-radius) var(--tblr-border-radius) 0 0;
+        box-shadow: 0 -0.5rem 1.5rem rgba(0, 0, 0, 0.18);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    #panel-pieza .card-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--tblr-card-bg, var(--tblr-bg-surface));
+    }
+
+    /* Deja sitio para que el contenido no quede tapado por el panel. */
+    body:has(#panel-pieza) .page-body {
+        padding-bottom: 47vh;
+    }
+
+    .odontograma-arcada-contenedor {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .page-header .page-title {
+        font-size: 1.25rem;
+    }
+
+    .page-header .col-auto .btn-list,
+    .page-header .col-auto .btn {
+        flex-wrap: wrap;
+    }
+
+    .pieza {
+        width: 38px;
+    }
+
+    .odontograma-cuadrante {
+        gap: 0.2rem;
     }
 }

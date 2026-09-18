@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DENTAL-PRO · Software de gestión para clínicas dentales</title>
+  <meta name="description" content="DENTAL-PRO: agenda, odontograma 3D, historia clínica, imagenología, presupuestos, caja, facturación e inventario para clínicas dentales. Windows, Android y nube. Licencia mensual, anual o vitalicia.">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://cajacuenta767-sketch.github.io/DENTAL-PRO/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="DENTAL-PRO">
+  <meta property="og:title" content="DENTAL-PRO · Software de gestión para clínicas dentales">
+  <meta property="og:description" content="Agenda, odontograma 3D, historia clínica, imagenología, presupuestos, caja, facturación e inventario. Windows, Android y nube.">
+  <meta property="og:url" content="https://cajacuenta767-sketch.github.io/DENTAL-PRO/">
+  <meta property="og:image" content="https://cajacuenta767-sketch.github.io/DENTAL-PRO/img/home.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DENTAL-PRO · Software para clínicas dentales">
+  <meta name="twitter:description" content="Agenda, odontograma 3D, historia clínica, imagenología, presupuestos, caja, facturación e inventario.">
+  <meta name="twitter:image" content="https://cajacuenta767-sketch.github.io/DENTAL-PRO/img/home.jpg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="estilos.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <a class="salto" href="#contenido">Ir al contenido</a>
+
+  <svg width="0" height="0" class="visualmente-oculto" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-calendario" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></symbol>
+      <symbol id="i-diente" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-1.5 0-2 .7-3.3.7C7 5.7 6 7 6 9.1c0 3.2 1.6 9.9 3.3 9.9 1.1 0 1.4-2.6 2.7-2.6s1.6 2.6 2.7 2.6c1.7 0 3.3-6.7 3.3-9.9C18 7 17 5.7 15.3 5.7 14 5.7 13.5 5 12 5z"/></symbol>
+      <symbol id="i-usuarios" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 4.5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.7"/></symbol>
+      <symbol id="i-mensaje" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12h5"/></symbol>
+      <symbol id="i-historia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></symbol>
+      <symbol id="i-imagen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></symbol>
+      <symbol id="i-presupuesto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+      <symbol id="i-caja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 11h18M7 15h3"/></symbol>
+      <symbol id="i-factura" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+      <symbol id="i-comision" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3h3.5"/></symbol>
+      <symbol id="i-inventario" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9z"/><path d="M12 12l9-4.5M12 12v9M12 12L3 7.5"/></symbol>
+      <symbol id="i-reloj" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-firma" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c3-1 4-6 6-6s1 4 3 4 2-4 4-4 2 3 3 3"/><path d="M4 5l3 3M14 5l-8 8v3h3l8-8z"/></symbol>
+      <symbol id="i-portal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M10 18h4M9 7h6"/></symbol>
+      <symbol id="i-sedes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5M9 12h2M13 12h2"/></symbol>
+      <symbol id="i-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></symbol>
+      <symbol id="i-respaldo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+      <symbol id="i-escudo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+      <symbol id="i-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4M12 15v2"/></symbol>
+      <symbol id="i-auditoria" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5M8 11h6M11 8v6"/></symbol>
+      <symbol id="i-lista" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h1M4 12h1M4 18h1"/></symbol>
+      <symbol id="i-reporte" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 16v-5M10 16V8M14 16v-3M18 16V5"/></symbol>
+      <symbol id="i-windows" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5l7.5-1v7H3zM11.5 4.3L21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></symbol>
+      <symbol id="i-android" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2zM5 10a7 7 0 0 1 14 0M7 5l1.5 2M17 5l-1.5 2M9 19v2M15 19v2M3 11v5M21 11v5"/><path d="M9.5 8.5h.01M14.5 8.5h.01"/></symbol>
+      <symbol id="i-nube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/></symbol>
+      <symbol id="i-descarga" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></symbol>
+      <symbol id="i-carrito" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.5 11h11L21 7H7"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+      <symbol id="i-jugar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/></symbol>
+      <symbol id="i-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-1.8-1-1 .8a4 4 0 0 1-2-2l.8-1-1-1.8z"/></symbol>
+      <symbol id="i-correo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+      <symbol id="i-externo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 13v6H5V6h6"/></symbol>
+      <symbol id="i-cerrar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-izquierda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+      <symbol id="i-derecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="cabecera">
+    <div class="contenedor">
+      <a class="logo" href="#inicio" aria-label="DENTAL-PRO, inicio">
+        <img src="favicon.svg" alt="" width="32" height="32">
+        DENTAL-PRO
+      </a>
+      <button class="menu-boton" type="button" aria-expanded="false" aria-controls="navegacion" data-menu>
+        <span class="visualmente-oculto">Abrir menú</span>
+        <svg aria-hidden="true" focusable="false"><use href="#i-lista"/></svg>
+      </button>
+      <nav id="navegacion" class="nav" aria-label="Principal">
+        <a href="#modulos">Módulos</a>
+        <a href="#capturas">Capturas</a>
+        <a href="#precios">Precios</a>
+        <a href="#descargas">Descargas</a>
+        <a href="#demo">Demo</a>
+        <a href="#faq">Preguntas</a>
+        <a href="#contacto">Contacto</a>
+        <a class="boton boton-primario boton-pequeno" href="#comprar">Comprar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+
+    <section class="hero" id="inicio" aria-labelledby="titulo-hero">
+      <div class="contenedor">
+        <div class="hero-grid">
+          <div>
+            <span class="etiqueta">Software para clínicas dentales</span>
+            <h1 id="titulo-hero">Toda la clínica en un solo sistema: agenda, odontograma, caja y pacientes.</h1>
+            <p class="entradilla">DENTAL-PRO reúne la operación clínica y administrativa de tu consultorio o red de sedes: citas con recordatorios, odontograma en arcada 3D, historia clínica, imagenología, presupuestos, cobros, facturación e inventario. Instálalo en Windows, úsalo en la nube o desde la app Android.</p>
+            <div class="hero-acciones">
+              <a class="boton boton-primario" href="#demo" data-enlace="demo">
+                <svg aria-hidden="true" focusable="false"><use href="#i-jugar"/></svg>
+                Probar demo
+              </a>
+              <a class="boton boton-secundario" href="#descargas" data-descarga="windows">
+                <svg aria-hidden="true" focusable="false"><use href="#i-windows"/></svg>
+                Descargar para Windows
+              </a>
+              <a class="boton boton-secundario" href="#descargas" data-descarga="android">
+                <svg aria-hidden="true" focusable="false"><use href="#i-android"/></svg>
+                Descargar para Android
+              </a>
+              <a class="boton boton-secundario" href="#comprar">
+                <svg aria-hidden="true" focusable="false"><use href="#i-carrito"/></svg>
+                Comprar
+              </a>
+            </div>
+            <p class="hero-nota">Prueba gratuita de 7 días con la demo. Instalación y capacitación inicial remota incluidas en todos los planes.</p>
+            <ul class="hero-cifras">
+              <li><strong>25+</strong><span>módulos integrados</span></li>
+              <li><strong>3</strong><span>formas de usarlo: Windows, nube y Android</span></li>
+              <li><strong>82</strong><span>permisos por acción en 5 roles</span></li>
+              <li><strong>7 días</strong><span>de funcionamiento sin internet</span></li>
+            </ul>
+          </div>
+          <figure class="hero-imagen">
+            <img src="img/home.jpg" alt="Panel de control de DENTAL-PRO con indicadores de citas, pacientes, ingresos y gráfico de rendimiento" width="1440" height="900" fetchpriority="high">
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="modulos" class="alterna" aria-labelledby="titulo-modulos">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Todo lo que incluye</span>
+          <h2 id="titulo-modulos">Un sistema completo, sin módulos aparte ni cobros ocultos</h2>
+          <p>Cada licencia incluye todas las funciones. No hay versión básica: la clínica pequeña y la red de sedes usan el mismo sistema.</p>
+        </div>
+
+        <div class="grupo-modulos">
+          <h3><svg aria-hidden="true" focusable="false"><use href="#i-diente"/></svg> Clínica</h3>
+          <ul class="tarjetas">
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-diente"/></svg></span>
+              <h4>Odontograma en arcada 3D</h4>
+              <p>Hallazgos por pieza y por cara (FDI), dentición permanente y temporal, vistas arcada, 3D y cuadrícula, evaluación y ejecución, comparativo entre fechas y generación del presupuesto desde el diagnóstico.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-reporte"/></svg></span>
+              <h4>Periodontograma</h4>
+              <p>Sondaje por sitio, sangrado, placa, movilidad, furca y recesión, con índices automáticos, gráfico por arcada y PDF para el paciente.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-historia"/></svg></span>
+              <h4>Historia clínica</h4>
+              <p>Registro por consulta con antecedentes, alergias, diagnóstico y tratamiento; plantillas reutilizables, dictado por voz y receta en PDF.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-imagen"/></svg></span>
+              <h4>Imagenología</h4>
+              <p>Radiografías, fotos clínicas, informes, PDF, Word y DICOM en almacenamiento privado; carga múltiple, visor con zoom, anotaciones y comparación lado a lado.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-firma"/></svg></span>
+              <h4>Recetas, certificados y consentimientos</h4>
+              <p>Seis tipos de documento con folio correlativo y vigencia. Los consentimientos se firman en pantalla y la firma viaja al PDF con fecha y hora.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg></span>
+              <h4>Aseguradoras y convenios</h4>
+              <p>Obras sociales con porcentaje de cobertura y tope anual, aplicados automáticamente al presupuesto.</p>
+            </li>
+          </ul>
+        </div>
+
+        <div class="grupo-modulos">
+          <h3><svg aria-hidden="true" focusable="false"><use href="#i-calendario"/></svg> Agenda y pacientes</h3>
+          <ul class="tarjetas">
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-calendario"/></svg></span>
+              <h4>Agenda diaria, semanal y mensual</h4>
+              <p>Arrastrar y soltar para mover turnos, duración real por tratamiento, detección de cruces, citas recurrentes y vista por profesional o de toda la clínica.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-mensaje"/></svg></span>
+              <h4>Recordatorios con confirmación</h4>
+              <p>Avisos por WhatsApp, SMS y correo con enlace para confirmar asistencia en un clic. Twilio o WhatsApp Cloud API, con mensaje de prueba desde Ajustes.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-usuarios"/></svg></span>
+              <h4>Pacientes</h4>
+              <p>Ficha completa con antecedentes, alergias, contacto de emergencia, saldo, documentos y línea de tiempo. Búsqueda global sobre pacientes, citas, recibos y presupuestos.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-reloj"/></svg></span>
+              <h4>Lista de espera</h4>
+              <p>Pacientes que quieren un turno antes, con prioridad y preferencia horaria. Al liberarse un cupo, se agenda con un clic.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-portal"/></svg></span>
+              <h4>Portal del paciente</h4>
+              <p>Cuenta propia para reservar citas, ver y cancelar turnos, pagar en línea, firmar consentimientos y descargar recetas, presupuestos y recibos.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-externo"/></svg></span>
+              <h4>Reservas en línea con QR</h4>
+              <p>Página pública de reserva con enlace y código QR para recepción; el paciente elige especialidad, profesional y un cupo real.</p>
+            </li>
+          </ul>
+        </div>
+
+        <div class="grupo-modulos">
+          <h3><svg aria-hidden="true" focusable="false"><use href="#i-caja"/></svg> Finanzas</h3>
+          <ul class="tarjetas">
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-presupuesto"/></svg></span>
+              <h4>Presupuestos por sesiones</h4>
+              <p>Plan de tratamiento por pieza, flujo evaluación → aprobación → ejecución, avance por sesión, cobertura de la aseguradora y cobro desde el mismo plan.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-caja"/></svg></span>
+              <h4>Caja diaria con arqueo</h4>
+              <p>Recibos con detalle, efectivo, tarjeta, QR y transferencia, saldos, anulación, PDF y cierre de caja con fondo inicial, efectivo contado y diferencia.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-factura"/></svg></span>
+              <h4>Facturación electrónica conectable</h4>
+              <p>Documentos con serie, correlativo e IVA; anular emite la nota de crédito. Se conecta a la administración tributaria de tu país mediante un driver.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-comision"/></svg></span>
+              <h4>Comisiones por doctor</h4>
+              <p>Porcentaje por profesional o por tratamiento, liquidación por período y reporte de comisiones listo para pagar.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-inventario"/></svg></span>
+              <h4>Inventario</h4>
+              <p>Insumos con kardex, entradas, salidas, ajustes, mermas, valorización y alertas de stock mínimo. Las existencias solo cambian por movimientos.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-reporte"/></svg></span>
+              <h4>Reportes</h4>
+              <p>Financiero y caja, citas y productividad, padrón de pacientes, rentabilidad por tratamiento y comisiones, con exportación a PDF y CSV.</p>
+            </li>
+          </ul>
+        </div>
+
+        <div class="grupo-modulos">
+          <h3><svg aria-hidden="true" focusable="false"><use href="#i-escudo"/></svg> Operación y seguridad</h3>
+          <ul class="tarjetas">
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-sedes"/></svg></span>
+              <h4>Multisucursal</h4>
+              <p>Varias sedes en una misma clínica: horarios, citas, caja e inventario etiquetados por sede, usuarios ligados a una sede y totales por sucursal.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-candado"/></svg></span>
+              <h4>Roles, permisos y 2FA</h4>
+              <p>Cinco roles predefinidos y 82 permisos por acción editables desde la interfaz, sin escalada de privilegios. Doble factor por correo y límites de intentos.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-auditoria"/></svg></span>
+              <h4>Auditoría</h4>
+              <p>Quién creó, cambió o eliminó cada registro, con el antes y el después, la IP y los accesos fallidos. Los registros clínicos usan borrado lógico.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-respaldo"/></svg></span>
+              <h4>Copias de seguridad automáticas</h4>
+              <p>Respaldo diario de la base de datos y de los archivos privados en un ZIP con rotación, creación manual desde el panel y restauración desde consola.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-api"/></svg></span>
+              <h4>API con tokens</h4>
+              <p>API REST autenticada con tokens personales que heredan los permisos del usuario, para centrales telefónicas, chatbots, apps y sistemas contables.</p>
+            </li>
+            <li class="tarjeta">
+              <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-nube"/></svg></span>
+              <h4>Windows, nube y Android</h4>
+              <p>Instalador para Windows con todo incluido, versión web instalable como app (PWA) y app Android. Datos privados en tu servidor.</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="capturas" aria-labelledby="titulo-capturas">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Capturas reales</span>
+          <h2 id="titulo-capturas">Así se ve DENTAL-PRO</h2>
+          <p>Pantallas tomadas de la instalación de demostración, con datos de ejemplo. Pulsa cualquiera para ampliarla.</p>
+        </div>
+        <div class="galeria" data-galeria>
+          <figure>
+            <button type="button" data-ampliar="img/home.jpg" aria-label="Ampliar: Panel de control">
+              <img src="img/home.jpg" alt="Panel de control con ocho indicadores, gráfico de citas de seis meses y estado global de citas" width="1440" height="900" loading="lazy">
+            </button>
+            <figcaption><strong>Panel de control</strong>Indicadores del día, evolución de citas y reparto por estado.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/agenda-semana.jpg" aria-label="Ampliar: Agenda semanal">
+              <img src="img/agenda-semana.jpg" alt="Agenda semanal con turnos por día y hora, en distintos estados y con arrastrar y soltar" width="1440" height="1000" loading="lazy">
+            </button>
+            <figcaption><strong>Agenda semanal</strong>Turnos por franja y profesional; se mueven arrastrando.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/odontograma.jpg" aria-label="Ampliar: Odontograma en arcada">
+              <img src="img/odontograma.jpg" alt="Odontograma en vista de arcada con las piezas numeradas en FDI y la paleta de hallazgos" width="1440" height="1300" loading="lazy">
+            </button>
+            <figcaption><strong>Odontograma en arcada</strong>Hallazgos por pieza y por cara, evaluación y ejecución.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/odontograma-3d.jpg" aria-label="Ampliar: Odontograma en perspectiva 3D">
+              <img src="img/odontograma-3d.jpg" alt="Odontograma en perspectiva 3D con ambas arcadas y la leyenda de hallazgos" width="1440" height="1300" loading="lazy">
+            </button>
+            <figcaption><strong>Odontograma 3D</strong>Arcadas en perspectiva con resumen de diagnóstico.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/periodontograma.jpg" aria-label="Ampliar: Periodontograma">
+              <img src="img/periodontograma.jpg" alt="Periodontograma con sondaje por sitio, movilidad, furca, gráfico por arcada e índices" width="1440" height="1000" loading="lazy">
+            </button>
+            <figcaption><strong>Periodontograma</strong>Sondaje por sitio con índices y gráfico automáticos.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/estudios.jpg" aria-label="Ampliar: Imagenología">
+              <img src="img/estudios.jpg" alt="Galería de estudios de imagenología con radiografías y fotos clínicas por paciente" width="1440" height="1000" loading="lazy">
+            </button>
+            <figcaption><strong>Imagenología</strong>Radiografías, fotos, PDF, Word y DICOM en un solo lugar.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/presupuestos.jpg" aria-label="Ampliar: Presupuestos">
+              <img src="img/presupuestos.jpg" alt="Listado de presupuestos con avance, cobertura de aseguradora, total y estado" width="1440" height="1000" loading="lazy">
+            </button>
+            <figcaption><strong>Presupuestos</strong>Planes de tratamiento con avance, cobertura y estado.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/caja-arqueo.jpg" aria-label="Ampliar: Arqueo de caja">
+              <img src="img/caja-arqueo.jpg" alt="Arqueo de caja con totales por método de pago, por cajero y formulario de cierre" width="1440" height="900" loading="lazy">
+            </button>
+            <figcaption><strong>Arqueo de caja</strong>Cierre diario con efectivo esperado, contado y diferencia.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/reportes.jpg" aria-label="Ampliar: Reportes">
+              <img src="img/reportes.jpg" alt="Centro de reportes con ingresos recaudados, saldos por cobrar, recaudación por método y recibos" width="1440" height="1000" loading="lazy">
+            </button>
+            <figcaption><strong>Reportes</strong>Cinco secciones con exportación a PDF y CSV.</figcaption>
+          </figure>
+          <figure>
+            <button type="button" data-ampliar="img/ajustes.jpg" aria-label="Ampliar: Ajustes">
+              <img src="img/ajustes.jpg" alt="Ajustes de la clínica con datos generales, logotipo y parámetros de operación" width="1440" height="900" loading="lazy">
+            </button>
+            <figcaption><strong>Ajustes</strong>Datos de la clínica, divisa, logotipo, recordatorios y portal.</figcaption>
+          </figure>
+        </div>
+      </div>
+      <dialog class="lightbox" data-lightbox aria-labelledby="lightbox-titulo">
+        <figure>
+          <img src="data:," alt="" data-lightbox-imagen>
+          <figcaption>
+            <span id="lightbox-titulo" data-lightbox-titulo></span>
+            <span class="lightbox-controles">
+              <button class="boton boton-secundario boton-pequeno" type="button" data-lightbox-anterior aria-label="Captura anterior"><svg aria-hidden="true" focusable="false"><use href="#i-izquierda"/></svg></button>
+              <button class="boton boton-secundario boton-pequeno" type="button" data-lightbox-siguiente aria-label="Captura siguiente"><svg aria-hidden="true" focusable="false"><use href="#i-derecha"/></svg></button>
+              <button class="boton boton-secundario boton-pequeno" type="button" data-lightbox-cerrar aria-label="Cerrar"><svg aria-hidden="true" focusable="false"><use href="#i-cerrar"/></svg></button>
+            </span>
+          </figcaption>
+        </figure>
+      </dialog>
+    </section>
+
+    <section id="como-funciona" class="alterna" aria-labelledby="titulo-como">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Cómo funciona</span>
+          <h2 id="titulo-como">Tres pasos para empezar</h2>
+        </div>
+        <ol class="pasos">
+          <li>
+            <h3>Elige tu plan</h3>
+            <p>Mensual para entrar sin compromiso, anual para ahorrar dos meses y medio, o vitalicio para pagar una sola vez. Puedes empezar con la demo de 7 días.</p>
+          </li>
+          <li>
+            <h3>Recibe tu clave CTL</h3>
+            <p>Al confirmarse el pago recibes por correo una clave con formato <code>CTL-XXXX-XXXX-XXXX-XXXX</code>. También queda disponible en el portal de clientes y en la consulta de pedido de esta página.</p>
+          </li>
+          <li>
+            <h3>Instala y activa</h3>
+            <p>Instala en Windows, usa la versión en la nube o la app Android e introduce la clave en la pantalla <em>Licencia</em>. Nuestro equipo hace la instalación y capacitación inicial de forma remota.</p>
+          </li>
+        </ol>
+        <div class="aviso-licencia">
+          <p><strong>Una licencia = una instalación o sede.</strong> La clave se ata al equipo o dominio donde se activa. El sistema verifica la licencia con nuestro servidor central y guarda un token firmado, así que sigue funcionando <strong>hasta 7 días sin internet</strong>; al reconectarse se renueva solo. Para una segunda sede se compra una licencia adicional a precio reducido.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="precios" aria-labelledby="titulo-precios">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Precios</span>
+          <h2 id="titulo-precios">Un precio claro, sin impuestos ocultos ni módulos extra</h2>
+          <p>Todos los planes incluyen todas las funciones, instalación y capacitación inicial remota, y soporte por WhatsApp y portal.</p>
+        </div>
+        <div class="precios-barra">
+          <span class="estado" data-estado-precios data-tipo="cargando" aria-live="polite">Consultando precios actualizados…</span>
+          <div class="selector-moneda" hidden data-selector-moneda>
+            <label for="moneda">Ver en</label>
+            <select id="moneda" data-moneda></select>
+          </div>
+        </div>
+        <div class="planes" data-planes aria-live="polite"></div>
+        <div class="extras" data-extras></div>
+        <p class="nota-precios" data-nota-precios>Precios en USD, sin impuestos. Referencia para Perú: aproximadamente S/ 146 al mes o S/ 2 960 de por vida. Se cobra en tu moneda al tipo de cambio vigente.</p>
+      </div>
+    </section>
+
+    <section id="comprar" class="alterna" aria-labelledby="titulo-comprar">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Comprar</span>
+          <h2 id="titulo-comprar">Haz tu pedido</h2>
+          <p>Completa el formulario y recibirás un número de pedido. Si eliges pago en línea, se abrirá la pasarela al instante; si prefieres transferencia o pago en persona, te contactamos para coordinarlo.</p>
+        </div>
+        <div class="dos-columnas">
+          <form class="formulario" data-formulario-pedido novalidate>
+            <div class="vendedor" hidden data-vendedor></div>
+            <div class="campos">
+              <div class="campo">
+                <label for="pedido-plan">Plan</label>
+                <select id="pedido-plan" name="plan_id" required data-pedido-plan></select>
+              </div>
+              <div class="campo">
+                <label for="pedido-cantidad">Cantidad de sedes o equipos</label>
+                <input id="pedido-cantidad" name="cantidad" type="number" min="1" max="20" value="1" required inputmode="numeric">
+                <span class="ayuda">Una licencia por cada instalación. De la segunda en adelante aplica precio de sede adicional.</span>
+              </div>
+              <div class="campo">
+                <label for="pedido-nombre">Nombre y apellido</label>
+                <input id="pedido-nombre" name="nombre" type="text" required minlength="2" maxlength="120" autocomplete="name">
+                <span class="error" data-error-de="nombre" aria-live="polite"></span>
+              </div>
+              <div class="campo">
+                <label for="pedido-empresa">Clínica o empresa</label>
+                <input id="pedido-empresa" name="empresa" type="text" maxlength="120" autocomplete="organization">
+              </div>
+              <div class="campo">
+                <label for="pedido-email">Correo electrónico</label>
+                <input id="pedido-email" name="email" type="email" required maxlength="120" autocomplete="email" placeholder="nombre@clinica.com">
+                <span class="ayuda">Aquí llegan la clave de licencia y el acceso al portal.</span>
+                <span class="error" data-error-de="email" aria-live="polite"></span>
+              </div>
+              <div class="campo">
+                <label for="pedido-telefono">Teléfono o WhatsApp</label>
+                <input id="pedido-telefono" name="telefono" type="tel" maxlength="40" autocomplete="tel" placeholder="+591 70000000">
+              </div>
+              <div class="campo">
+                <label for="pedido-pais">País</label>
+                <select id="pedido-pais" name="pais" autocomplete="country">
+                  <option value="">Selecciona tu país</option>
+                  <option value="AR">Argentina</option>
+                  <option value="BO">Bolivia</option>
+                  <option value="BR">Brasil</option>
+                  <option value="CL">Chile</option>
+                  <option value="CO">Colombia</option>
+                  <option value="CR">Costa Rica</option>
+                  <option value="CU">Cuba</option>
+                  <option value="DO">República Dominicana</option>
+                  <option value="EC">Ecuador</option>
+                  <option value="SV">El Salvador</option>
+                  <option value="ES">España</option>
+                  <option value="US">Estados Unidos</option>
+                  <option value="GT">Guatemala</option>
+                  <option value="HN">Honduras</option>
+                  <option value="MX">México</option>
+                  <option value="NI">Nicaragua</option>
+                  <option value="PA">Panamá</option>
+                  <option value="PY">Paraguay</option>
+                  <option value="PE">Perú</option>
+                  <option value="PR">Puerto Rico</option>
+                  <option value="UY">Uruguay</option>
+                  <option value="VE">Venezuela</option>
+                  <option value="XX">Otro</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="pedido-pasarela">Forma de pago</label>
+                <select id="pedido-pasarela" name="pasarela" data-pedido-pasarela>
+                  <option value="">Coordinar con el equipo de ventas</option>
+                </select>
+                <span class="ayuda" data-ayuda-pasarela>Las opciones de pago en línea aparecen según la configuración del servidor.</span>
+              </div>
+              <div class="campo ancho">
+                <label for="pedido-notas">Notas para el pedido (opcional)</label>
+                <textarea id="pedido-notas" name="notas" maxlength="300" placeholder="Por ejemplo: nombre de la clínica para la factura, sede donde se instalará, horario de contacto."></textarea>
+              </div>
+            </div>
+            <div class="acciones-formulario">
+              <div class="resumen-pedido" data-resumen-pedido>
+                <span>Total estimado</span>
+                <strong data-total-pedido>—</strong>
+              </div>
+              <button class="boton boton-primario" type="submit" data-enviar-pedido>
+                <svg aria-hidden="true" focusable="false"><use href="#i-carrito"/></svg>
+                Enviar pedido
+              </button>
+            </div>
+            <div class="mensaje" hidden data-mensaje-pedido role="status" aria-live="polite"></div>
+          </form>
+
+          <aside class="lateral" aria-label="Consultar pedido y portal de clientes">
+            <form class="caja" id="pedido" data-formulario-consulta novalidate>
+              <h3>Consultar un pedido</h3>
+              <p>Introduce el número de pedido y el correo con el que lo hiciste. Si ya está pagado, verás tus claves de licencia.</p>
+              <div class="campos">
+                <div class="campo ancho">
+                  <label for="consulta-numero">Número de pedido</label>
+                  <input id="consulta-numero" name="numero" type="text" required placeholder="V-2026-00001" autocomplete="off">
+                </div>
+                <div class="campo ancho">
+                  <label for="consulta-email">Correo electrónico</label>
+                  <input id="consulta-email" name="email" type="email" required autocomplete="email">
+                </div>
+              </div>
+              <div class="acciones-formulario">
+                <button class="boton boton-secundario" type="submit">Consultar estado</button>
+              </div>
+              <div class="mensaje" hidden data-mensaje-consulta role="status" aria-live="polite"></div>
+            </form>
+            <div class="caja">
+              <h3>Portal de clientes</h3>
+              <p>Licencias, recibos, renovación en línea y tickets de soporte, con tu clave de licencia y tu correo o teléfono.</p>
+              <a class="boton boton-secundario" href="#" data-enlace="portal" rel="noopener">
+                <svg aria-hidden="true" focusable="false"><use href="#i-externo"/></svg>
+                Entrar al portal
+              </a>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="descargas" aria-labelledby="titulo-descargas">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Descargas</span>
+          <h2 id="titulo-descargas">Windows, Android o nube: tú eliges</h2>
+          <p>La versión es la misma en todos los casos y los datos son siempre tuyos. La clave de licencia activa cualquiera de las tres formas de uso.</p>
+        </div>
+        <div class="descargas">
+          <article class="descarga">
+            <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-windows"/></svg></span>
+            <h3>Windows</h3>
+            <p>Instalador con todo incluido (servidor, base de datos y aplicación). Ideal para una clínica con uno o varios equipos en red local.</p>
+            <span class="meta" data-meta="windows">Versión y tamaño: consultando…</span>
+            <a class="boton boton-primario" href="#" data-descarga-enlace="windows" rel="noopener">
+              <svg aria-hidden="true" focusable="false"><use href="#i-descarga"/></svg>
+              Descargar DENTAL-PRO-Setup.exe
+            </a>
+            <a class="alternativo" href="#" data-enlace="releases" rel="noopener">Ver todas las versiones en la página de releases</a>
+          </article>
+          <article class="descarga">
+            <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-android"/></svg></span>
+            <h3>Android</h3>
+            <p>App para tablet y teléfono: agenda, pacientes, odontograma y cobros desde el sillón o fuera de la clínica, conectada a tu servidor.</p>
+            <span class="meta" data-meta="android">Versión y tamaño: consultando…</span>
+            <a class="boton boton-primario" href="#" data-descarga-enlace="android" rel="noopener">
+              <svg aria-hidden="true" focusable="false"><use href="#i-descarga"/></svg>
+              Descargar DENTAL-PRO.apk
+            </a>
+            <a class="alternativo" href="#" data-enlace="releases" rel="noopener">Ver todas las versiones en la página de releases</a>
+          </article>
+          <article class="descarga">
+            <span class="icono"><svg aria-hidden="true" focusable="false"><use href="#i-nube"/></svg></span>
+            <h3>Nube o servidor propio</h3>
+            <p>Versión web para usar desde cualquier navegador. La alojamos nosotros o la instalas en tu servidor con Docker.</p>
+            <span class="meta">Incluida con cualquier licencia</span>
+            <a class="boton boton-secundario" href="#contacto">
+              <svg aria-hidden="true" focusable="false"><use href="#i-mensaje"/></svg>
+              Solicitar instalación en la nube
+            </a>
+            <a class="alternativo" href="#pwa">Cómo instalarla como app</a>
+          </article>
+        </div>
+        <div class="requisitos">
+          <div class="caja">
+            <h3>Requisitos</h3>
+            <ul>
+              <li><strong>Windows:</strong> Windows 10 u 11 de 64 bits, 4 GB de RAM y 2 GB libres en disco.</li>
+              <li><strong>Android:</strong> Android 8.0 o superior. Se conecta a la instalación Windows o en la nube.</li>
+              <li><strong>Versión web:</strong> PHP 8.4 con PostgreSQL 16, o Docker (imagen y <code>compose.yaml</code> incluidos). Navegador actual: Chrome, Edge, Firefox o Safari.</li>
+            </ul>
+          </div>
+          <div class="caja" id="pwa">
+            <h3>Instalar como app (PWA)</h3>
+            <p>La versión web se instala como una aplicación más, sin tienda de aplicaciones: abre DENTAL-PRO en Chrome o Edge, pulsa el icono <em>Instalar</em> de la barra de direcciones (o el menú → <em>Instalar aplicación</em>) y quedará con su propio icono y ventana. En iPhone y iPad: Safari → <em>Compartir</em> → <em>Añadir a pantalla de inicio</em>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="alterna" aria-labelledby="titulo-demo">
+      <div class="contenedor">
+        <div class="dos-columnas">
+          <div>
+            <span class="etiqueta">Demo</span>
+            <h2 id="titulo-demo">Pruébalo con datos de ejemplo</h2>
+            <p>La instalación de demostración trae 50 pacientes, 200 citas, historias clínicas, odontogramas, estudios de imagen, presupuestos y recibos repartidos en seis meses, para que veas el panel y los reportes con información real. Se reinicia periódicamente.</p>
+            <p>
+              <a class="boton boton-primario" href="#" data-enlace="demo" rel="noopener">
+                <svg aria-hidden="true" focusable="false"><use href="#i-jugar"/></svg>
+                Abrir la demo en línea
+              </a>
+            </p>
+            <p class="hero-nota">¿Prefieres una demostración guiada? Escríbenos por WhatsApp y la agendamos en el horario que te convenga.</p>
+          </div>
+          <div class="caja">
+            <h3>Cuentas de demostración</h3>
+            <div class="desplazable">
+              <table class="tabla" data-cuentas-demo>
+                <thead>
+                  <tr><th scope="col">Rol</th><th scope="col">Correo</th><th scope="col">Contraseña</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="hero-nota">Son contraseñas temporales: en la demo el sistema puede pedir definir una propia en el primer ingreso.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="titulo-faq">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Preguntas frecuentes</span>
+          <h2 id="titulo-faq">Lo que suelen preguntarnos</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>¿Cómo funciona la licencia?</summary>
+            <p>Cada licencia es una clave <code>CTL-…</code> que se activa en una instalación (un equipo Windows o un dominio en la nube). Al activarla, el sistema recibe un token firmado que verifica sin conexión. Si necesitas otra sede u otro equipo independiente, compras una licencia adicional a precio reducido. La app Android no consume licencia: se conecta a tu instalación.</p>
+          </details>
+          <details>
+            <summary>¿De quién son los datos y dónde se guardan?</summary>
+            <p>Los datos son de la clínica. En Windows quedan en tu propio equipo; en la nube, en un servidor dedicado a tu clínica con copia de seguridad diaria. Radiografías, fotos y firmas se guardan en almacenamiento privado y solo se sirven a usuarios autenticados. Puedes exportar y llevarte tu base de datos en cualquier momento.</p>
+          </details>
+          <details>
+            <summary>¿Funciona sin internet?</summary>
+            <p>Sí. La versión Windows trabaja en red local sin internet; la licencia se verifica con nuestro servidor central y sigue válida hasta 7 días sin conexión, renovándose sola al reconectarse. Si hay una emergencia prolongada, el soporte puede emitir un código de emergencia de 72 horas que se acepta sin red. Los recordatorios por WhatsApp, SMS y correo sí requieren conexión.</p>
+          </details>
+          <details>
+            <summary>¿Cómo se actualiza el sistema?</summary>
+            <p>Los planes mensual y anual incluyen todas las actualizaciones mientras estén vigentes. El vitalicio incluye 12 meses de actualizaciones y soporte; después puedes contratar el mantenimiento anual opcional o seguir usando tu versión sin límite de tiempo. El sistema avisa cuando hay una versión nueva disponible.</p>
+          </details>
+          <details>
+            <summary>¿Qué soporte incluye?</summary>
+            <p>Instalación y capacitación inicial remota, soporte por WhatsApp y tickets desde el portal de clientes. Las incidencias que afectan la operación se atienden con prioridad. El mantenimiento anual del plan vitalicio mantiene el mismo nivel de soporte a partir del segundo año.</p>
+          </details>
+          <details>
+            <summary>¿Sirve para varias sucursales?</summary>
+            <p>Sí. El módulo de sucursales etiqueta horarios, citas, caja e inventario por sede, permite ligar usuarios a una sede y muestra totales por sucursal. Cada sede con instalación propia necesita su licencia; si todas las sedes usan la misma instalación en la nube, se licencian como sedes adicionales al precio reducido.</p>
+          </details>
+          <details>
+            <summary>¿Qué pasa con las copias de seguridad?</summary>
+            <p>El sistema genera cada noche un respaldo con la base de datos y los archivos privados, conserva los últimos 14 y permite crear uno manual desde el panel en cualquier momento. La restauración se hace desde consola para evitar sobrescrituras accidentales. En la nube, además, el servidor tiene su propia copia externa.</p>
+          </details>
+          <details>
+            <summary>¿La facturación electrónica funciona en mi país?</summary>
+            <p>El módulo emite documentos con serie, correlativo, IVA y notas de crédito, y se conecta al organismo tributario de cada país (SUNAT, SIN, DIAN, Hacienda, etc.) mediante un driver o una pasarela intermedia. Consúltanos por tu caso: te decimos si ya está disponible o qué hace falta para conectarlo.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacto" class="alterna" aria-labelledby="titulo-contacto">
+      <div class="contenedor">
+        <div class="cabecera-seccion">
+          <span class="etiqueta">Contacto</span>
+          <h2 id="titulo-contacto">Hablemos de tu clínica</h2>
+          <p>Respondemos en horario laboral y agendamos demostraciones guiadas sin costo.</p>
+        </div>
+        <div class="contacto-grid">
+          <div class="caja">
+            <h3>WhatsApp</h3>
+            <p>Ventas, soporte y demostraciones guiadas.</p>
+            <a class="boton boton-primario" href="#" data-enlace="whatsapp" rel="noopener">
+              <svg aria-hidden="true" focusable="false"><use href="#i-whatsapp"/></svg>
+              <span data-texto="whatsapp">Escribir por WhatsApp</span>
+            </a>
+          </div>
+          <div class="caja">
+            <h3>Correo electrónico</h3>
+            <p>Cotizaciones formales, facturación y convenios.</p>
+            <a class="boton boton-secundario" href="#" data-enlace="correo">
+              <svg aria-hidden="true" focusable="false"><use href="#i-correo"/></svg>
+              <span data-texto="correo">Enviar un correo</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <div class="pie-grid">
+        <div>
+          <a class="logo" href="#inicio" aria-label="DENTAL-PRO, inicio">
+            <img src="favicon.svg" alt="" width="32" height="32">
+            DENTAL-PRO
+          </a>
+          <p>Software de gestión para clínicas dentales. Desarrollado y distribuido por <span data-texto="agencia">nuestra agencia</span>.</p>
+        </div>
+        <div>
+          <h3>Producto</h3>
+          <ul>
+            <li><a href="#modulos">Módulos</a></li>
+            <li><a href="#capturas">Capturas</a></li>
+            <li><a href="#precios">Precios</a></li>
+            <li><a href="#descargas">Descargas</a></li>
+            <li><a href="#demo">Demo</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Ayuda</h3>
+          <ul>
+            <li><a href="#faq">Preguntas frecuentes</a></li>
+            <li><a href="#pedido">Consultar pedido</a></li>
+            <li><a href="#" data-enlace="portal" rel="noopener">Portal de clientes</a></li>
+            <li><a href="#" data-enlace="releases" rel="noopener">Versiones publicadas</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie-final">
+        <span>© <span data-texto="anio">2026</span> <span data-texto="agencia">nuestra agencia</span>. Todos los derechos reservados.</span>
+        <span>Precios en USD sin impuestos. La demo se reinicia periódicamente.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cajacuenta767-sketch.github.io/DENTAL-PRO/sitemap.xml

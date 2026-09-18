@@ -22,3 +22,22 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/playwright-report
+/test-results
+
+# App Android (movil/)
+/movil/.gradle
+/movil/build
+/movil/app/build
+/movil/local.properties
+/movil/*.keystore
+/movil/keystore.properties
+/movil/salida
+/escritorio/recursos
+/escritorio/dist
+/escritorio/node_modules
+
+composer.phar
+composer.bat
+*.sqlite
+

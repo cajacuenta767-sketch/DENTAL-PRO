@@ -4,17 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
+use App\Models\Auditoria;
 use App\Models\DocumentoFiscal;
 use App\Models\Pago;
+use App\Services\FacturacionElectronicaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
 class FacturacionController extends Controller
 {
+    public function __construct(private readonly FacturacionElectronicaService $transmision) {}
+
     public function index(Request $request): View
     {
         $documentos = DocumentoFiscal::query()
@@ -33,7 +38,7 @@ class FacturacionController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $emitidos = DocumentoFiscal::where('estado', 'EMITIDO');
+        $emitidos = DocumentoFiscal::ventas()->where('estado', 'EMITIDO');
 
         return view('admin.facturacion.index', [
             'documentos' => $documentos,
@@ -48,6 +53,7 @@ class FacturacionController extends Controller
                 'facturado' => (float) (clone $emitidos)->sum('total'),
                 'iva' => (float) (clone $emitidos)->sum('iva'),
                 'anulados' => DocumentoFiscal::where('estado', 'ANULADO')->count(),
+                'notasCredito' => DocumentoFiscal::where('tipo', 'NOTA_CREDITO')->where('estado', 'EMITIDO')->count(),
             ],
         ]);
     }
@@ -85,15 +91,20 @@ class FacturacionController extends Controller
             'receptor_documento' => 'documento del receptor',
         ]);
 
-        $pago = Pago::with('detalles')->vigentes()->findOrFail($datos['pago_id']);
-
-        if ($pago->documentoFiscal()->exists()) {
-            return back()->with('error', 'Este recibo ya tiene un documento fiscal vigente.');
+        if (! in_array($datos['tipo'], ['FACTURA', 'CREDITO_FISCAL'], true)) {
+            return back()->with('error', 'Las notas de crédito y débito se generan al anular un documento emitido.');
         }
 
         $ajustes = Ajuste::actual();
 
-        $documento = DB::transaction(function () use ($datos, $pago, $ajustes, $request) {
+        $documento = DB::transaction(function () use ($datos, $ajustes, $request) {
+            // Bloquea el recibo: dos pestañas no pueden emitir dos facturas.
+            $pago = Pago::with('detalles')->vigentes()->lockForUpdate()->findOrFail($datos['pago_id']);
+
+            if ($pago->documentoFiscal()->exists()) {
+                throw ValidationException::withMessages(['pago_id' => 'Este recibo ya tiene un documento fiscal vigente.']);
+            }
+
             $serie = $ajustes->facturacion_serie ?: 'A';
             $tasa = (float) $ajustes->facturacion_tasa_iva;
             $correlativo = DocumentoFiscal::siguienteCorrelativo($datos['tipo'], $serie);
@@ -130,15 +141,53 @@ class FacturacionController extends Controller
             ]);
         });
 
+        // La transmisión va fuera de la transacción: el documento ya existe
+        // con su correlativo aunque el proveedor no responda.
+        $respuesta = $this->transmision->transmitir($documento);
+
+        $mensaje = "Documento {$documento->numero_control} emitido.";
+
+        if ($respuesta !== null && ! $respuesta->aceptado) {
+            return redirect()->route('admin.facturacion.show', $documento)
+                ->with('aviso', $mensaje.' El proveedor fiscal lo rechazó: '.($respuesta->mensaje ?: 'sin detalle').'. Puedes reintentar la transmisión.');
+        }
+
         return redirect()->route('admin.facturacion.show', $documento)
-            ->with('exito', "Documento {$documento->numero_control} emitido.");
+            ->with('exito', $mensaje.($respuesta?->aceptado ? ' Transmitido y aceptado.' : ''));
     }
 
     public function show(DocumentoFiscal $documento): View
     {
-        $documento->load(['pago.paciente', 'pago.detalles', 'emisor']);
+        $documento->load(['pago.paciente', 'pago.detalles', 'emisor', 'documentoReferencia', 'notas']);
 
-        return view('admin.facturacion.show', compact('documento'));
+        return view('admin.facturacion.show', [
+            'documento' => $documento,
+            'proveedorFiscal' => $this->transmision->proveedor(),
+        ]);
+    }
+
+    /** Reintenta la transmisión de un documento rechazado o pendiente. */
+    public function transmitir(DocumentoFiscal $documento): RedirectResponse
+    {
+        if ($documento->estado === 'ANULADO') {
+            return back()->with('error', 'Un documento anulado no se transmite.');
+        }
+
+        if (! $this->transmision->activa()) {
+            return back()->with('aviso', 'No hay un proveedor de transmisión configurado (FACTURACION_PROVEEDOR=ninguno).');
+        }
+
+        if ($documento->estado_transmision === 'ACEPTADO') {
+            return back()->with('aviso', 'Este documento ya fue aceptado por el proveedor.');
+        }
+
+        $respuesta = $this->transmision->transmitir($documento);
+
+        if ($respuesta?->aceptado) {
+            return back()->with('exito', "El documento {$documento->numero_control} fue aceptado por el proveedor.");
+        }
+
+        return back()->with('error', 'El proveedor rechazó el documento: '.($respuesta?->mensaje ?: 'sin detalle').'.');
     }
 
     public function anular(Request $request, DocumentoFiscal $documento): RedirectResponse
@@ -151,12 +200,51 @@ class FacturacionController extends Controller
             'motivo' => ['required', 'string', 'max:500'],
         ])['motivo'];
 
-        $documento->update([
-            'estado' => 'ANULADO',
-            'motivo_anulacion' => $motivo.' · Anulado el '.now()->format('d/m/Y H:i').' por '.$request->user()->nombre,
-        ]);
+        if ($documento->es_nota) {
+            return back()->with('error', 'Una nota de crédito no se anula: emite el documento corregido.');
+        }
 
-        return back()->with('exito', "El documento {$documento->numero_control} fue anulado.");
+        $nota = DB::transaction(function () use ($documento, $request, $motivo) {
+            $documento->update([
+                'estado' => 'ANULADO',
+                'motivo_anulacion' => $motivo.' · Anulado el '.now()->format('d/m/Y H:i').' por '.$request->user()->nombre,
+            ]);
+
+            // La anulación se documenta con una nota de crédito por el mismo importe.
+            $serie = $documento->serie;
+            $correlativo = DocumentoFiscal::siguienteCorrelativo('NOTA_CREDITO', $serie);
+
+            return DocumentoFiscal::create([
+                'pago_id' => $documento->pago_id,
+                'usuario_id' => $request->user()->id,
+                'documento_referencia_id' => $documento->id,
+                'tipo' => 'NOTA_CREDITO',
+                'serie' => $serie,
+                'correlativo' => $correlativo,
+                'numero_control' => DocumentoFiscal::componerNumeroControl('NOTA_CREDITO', $serie, $correlativo),
+                'codigo_generacion' => DocumentoFiscal::nuevoCodigoGeneracion(),
+                'receptor_nombre' => $documento->receptor_nombre,
+                'receptor_documento' => $documento->receptor_documento,
+                'receptor_direccion' => $documento->receptor_direccion,
+                'receptor_email' => $documento->receptor_email,
+                'subtotal' => $documento->subtotal,
+                'descuento' => $documento->descuento,
+                'iva' => $documento->iva,
+                'total' => $documento->total,
+                'tasa_iva' => $documento->tasa_iva,
+                'estado' => 'EMITIDO',
+                'sello_recepcion' => mb_strtoupper(bin2hex(random_bytes(16))),
+                'fecha_emision' => now(),
+                'contenido' => ($documento->contenido ?? []) + [
+                    'referencia' => $documento->numero_control,
+                    'motivo' => $motivo,
+                ],
+            ]);
+        });
+
+        Auditoria::registrar('ANULAR', $documento, "Anuló {$documento->numero_control} con la nota {$nota->numero_control}: {$motivo}");
+
+        return back()->with('exito', "El documento {$documento->numero_control} fue anulado y se emitió la nota de crédito {$nota->numero_control}.");
     }
 
     public function pdf(DocumentoFiscal $documento): Response

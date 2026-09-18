@@ -43,6 +43,12 @@
                 </div>
             </div>
             <div class="btn-list ms-auto flex-nowrap">
+                @if ($documento->esta_firmado)
+                    <span class="badge bg-success-lt badge-sm align-self-center"
+                          title="Firmado el {{ $documento->firmado_en->format('d/m/Y H:i') }}">
+                        <i class="ti ti-writing-sign me-1"></i>Firmado
+                    </span>
+                @endif
                 @if ($documento->estado === 'ANULADO')
                     <span class="badge bg-danger align-self-center">Anulado</span>
                 @elseif ($documento->vence_el)

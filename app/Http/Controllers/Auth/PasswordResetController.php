@@ -26,11 +26,12 @@ class PasswordResetController extends Controller
 
         $estado = Password::sendResetLink($request->only('email'));
 
-        if ($estado !== Password::RESET_LINK_SENT) {
+        if ($estado === Password::RESET_THROTTLED) {
             throw ValidationException::withMessages(['email' => __($estado)]);
         }
 
-        return back()->with('status', 'Te enviamos un enlace para restablecer tu contraseña.');
+        // La respuesta es la misma exista o no la cuenta: no revela usuarios.
+        return back()->with('status', 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.');
     }
 
     public function formulario(Request $request): View

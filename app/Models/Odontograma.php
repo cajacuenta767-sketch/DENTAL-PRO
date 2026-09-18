@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Odontograma extends Model
 {
-    use HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory, SoftDeletes;
 
     protected $table = 'odontogramas';
 
     protected $fillable = [
-        'paciente_id', 'doctor_id', 'cita_id', 'tipo', 'piezas', 'observaciones', 'fecha',
+        'paciente_id', 'doctor_id', 'cita_id', 'tipo', 'escala_frankl', 'piezas', 'observaciones', 'fecha',
     ];
 
     protected function casts(): array
@@ -21,8 +23,41 @@ class Odontograma extends Model
         return [
             'piezas' => 'array',
             'fecha' => 'date',
+            'escala_frankl' => 'integer',
         ];
     }
+
+    /** Escala de conducta de Frankl para odontopediatría */
+    public const ESCALA_FRANKL = [
+        1 => [
+            'etiqueta' => 'Definitivamente Negativo (--)',
+            'descripcion' => 'Rechazo al tratamiento, llanto fuerte, movimientos de defensa extremos.',
+            'color' => 'danger',
+            'icono' => 'ti-mood-sad',
+            'simbolo' => '--',
+        ],
+        2 => [
+            'etiqueta' => 'Negativo (-)',
+            'descripcion' => 'Renuente a aceptar el tratamiento, poco cooperador, retraído.',
+            'color' => 'warning',
+            'icono' => 'ti-mood-neutral',
+            'simbolo' => '-',
+        ],
+        3 => [
+            'etiqueta' => 'Positivo (+)',
+            'descripcion' => 'Acepta el tratamiento, cooperador con ciertas reservas, sigue instrucciones.',
+            'color' => 'info',
+            'icono' => 'ti-mood-smile',
+            'simbolo' => '+',
+        ],
+        4 => [
+            'etiqueta' => 'Definitivamente Positivo (++)',
+            'descripcion' => 'Excelente compenetración con el odontólogo, entusiasmo y cooperación activa.',
+            'color' => 'success',
+            'icono' => 'ti-mood-happy',
+            'simbolo' => '++',
+        ],
+    ];
 
     /** Numeración FDI: cuadrantes superiores e inferiores de la dentición permanente. */
     public const PIEZAS_ADULTO = [
@@ -38,6 +73,14 @@ class Odontograma extends Model
         'superior_izquierdo' => [61, 62, 63, 64, 65],
         'inferior_derecho' => [85, 84, 83, 82, 81],
         'inferior_izquierdo' => [71, 72, 73, 74, 75],
+    ];
+
+    /** Numeración FDI dentición mixta (adulto y decidua combinados por cuadrante) */
+    public const PIEZAS_MIXTO = [
+        'superior_derecho' => [18, 17, 16, 55, 54, 53, 52, 51, 11, 12, 13, 14, 15],
+        'superior_izquierdo' => [21, 22, 23, 24, 25, 61, 62, 63, 64, 65, 26, 27, 28],
+        'inferior_derecho' => [48, 47, 46, 85, 84, 83, 82, 81, 41, 42, 43, 44, 45],
+        'inferior_izquierdo' => [31, 32, 33, 34, 35, 71, 72, 73, 74, 75, 36, 37, 38],
     ];
 
     /** Caras registrables por pieza. */
@@ -86,7 +129,11 @@ class Odontograma extends Model
 
     public static function cuadrantes(string $tipo): array
     {
-        return $tipo === 'INFANTIL' ? self::PIEZAS_INFANTIL : self::PIEZAS_ADULTO;
+        return match ($tipo) {
+            'INFANTIL' => self::PIEZAS_INFANTIL,
+            'MIXTO' => self::PIEZAS_MIXTO,
+            default => self::PIEZAS_ADULTO,
+        };
     }
 
     /** Cuenta las piezas afectadas separadas por capa. */
@@ -107,6 +154,96 @@ class Odontograma extends Model
         }
 
         return $conteo;
+    }
+
+    /** Grados de movilidad dentaria (índice de Miller). */
+    public const MOVILIDAD = [0 => 'Sin movilidad', 1 => 'Grado I', 2 => 'Grado II', 3 => 'Grado III'];
+
+    /**
+     * Diferencias respecto a otro mapa (normalmente el odontograma anterior):
+     * qué piezas o caras cambiaron y en qué sentido.
+     *
+     * @return array<int, array{pieza: string, cara: ?string, antes: string, despues: string}>
+     */
+    public function cambiosRespectoA(?array $anterior): array
+    {
+        if (! $anterior) {
+            return [];
+        }
+
+        $cambios = [];
+
+        foreach ($this->piezas ?? [] as $numero => $pieza) {
+            $previa = $anterior[$numero] ?? null;
+            $estadoAntes = $previa['estado'] ?? 'sano';
+            $estadoAhora = $pieza['estado'] ?? 'sano';
+
+            if ($estadoAntes !== $estadoAhora) {
+                $cambios[] = ['pieza' => (string) $numero, 'cara' => null, 'antes' => $estadoAntes, 'despues' => $estadoAhora];
+
+                continue;
+            }
+
+            foreach (self::CARAS as $cara) {
+                $antes = $previa['caras'][$cara] ?? 'sano';
+                $ahora = $pieza['caras'][$cara] ?? 'sano';
+
+                if ($antes !== $ahora) {
+                    $cambios[] = ['pieza' => (string) $numero, 'cara' => $cara, 'antes' => $antes, 'despues' => $ahora];
+                }
+            }
+        }
+
+        return $cambios;
+    }
+
+    /** Texto de diagnóstico listo para pegar en la historia clínica. */
+    public function resumenTexto(): string
+    {
+        $lineas = [];
+
+        foreach ($this->piezas ?? [] as $numero => $pieza) {
+            $partes = [];
+            $estado = $pieza['estado'] ?? 'sano';
+
+            if ($estado !== 'sano') {
+                $partes[] = mb_strtolower(self::ESTADOS[$estado]['etiqueta'] ?? $estado);
+            } else {
+                foreach ($pieza['caras'] ?? [] as $cara => $valor) {
+                    if ($valor !== 'sano') {
+                        $partes[] = mb_strtolower(self::ESTADOS[$valor]['etiqueta'] ?? $valor)." ({$cara})";
+                    }
+                }
+            }
+
+            if (($pieza['movilidad'] ?? 0) > 0) {
+                $partes[] = 'movilidad '.self::MOVILIDAD[(int) $pieza['movilidad']];
+            }
+
+            if ($partes === []) {
+                continue;
+            }
+
+            $linea = "Pieza {$numero}: ".implode(', ', $partes);
+
+            if (! empty($pieza['urgente'])) {
+                $linea .= ' [URGENTE]';
+            }
+
+            if (! empty($pieza['nota'])) {
+                $linea .= ' — '.$pieza['nota'];
+            }
+
+            $lineas[] = $linea.'.';
+        }
+
+        return $lineas === [] ? 'Sin hallazgos: dentición sana.' : implode("\n", $lineas);
+    }
+
+    /** Piezas marcadas como urgentes. */
+    public function getPiezasUrgentesAttribute(): array
+    {
+        return array_map('strval', array_keys(array_filter($this->piezas ?? [], fn ($p) => ! empty($p['urgente']))));
     }
 
     /** Número de piezas con algún hallazgo distinto de sano. */

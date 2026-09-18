@@ -7,14 +7,21 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\EstudioImagen;
 use App\Models\Paciente;
+use App\Rules\ArchivoClinico;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EstudioImagenController extends Controller
 {
+    /** Tamaño máximo por archivo (30 MB): las tomografías y los DICOM pesan más que una foto. */
+    public const TAMANO_MAXIMO_KB = 30720;
+
     /** Bandeja general de estudios de toda la clínica. */
     public function index(Request $request): View
     {
@@ -80,18 +87,28 @@ class EstudioImagenController extends Controller
     {
         $datos = $this->validar($request, archivoObligatorio: true);
 
-        $archivo = $request->file('archivo');
+        // Se admiten varios archivos a la vez: cada uno queda como un estudio con los mismos datos.
+        $archivos = $request->file('archivos') ?: [$request->file('archivo')];
+        $archivos = array_values(array_filter($archivos));
+        $total = count($archivos);
 
-        $estudio = EstudioImagen::create($datos + [
-            'usuario_id' => $request->user()->id,
-            'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
-            'nombre_original' => $archivo->getClientOriginalName(),
-            'mime' => $archivo->getClientMimeType(),
-            'tamano' => $archivo->getSize(),
-        ]);
+        DB::transaction(function () use ($archivos, $datos, $request, $total) {
+            foreach ($archivos as $indice => $archivo) {
+                // array_merge: el título numerado debe imponerse al del formulario cuando hay varios archivos.
+                EstudioImagen::create(array_merge($datos, [
+                    'titulo' => $total > 1 ? sprintf('%s (%d/%d)', $datos['titulo'], $indice + 1, $total) : $datos['titulo'],
+                    'usuario_id' => $request->user()->id,
+                    'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
+                    'nombre_original' => $archivo->getClientOriginalName(),
+                    // MIME detectado del contenido real, no del que declara el navegador.
+                    'mime' => $archivo->getMimeType(),
+                    'tamano' => $archivo->getSize(),
+                ]));
+            }
+        });
 
-        return redirect()->route('admin.estudios.paciente', $estudio->paciente_id)
-            ->with('exito', 'El estudio fue cargado.');
+        return redirect()->route('admin.estudios.paciente', $datos['paciente_id'])
+            ->with('exito', $total > 1 ? "Se cargaron $total archivos." : 'El estudio fue cargado.');
     }
 
     public function edit(EstudioImagen $estudio): View
@@ -110,13 +127,13 @@ class EstudioImagenController extends Controller
         $datos = $this->validar($request);
 
         if ($request->hasFile('archivo')) {
-            Storage::disk('public')->delete($estudio->archivo);
+            Storage::disk(EstudioImagen::DISCO)->delete($estudio->archivo);
 
             $archivo = $request->file('archivo');
             $datos += [
-                'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
+                'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], EstudioImagen::DISCO),
                 'nombre_original' => $archivo->getClientOriginalName(),
-                'mime' => $archivo->getClientMimeType(),
+                'mime' => $archivo->getMimeType(),
                 'tamano' => $archivo->getSize(),
             ];
         }
@@ -131,27 +148,133 @@ class EstudioImagenController extends Controller
     {
         $paciente = $estudio->paciente_id;
 
-        Storage::disk('public')->delete($estudio->archivo);
+        // Borrado lógico: el archivo se conserva para poder restaurar el estudio.
         $estudio->delete();
 
         return redirect()->route('admin.estudios.paciente', $paciente)
             ->with('exito', 'El estudio fue eliminado.');
     }
 
+    /** Muestra el archivo en línea (visor y miniaturas) desde el disco privado. */
+    public function ver(EstudioImagen $estudio): Response
+    {
+        abort_unless($estudio->archivoExiste(), 404, 'El archivo del estudio ya no está disponible.');
+
+        return Storage::disk(EstudioImagen::DISCO)->response($estudio->archivo, null, [
+            'Content-Type' => $estudio->mime ?: 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
     /** Entrega el archivo original con su nombre de subida. */
     public function descargar(EstudioImagen $estudio): StreamedResponse
     {
-        abort_unless(Storage::disk('public')->exists($estudio->archivo), 404, 'El archivo del estudio ya no está disponible.');
+        abort_unless($estudio->archivoExiste(), 404, 'El archivo del estudio ya no está disponible.');
 
-        return Storage::disk('public')->download(
+        return Storage::disk(EstudioImagen::DISCO)->download(
             $estudio->archivo,
             $estudio->nombre_original ?: basename($estudio->archivo)
         );
     }
 
+    /** Compara dos estudios (imágenes) del mismo paciente lado a lado. */
+    public function comparar(Request $request): View
+    {
+        $a = EstudioImagen::find($request->integer('a'));
+        $b = EstudioImagen::find($request->integer('b'));
+
+        abort_if(! $a || ! $b, 404, 'Debes elegir dos estudios para comparar.');
+        abort_if($a->paciente_id !== $b->paciente_id, 404, 'Los estudios deben pertenecer al mismo paciente.');
+        abort_unless($a->es_visualizable && $b->es_visualizable, 404, 'Solo se pueden comparar imágenes.');
+
+        $paciente = $a->paciente;
+
+        // Candidatos para los selectores: todas las imágenes del paciente.
+        $estudios = $paciente->estudios()
+            ->orderByDesc('fecha_estudio')->orderByDesc('id')
+            ->get()
+            ->filter(fn (EstudioImagen $e) => $e->es_visualizable)
+            ->values();
+
+        return view('admin.estudios.comparar', [
+            'paciente' => $paciente,
+            'a' => $a,
+            'b' => $b,
+            'estudios' => $estudios,
+        ]);
+    }
+
+    /** Tipos de anotación que dibuja el visor sobre la imagen. */
+    public const TIPOS_ANOTACION = ['lapiz', 'flecha', 'circulo', 'texto'];
+
+    /**
+     * Guarda las anotaciones dibujadas en el visor. Las coordenadas llegan
+     * relativas a la imagen (0-1) para que escalen con cualquier zoom.
+     */
+    public function anotaciones(Request $request, EstudioImagen $estudio): JsonResponse
+    {
+        $coordenada = ['nullable', 'numeric', 'between:-1,2'];
+
+        $datos = $request->validate([
+            'anotaciones' => ['present', 'array', 'max:500'],
+            'anotaciones.*.tipo' => ['required', 'string', 'in:'.implode(',', self::TIPOS_ANOTACION)],
+            'anotaciones.*.color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'anotaciones.*.grosor' => ['required', 'numeric', 'between:1,40'],
+            'anotaciones.*.puntos' => ['nullable', 'array', 'max:3000'],
+            'anotaciones.*.puntos.*' => ['array', 'size:2'],
+            'anotaciones.*.puntos.*.*' => ['numeric', 'between:-1,2'],
+            'anotaciones.*.desde' => ['nullable', 'array'],
+            'anotaciones.*.desde.x' => $coordenada,
+            'anotaciones.*.desde.y' => $coordenada,
+            'anotaciones.*.hasta' => ['nullable', 'array'],
+            'anotaciones.*.hasta.x' => $coordenada,
+            'anotaciones.*.hasta.y' => $coordenada,
+            'anotaciones.*.centro' => ['nullable', 'array'],
+            'anotaciones.*.centro.x' => $coordenada,
+            'anotaciones.*.centro.y' => $coordenada,
+            'anotaciones.*.radio' => ['nullable', 'numeric', 'between:0,2'],
+            'anotaciones.*.texto' => ['nullable', 'string', 'max:200'],
+            'anotaciones.*.x' => $coordenada,
+            'anotaciones.*.y' => $coordenada,
+        ], [], ['anotaciones' => 'anotaciones']);
+
+        $limpias = [];
+
+        foreach ($datos['anotaciones'] as $a) {
+            $item = [
+                'tipo' => $a['tipo'],
+                'color' => strtolower($a['color']),
+                'grosor' => (float) $a['grosor'],
+            ];
+
+            $item += match ($a['tipo']) {
+                'lapiz' => ['puntos' => array_map(fn ($p) => [(float) $p[0], (float) $p[1]], $a['puntos'] ?? [])],
+                'flecha' => [
+                    'desde' => ['x' => (float) ($a['desde']['x'] ?? 0), 'y' => (float) ($a['desde']['y'] ?? 0)],
+                    'hasta' => ['x' => (float) ($a['hasta']['x'] ?? 0), 'y' => (float) ($a['hasta']['y'] ?? 0)],
+                ],
+                'circulo' => [
+                    'centro' => ['x' => (float) ($a['centro']['x'] ?? 0), 'y' => (float) ($a['centro']['y'] ?? 0)],
+                    'radio' => (float) ($a['radio'] ?? 0),
+                ],
+                'texto' => [
+                    'texto' => trim((string) ($a['texto'] ?? '')),
+                    'x' => (float) ($a['x'] ?? 0),
+                    'y' => (float) ($a['y'] ?? 0),
+                ],
+            };
+
+            $limpias[] = $item;
+        }
+
+        $estudio->update(['anotaciones' => $limpias]);
+
+        return response()->json(['ok' => true, 'total' => count($limpias)]);
+    }
+
     private function validar(Request $request, bool $archivoObligatorio = false): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
             'cita_id' => ['nullable', 'exists:citas,id'],
@@ -161,11 +284,25 @@ class EstudioImagenController extends Controller
             'piezas_referidas' => ['nullable', 'string', 'max:255'],
             'hallazgos' => ['nullable', 'string', 'max:2000'],
             'observaciones' => ['nullable', 'string', 'max:2000'],
-            'archivo' => [$archivoObligatorio ? 'required' : 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:20480'],
-        ], [], [
+            'archivo' => [
+                $archivoObligatorio ? 'required_without:archivos' : 'nullable',
+                'file', 'max:'.self::TAMANO_MAXIMO_KB, new ArchivoClinico,
+            ],
+            'archivos' => [$archivoObligatorio ? 'required_without:archivo' : 'nullable', 'array', 'max:20'],
+            'archivos.*' => ['file', 'max:'.self::TAMANO_MAXIMO_KB, new ArchivoClinico],
+        ], [
+            'archivo.required_without' => 'Debe adjuntar al menos un archivo.',
+            'archivos.required_without' => 'Debe adjuntar al menos un archivo.',
+            'archivos.max' => 'Puede subir hasta 20 archivos por vez.',
+        ], [
             'paciente_id' => 'paciente',
             'fecha_estudio' => 'fecha del estudio',
             'piezas_referidas' => 'piezas referidas',
         ]);
+
+        // Los archivos subidos se procesan aparte: nunca se guarda su ruta temporal.
+        unset($datos['archivo'], $datos['archivos']);
+
+        return $datos;
     }
 }

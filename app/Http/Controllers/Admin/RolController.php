@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\GestionaPrivilegios;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RolController extends Controller
 {
+    use GestionaPrivilegios;
+
     /** Roles que el sistema necesita para funcionar y no pueden borrarse. */
     private const PROTEGIDOS = ['SUPER ADMINISTRADOR'];
 
@@ -26,12 +30,13 @@ class RolController extends Controller
         return view('admin.roles.index', compact('roles'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('admin.roles.form', [
             'rol' => new Role,
             'permisosPorGrupo' => $this->permisosPorGrupo(),
             'asignados' => [],
+            'concedibles' => $this->permisosConcedibles($request->user())->all(),
         ]);
     }
 
@@ -46,17 +51,22 @@ class RolController extends Controller
             ->with('exito', "El rol {$rol->name} fue creado.");
     }
 
-    public function edit(Role $role): View
+    public function edit(Request $request, Role $role): View
     {
+        abort_unless($this->rolAlAlcance($request->user(), $role), 403, 'Ese rol tiene permisos que tú no posees; no puedes editarlo.');
+
         return view('admin.roles.form', [
             'rol' => $role,
             'permisosPorGrupo' => $this->permisosPorGrupo(),
             'asignados' => $role->permissions->pluck('name')->all(),
+            'concedibles' => $this->permisosConcedibles($request->user())->all(),
         ]);
     }
 
     public function update(Request $request, Role $role): RedirectResponse
     {
+        abort_unless($this->rolAlAlcance($request->user(), $role), 403, 'Ese rol tiene permisos que tú no posees; no puedes editarlo.');
+
         $datos = $this->validar($request, $role->id);
 
         // El super administrador conserva siempre todos los permisos.
@@ -74,8 +84,10 @@ class RolController extends Controller
             ->with('exito', "El rol {$role->name} fue actualizado.");
     }
 
-    public function destroy(Role $role): RedirectResponse
+    public function destroy(Request $request, Role $role): RedirectResponse
     {
+        abort_unless($this->rolAlAlcance($request->user(), $role), 403);
+
         if (in_array($role->name, self::PROTEGIDOS, true)) {
             return back()->with('error', 'El rol SUPER ADMINISTRADOR no se puede eliminar.');
         }
@@ -92,11 +104,22 @@ class RolController extends Controller
 
     private function validar(Request $request, ?int $ignorar = null): array
     {
-        return $request->validate([
+        $datos = $request->validate([
             'name' => ['required', 'string', 'max:100', 'unique:roles,name'.($ignorar ? ",{$ignorar}" : '')],
             'permisos' => ['array'],
             'permisos.*' => ['string', 'exists:permissions,name'],
         ], [], ['name' => 'nombre del rol']);
+
+        // Nadie reparte permisos que no tiene.
+        $fuera = $this->permisosFueraDeAlcance($request->user(), $datos['permisos'] ?? []);
+
+        if ($fuera !== []) {
+            throw ValidationException::withMessages([
+                'permisos' => 'No puedes conceder permisos que tu cuenta no posee: '.implode(', ', $fuera).'.',
+            ]);
+        }
+
+        return $datos;
     }
 
     /** Agrupa los permisos por el grupo declarado en config/odontosuite.php. */

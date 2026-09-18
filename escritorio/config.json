@@ -1,0 +1,8 @@
+{
+  "_comentario": "Valores por defecto del lanzador. Para cambiarlos en un equipo concreto crea %LOCALAPPDATA%\\DENTAL-PRO\\config.json con las mismas claves; se fusionan sobre estas.",
+  "controlUrl": "https://control.tuagencia.com",
+  "controlClavePublica": "",
+  "zonaHoraria": "America/Lima",
+  "moneda": "BOB",
+  "prefijoPais": "591"
+}

@@ -1,0 +1,76 @@
+# Configuración de electron-builder para el instalador de Windows.
+#   cd escritorio && npm ci && npx electron-builder --win nsis --publish never
+# Requiere antes: node preparar-app.mjs  y  pwsh preparar-runtime.ps1
+appId: com.dentalpro.escritorio
+productName: DENTAL-PRO
+copyright: Copyright © 2026 DENTAL-PRO
+artifactName: DENTAL-PRO-Setup-${version}.${ext}
+electronLanguages:
+  - es
+  - es-419
+  - en-US
+
+directories:
+  output: dist
+  buildResources: recursos-build
+
+# El código del lanzador va en app.asar; la app Laravel y el runtime van sueltos
+# en resources/ (php.exe y postgres.exe no pueden leer dentro de un asar).
+asar: true
+files:
+  - main.js
+  - preload.js
+  - ventana-carga.html
+  - config.json
+  - icono.ico
+  - icono.png
+  - icono-32.png
+  - lib/**/*
+  - package.json
+  - "!test/**"
+  - "!herramientas/**"
+  - "!recursos/**"
+  - "!dist/**"
+  - "!*.ps1"
+  - "!*.mjs"
+  - "!*.md"
+
+extraResources:
+  - from: recursos/runtime
+    to: runtime
+    filter:
+      - "**/*"
+  - from: recursos/app
+    to: app
+    filter:
+      - "**/*"
+      - "!**/.git/**"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: icono.ico
+  # Sin firma de código: el instalador mostrará el aviso SmartScreen hasta que se firme.
+  verifyUpdateCodeSignature: false
+  requestedExecutionLevel: asInvoker
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerLanguages:
+    - es_ES
+  language: "1034"
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: DENTAL-PRO
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  installerIcon: icono.ico
+  uninstallerIcon: icono.ico
+  uninstallDisplayName: DENTAL-PRO
+  include: instalador.nsh
+  artifactName: DENTAL-PRO-Setup-${version}.${ext}

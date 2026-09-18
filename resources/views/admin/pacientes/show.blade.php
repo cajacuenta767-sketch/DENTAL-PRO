@@ -73,6 +73,10 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <x-alerta-medica :paciente="$paciente" />
+</div>
+
 @include('admin.pacientes._pestanas', ['paciente' => $paciente, 'activa' => 'ficha'])
 
 <div class="row g-3">
@@ -80,7 +84,7 @@
         <div class="card">
             <div class="card-body text-center">
                 @if ($paciente->fotografia)
-                    <span class="avatar avatar-xl mb-3" style="background-image: url({{ Storage::url($paciente->fotografia) }})"></span>
+                    <span class="avatar avatar-xl mb-3" style="background-image: url({{ $paciente->foto_url }})"></span>
                 @else
                     <span class="avatar avatar-xl bg-blue-lt mb-3">
                         {{ mb_substr($paciente->nombres, 0, 1) }}{{ mb_substr($paciente->apellidos, 0, 1) }}

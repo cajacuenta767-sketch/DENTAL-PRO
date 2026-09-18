@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Aseguradora extends Model
 {
-    use HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'aseguradoras';
 
@@ -38,15 +39,21 @@ class Aseguradora extends Model
         return $query->where('activo', true);
     }
 
-    /** Monto que cubre el seguro sobre un importe, respetando el tope anual. */
-    public function cobertura(float $importe): float
+    /**
+     * Monto que cubre el seguro sobre un importe. El tope anual se aplica
+     * sobre lo que ya se cubrió al paciente en el año ($yaCubierto), y el
+     * porcentaje puede venir congelado desde el presupuesto.
+     */
+    public function cobertura(float $importe, float $yaCubierto = 0, ?float $porcentaje = null): float
     {
-        $cubierto = round($importe * ((float) $this->porcentaje_cobertura / 100), 2);
+        $porcentaje ??= (float) $this->porcentaje_cobertura;
+        $cubierto = round($importe * ($porcentaje / 100), 2);
 
         if ($this->tope_anual !== null) {
-            $cubierto = min($cubierto, (float) $this->tope_anual);
+            $disponible = max(0, round((float) $this->tope_anual - $yaCubierto, 2));
+            $cubierto = min($cubierto, $disponible);
         }
 
-        return $cubierto;
+        return max(0, $cubierto);
     }
 }

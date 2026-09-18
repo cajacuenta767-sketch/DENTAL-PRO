@@ -12,9 +12,11 @@ use App\Models\Presupuesto;
 use App\Models\PresupuestoDetalle;
 use App\Models\Tratamiento;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -108,7 +110,8 @@ class PresupuestoController extends Controller
 
         return view('admin.presupuestos.show', [
             'presupuesto' => $presupuesto,
-            'pagado' => (float) Pago::where('paciente_id', $presupuesto->paciente_id)->vigentes()->sum('monto_pagado'),
+            'pagado' => (float) $presupuesto->pagos()->vigentes()->sum('monto_pagado'),
+            'porCobrar' => (float) $presupuesto->detalles()->cobrables()->sum('subtotal'),
         ]);
     }
 
@@ -133,6 +136,7 @@ class PresupuestoController extends Controller
                 'descripcion' => $d->descripcion,
                 'cantidad' => $d->cantidad,
                 'precio_unitario' => (float) $d->precio_unitario,
+                'sesion' => $d->sesion ?? 1,
             ])->all(),
         ]);
     }
@@ -185,11 +189,19 @@ class PresupuestoController extends Controller
             'estado' => ['required', 'in:'.implode(',', array_keys(Presupuesto::ESTADOS))],
         ])['estado'];
 
-        if ($presupuesto->estado === 'COMPLETADO' && $estado !== 'COMPLETADO') {
-            return back()->with('error', 'Un presupuesto completado ya no cambia de estado.');
+        if ($estado === $presupuesto->estado) {
+            return back()->with('aviso', "El presupuesto ya estaba en {$presupuesto->estado_legible}.");
         }
 
-        $presupuesto->update(['estado' => $estado]);
+        if (! $presupuesto->puedeTransitarA($estado)) {
+            return back()->with('error', "No se puede pasar de {$presupuesto->estado_legible} a ".Presupuesto::ESTADOS[$estado].'. El avance y el cierre se registran ejecutando las líneas del plan.');
+        }
+
+        DB::transaction(function () use ($presupuesto, $estado) {
+            $presupuesto->update(['estado' => $estado]);
+            // Al aprobar se congela la aseguradora y su porcentaje.
+            $presupuesto->recalcular();
+        });
 
         return back()->with('exito', "El presupuesto pasó a {$presupuesto->estado_legible}.");
     }
@@ -208,14 +220,91 @@ class PresupuestoController extends Controller
             return back()->with('error', 'Aprueba el presupuesto antes de ejecutar tratamientos.');
         }
 
-        $detalle->update($datos + [
-            'fecha_ejecucion' => $datos['estado'] === 'EJECUTADO' ? now()->toDateString() : null,
-        ]);
+        if ($presupuesto->estado === 'RECHAZADO') {
+            return back()->with('error', 'Un presupuesto rechazado no se ejecuta.');
+        }
 
-        $presupuesto->recalcular();
-        $presupuesto->sincronizarEstado();
+        if ($detalle->pago_id && $datos['estado'] !== 'EJECUTADO') {
+            return back()->with('error', 'Esa línea ya fue cobrada en el recibo '.$detalle->pago?->codigo_recibo.'. Anula el recibo antes de cambiarla.');
+        }
+
+        DB::transaction(function () use ($detalle, $datos, $presupuesto) {
+            $detalle->update($datos + [
+                'fecha_ejecucion' => $datos['estado'] === 'EJECUTADO' ? now()->toDateString() : null,
+            ]);
+
+            $presupuesto->recalcular();
+            $presupuesto->sincronizarEstado();
+        });
 
         return back()->with('exito', 'El plan de tratamiento fue actualizado.');
+    }
+
+    /**
+     * Reparte las líneas del plan en sesiones: recibe detalle_id => número de
+     * sesión (1-50). Solo toca líneas del propio presupuesto.
+     */
+    public function sesiones(Request $request, Presupuesto $presupuesto): RedirectResponse|JsonResponse
+    {
+        $datos = $request->validate([
+            'sesiones' => ['required', 'array', 'min:1'],
+            'sesiones.*' => ['required', 'integer', 'min:1', 'max:50'],
+        ], [], ['sesiones' => 'sesiones']);
+
+        $lineas = $presupuesto->detalles()
+            ->whereIn('id', array_keys($datos['sesiones']))
+            ->get();
+
+        DB::transaction(function () use ($lineas, $datos) {
+            foreach ($lineas as $linea) {
+                $linea->update(['sesion' => (int) $datos['sesiones'][$linea->id]]);
+            }
+        });
+
+        $resultado = $presupuesto->detalles()->get(['id', 'sesion'])->pluck('sesion', 'id');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'actualizadas' => $lineas->count(),
+                'sesiones' => $resultado,
+                'mensaje' => 'Las sesiones del plan fueron actualizadas.',
+            ]);
+        }
+
+        return back()->with('exito', 'Las sesiones del plan fueron actualizadas.');
+    }
+
+    /**
+     * Lleva a la agenda con los datos de una sesión del plan: paciente,
+     * doctor, el tratamiento de la primera línea pendiente y un motivo con
+     * lo que toca hacer en esa sesión.
+     */
+    public function agendarSesion(Request $request, Presupuesto $presupuesto, int $sesion): RedirectResponse
+    {
+        if ($presupuesto->estado === 'RECHAZADO') {
+            return back()->with('error', 'Un presupuesto rechazado no se agenda.');
+        }
+
+        $lineas = $presupuesto->detalles()
+            ->with('tratamiento')
+            ->where('sesion', $sesion)
+            ->whereNotIn('estado', ['EJECUTADO', 'ANULADO'])
+            ->get();
+
+        if ($lineas->isEmpty()) {
+            return back()->with('aviso', "La sesión {$sesion} no tiene tratamientos pendientes por agendar.");
+        }
+
+        $descripciones = $lineas->map(fn ($l) => $l->descripcion.($l->ubicacion ? " ({$l->ubicacion})" : ''))->implode(', ');
+        $motivo = mb_substr("Sesión {$sesion} del presupuesto {$presupuesto->codigo}: {$descripciones}", 0, 1000);
+
+        return redirect()->route('admin.citas.create', array_filter([
+            'paciente_id' => $presupuesto->paciente_id,
+            'doctor_id' => $presupuesto->doctor_id,
+            'tratamiento_id' => $lineas->first()->tratamiento_id,
+            'motivo' => $motivo,
+        ], fn ($v) => $v !== null && $v !== ''));
     }
 
     /** Genera el recibo de caja con las líneas ya ejecutadas y sin cobrar. */
@@ -225,18 +314,22 @@ class PresupuestoController extends Controller
             return back()->with('error', 'Solo puedes cobrar un presupuesto aprobado.');
         }
 
-        $lineas = $presupuesto->detalles()->where('estado', 'EJECUTADO')->get();
+        $pago = DB::transaction(function () use ($presupuesto, $request) {
+            // Solo lo ejecutado y todavía sin recibo: cobrar dos veces no crea nada.
+            $lineas = $presupuesto->detalles()->cobrables()->lockForUpdate()->get();
 
-        if ($lineas->isEmpty()) {
-            return back()->with('error', 'Marca al menos un tratamiento como ejecutado antes de cobrar.');
-        }
+            if ($lineas->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'detalles' => 'No hay tratamientos ejecutados pendientes de cobro en este presupuesto.',
+                ]);
+            }
 
-        $pago = DB::transaction(function () use ($presupuesto, $lineas, $request) {
             $pago = Pago::create([
                 'codigo_recibo' => Pago::siguienteCodigo(),
                 'paciente_id' => $presupuesto->paciente_id,
                 'doctor_id' => $presupuesto->doctor_id,
                 'usuario_id' => $request->user()->id,
+                'presupuesto_id' => $presupuesto->id,
                 'monto_pagado' => 0,
                 'metodo_pago' => 'EFECTIVO',
                 'fecha_pago' => now(),
@@ -251,6 +344,8 @@ class PresupuestoController extends Controller
                     'precio_unitario' => $linea->precio_unitario,
                     'subtotal' => $linea->subtotal,
                 ]);
+
+                $linea->update(['pago_id' => $pago->id]);
             }
 
             $pago->recalcular();
@@ -291,6 +386,7 @@ class PresupuestoController extends Controller
             'detalles.*.descripcion' => ['required', 'string', 'max:255'],
             'detalles.*.cantidad' => ['required', 'integer', 'min:1', 'max:999'],
             'detalles.*.precio_unitario' => ['required', 'numeric', 'min:0'],
+            'detalles.*.sesion' => ['nullable', 'integer', 'min:1', 'max:50'],
         ], [], [
             'paciente_id' => 'paciente',
             'validez_dias' => 'validez en días',
@@ -302,15 +398,16 @@ class PresupuestoController extends Controller
     {
         foreach (array_values($detalles) as $orden => $detalle) {
             $presupuesto->detalles()->create([
-                'tratamiento_id' => $detalle['tratamiento_id'] ?: null,
-                'pieza_dental' => $detalle['pieza_dental'] ?: null,
-                'cara' => $detalle['cara'] ?: null,
+                'tratamiento_id' => ($detalle['tratamiento_id'] ?? null) ?: null,
+                'pieza_dental' => ($detalle['pieza_dental'] ?? null) ?: null,
+                'cara' => ($detalle['cara'] ?? null) ?: null,
                 'descripcion' => $detalle['descripcion'],
                 'cantidad' => $detalle['cantidad'],
                 'precio_unitario' => $detalle['precio_unitario'],
                 'subtotal' => round($detalle['cantidad'] * $detalle['precio_unitario'], 2),
                 'estado' => 'PENDIENTE',
                 'orden' => $orden,
+                'sesion' => max(1, min(50, (int) ($detalle['sesion'] ?? 1) ?: 1)),
             ]);
         }
     }

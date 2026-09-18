@@ -2,18 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Horario extends Model
 {
-    use HasFactory;
+    use Auditable, Concerns\BelongsToClinica, HasFactory;
 
     protected $table = 'horarios';
 
     protected $fillable = [
-        'doctor_id', 'dia_semana', 'turno', 'hora_inicio', 'hora_fin', 'activo',
+        'doctor_id', 'sucursal_id', 'dia_semana', 'turno', 'hora_inicio', 'hora_fin', 'activo',
     ];
 
     protected function casts(): array
