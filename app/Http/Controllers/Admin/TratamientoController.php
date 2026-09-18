@@ -76,6 +76,8 @@ class TratamientoController extends Controller
 
     private function validar(Request $request): array
     {
+        $request->merge(['nombre' => mb_strtoupper(trim((string) $request->input('nombre')))]);
+
         $datos = $request->validate([
             'especialidad_id' => ['required', 'exists:especialidades,id'],
             'nombre' => ['required', 'string', 'max:150'],
@@ -85,7 +87,6 @@ class TratamientoController extends Controller
             'activo' => ['nullable', 'boolean'],
         ], [], ['especialidad_id' => 'especialidad', 'duracion' => 'duración']);
 
-        $datos['nombre'] = mb_strtoupper($datos['nombre']);
         $datos['activo'] = $request->boolean('activo');
 
         return $datos;

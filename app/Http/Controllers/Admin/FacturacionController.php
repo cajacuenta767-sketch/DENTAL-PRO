@@ -53,13 +53,23 @@ class FacturacionController extends Controller
     }
 
     /** Formulario de emisión sobre un recibo de caja. */
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        // Se emite siempre contra un recibo: sin él, el módulo devuelve al
+        // listado, que es donde están los recibos pendientes de facturar.
+        if (! $request->filled('pago_id')) {
+            return redirect()->route('admin.facturacion.index')
+                ->with('aviso', 'Elige el recibo que quieres facturar.');
+        }
+
         $pago = Pago::with(['paciente.aseguradora', 'detalles', 'doctor'])
             ->vigentes()
             ->findOrFail($request->query('pago_id'));
 
-        abort_if($pago->documentoFiscal()->exists(), 409, 'Este recibo ya tiene un documento fiscal vigente.');
+        if ($pago->documentoFiscal()->exists()) {
+            return redirect()->route('admin.facturacion.index')
+                ->with('error', "El recibo {$pago->codigo_recibo} ya tiene un documento fiscal vigente.");
+        }
 
         $ajustes = Ajuste::actual();
         $desglose = DocumentoFiscal::desglosarIva((float) $pago->monto_total, (float) $ajustes->facturacion_tasa_iva);

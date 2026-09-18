@@ -11,6 +11,7 @@ use App\Models\Pago;
 use App\Models\Tratamiento;
 use App\Models\Usuario;
 use App\Services\AgendaService;
+use Faker\Factory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -47,7 +48,7 @@ class DemoClinicaSeeder extends Seeder
 
     private function crearPacientes()
     {
-        $faker = \Faker\Factory::create('es_ES');
+        $faker = Factory::create('es_ES');
         $grupos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         $alergias = ['Penicilina', 'Látex', 'Lidocaína', 'Ibuprofeno', 'Ninguna conocida', 'Aspirina'];
         $enfermedades = ['Hipertensión', 'Diabetes tipo 2', 'Ninguna', 'Asma', 'Hipotiroidismo'];
@@ -199,6 +200,7 @@ class DemoClinicaSeeder extends Seeder
 
                 if ($hallazgo === 'ausente') {
                     $piezas[(string) $numero]['estado'] = 'ausente';
+
                     continue;
                 }
 

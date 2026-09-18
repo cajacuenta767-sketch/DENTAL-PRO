@@ -13,6 +13,7 @@ use App\Models\Presupuesto;
 use App\Models\Tratamiento;
 use App\Models\Usuario;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -239,7 +240,7 @@ class ClinicaAvanzadaSeeder extends Seeder
             $tipo = $tipos[$i % count($tipos)];
             $ruta = "estudios/{$cita->paciente_id}/demo-{$cita->id}.svg";
 
-            \Illuminate\Support\Facades\Storage::disk('public')->put($ruta, $this->svgDemostracion($tipo));
+            Storage::disk('public')->put($ruta, $this->svgDemostracion($tipo));
 
             EstudioImagen::create([
                 'paciente_id' => $cita->paciente_id,

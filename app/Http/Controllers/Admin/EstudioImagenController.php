@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\EstudioImagen;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -82,13 +83,15 @@ class EstudioImagenController extends Controller
 
         $archivo = $request->file('archivo');
 
-        $estudio = EstudioImagen::create($datos + [
+        // array_merge y no «+»: la unión conserva el valor de la izquierda y
+        // dejaría en «archivo» el fichero subido en lugar de su ruta guardada.
+        $estudio = EstudioImagen::create(array_merge($datos, [
             'usuario_id' => $request->user()->id,
             'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
             'nombre_original' => $archivo->getClientOriginalName(),
             'mime' => $archivo->getClientMimeType(),
             'tamano' => $archivo->getSize(),
-        ]);
+        ]));
 
         return redirect()->route('admin.estudios.paciente', $estudio->paciente_id)
             ->with('exito', 'El estudio fue cargado.');
@@ -109,16 +112,20 @@ class EstudioImagenController extends Controller
     {
         $datos = $this->validar($request);
 
+        // «archivo» viene del formulario como fichero subido, nunca como ruta:
+        // se descarta y solo se repone si de verdad se cargó uno nuevo.
+        unset($datos['archivo']);
+
         if ($request->hasFile('archivo')) {
             Storage::disk('public')->delete($estudio->archivo);
 
             $archivo = $request->file('archivo');
-            $datos += [
+            $datos = array_merge($datos, [
                 'archivo' => $archivo->store('estudios/'.$datos['paciente_id'], 'public'),
                 'nombre_original' => $archivo->getClientOriginalName(),
                 'mime' => $archivo->getClientMimeType(),
                 'tamano' => $archivo->getSize(),
-            ];
+            ]);
         }
 
         $estudio->update($datos);
@@ -154,7 +161,7 @@ class EstudioImagenController extends Controller
         return $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'tipo' => ['required', 'in:'.implode(',', array_keys(EstudioImagen::TIPOS))],
             'titulo' => ['required', 'string', 'max:150'],
             'fecha_estudio' => ['required', 'date', 'before_or_equal:today'],

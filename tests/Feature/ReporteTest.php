@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\CasoClinico;
 
 class ReporteTest extends CasoClinico
@@ -43,7 +44,7 @@ class ReporteTest extends CasoClinico
             ->assertSee($this->paciente->nombre_completo);
     }
 
-    /** @dataProvider secciones */
+    #[DataProvider('secciones')]
     public function test_cada_seccion_se_exporta_a_pdf(string $seccion): void
     {
         $respuesta = $this->get("/admin/reportes/exportar/{$seccion}")->assertOk();

@@ -13,6 +13,7 @@ use App\Services\AgendaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -199,13 +200,13 @@ class ReservaPublicaController extends Controller
 
         return array_values(array_filter(
             $horas,
-            fn ($hora) => \Illuminate\Support\Carbon::parse("{$fecha} {$hora}")->greaterThanOrEqualTo($limite)
+            fn ($hora) => Carbon::parse("{$fecha} {$hora}")->greaterThanOrEqualTo($limite)
         ));
     }
 
     private function verificarVentana(string $fecha, string $hora, Ajuste $ajustes): void
     {
-        $momento = \Illuminate\Support\Carbon::parse("{$fecha} {$hora}");
+        $momento = Carbon::parse("{$fecha} {$hora}");
 
         if ($momento->lessThan(now()->addHours((int) $ajustes->reservas_minimo_horas))) {
             throw ValidationException::withMessages([

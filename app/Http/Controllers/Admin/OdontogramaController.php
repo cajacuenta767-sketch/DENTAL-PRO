@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Odontograma;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,7 +45,7 @@ class OdontogramaController extends Controller
 
     public function store(Request $request, Paciente $paciente): RedirectResponse
     {
-        $datos = $this->validar($request);
+        $datos = $this->validar($request, $paciente);
         $datos['paciente_id'] = $paciente->id;
 
         Odontograma::create($datos);
@@ -74,7 +75,7 @@ class OdontogramaController extends Controller
 
     public function update(Request $request, Odontograma $odontograma): RedirectResponse
     {
-        $odontograma->update($this->validar($request));
+        $odontograma->update($this->validar($request, $odontograma->paciente));
 
         return redirect()->route('admin.odontogramas.index', $odontograma->paciente)
             ->with('exito', 'El odontograma fue actualizado.');
@@ -89,11 +90,11 @@ class OdontogramaController extends Controller
             ->with('exito', 'El odontograma fue eliminado.');
     }
 
-    private function validar(Request $request): array
+    private function validar(Request $request, Paciente $paciente): array
     {
         $datos = $request->validate([
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($paciente->id)],
             'tipo' => ['required', 'in:ADULTO,INFANTIL'],
             'fecha' => ['required', 'date', 'before_or_equal:today'],
             'piezas' => ['required', 'string'],

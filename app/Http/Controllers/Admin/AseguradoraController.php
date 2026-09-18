@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aseguradora;
+use App\Models\Paciente;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,7 +29,7 @@ class AseguradoraController extends Controller
             'totales' => [
                 'convenios' => Aseguradora::count(),
                 'activas' => Aseguradora::activas()->count(),
-                'afiliados' => \App\Models\Paciente::whereNotNull('aseguradora_id')->count(),
+                'afiliados' => Paciente::whereNotNull('aseguradora_id')->count(),
                 'coberturaMedia' => round((float) Aseguradora::activas()->avg('porcentaje_cobertura'), 1),
             ],
         ]);
@@ -75,6 +76,10 @@ class AseguradoraController extends Controller
 
     private function validar(Request $request, ?int $ignorar = null): array
     {
+        // El nombre se guarda en mayúsculas: se normaliza antes de validar
+        // para que «unique» compare contra el valor que acabará en la tabla.
+        $request->merge(['nombre' => mb_strtoupper(trim((string) $request->input('nombre')))]);
+
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:150', 'unique:aseguradoras,nombre'.($ignorar ? ",{$ignorar}" : '')],
             'codigo' => ['nullable', 'string', 'max:30'],
@@ -91,7 +96,6 @@ class AseguradoraController extends Controller
             'tope_anual' => 'tope anual',
         ]);
 
-        $datos['nombre'] = mb_strtoupper($datos['nombre']);
         $datos['activo'] = $request->boolean('activo');
 
         return $datos;

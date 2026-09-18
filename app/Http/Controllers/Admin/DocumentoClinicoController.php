@@ -8,6 +8,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\DocumentoClinico;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,11 +20,11 @@ class DocumentoClinicoController extends Controller
     /** Plantillas que precargan el contenido según el tipo elegido. */
     private const PLANTILLAS = [
         'RECETA' => "Rp/\n\n1. [Medicamento] [concentración] — [presentación]\n   Tomar [dosis] cada [intervalo] horas por [días] días.\n\n2. \n",
-        'CERTIFICADO' => "Por medio del presente se hace constar que el paciente recibió atención odontológica en esta clínica en la fecha indicada, y se le recomienda reposo por [N] día(s).",
+        'CERTIFICADO' => 'Por medio del presente se hace constar que el paciente recibió atención odontológica en esta clínica en la fecha indicada, y se le recomienda reposo por [N] día(s).',
         'ORDEN_LABORATORIO' => "Se solicita al laboratorio dental la elaboración de:\n\n- Trabajo: \n- Piezas: \n- Color: \n- Material: \n- Fecha de entrega requerida: ",
-        'CONSENTIMIENTO' => "El paciente declara haber sido informado sobre el procedimiento a realizar, sus beneficios, riesgos, alternativas y cuidados posteriores, y otorga su consentimiento para su ejecución.",
+        'CONSENTIMIENTO' => 'El paciente declara haber sido informado sobre el procedimiento a realizar, sus beneficios, riesgos, alternativas y cuidados posteriores, y otorga su consentimiento para su ejecución.',
         'REFERENCIA' => "Se refiere al paciente a la especialidad de [especialidad] por el siguiente motivo:\n\n[Motivo de la referencia]\n\nSe adjunta resumen clínico.",
-        'CONSTANCIA' => "Se hace constar que el paciente asistió a consulta odontológica en esta clínica en la fecha y hora indicadas.",
+        'CONSTANCIA' => 'Se hace constar que el paciente asistió a consulta odontológica en esta clínica en la fecha y hora indicadas.',
     ];
 
     public function index(Request $request): View
@@ -157,7 +158,7 @@ class DocumentoClinicoController extends Controller
         return $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['required', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'tipo' => ['required', 'in:'.implode(',', array_keys(DocumentoClinico::TIPOS))],
             'titulo' => ['required', 'string', 'max:180'],
             'contenido' => ['required', 'string', 'max:6000'],

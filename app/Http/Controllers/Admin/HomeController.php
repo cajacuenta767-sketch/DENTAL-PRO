@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Especialidad;
+use App\Models\Horario;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\Tratamiento;
@@ -39,8 +40,8 @@ class HomeController extends Controller
                 'especialidades' => Especialidad::count(),
                 'tratamientos' => Tratamiento::count(),
                 'tratamientosActivos' => Tratamiento::activos()->count(),
-                'horarios' => \App\Models\Horario::count(),
-                'horariosActivos' => \App\Models\Horario::activos()->count(),
+                'horarios' => Horario::count(),
+                'horariosActivos' => Horario::activos()->count(),
                 'usuarios' => Usuario::count(),
                 'roles' => Role::count(),
                 'permisos' => Permission::count(),
