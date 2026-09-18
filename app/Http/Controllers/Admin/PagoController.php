@@ -8,6 +8,7 @@ use App\Models\Ajuste;
 use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use App\Models\Pago;
 use App\Models\Tratamiento;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -216,7 +217,7 @@ class PagoController extends Controller
         return $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'metodo_pago' => ['required', 'in:'.implode(',', Pago::METODOS)],
             'monto_pagado' => ['required', 'numeric', 'min:0'],
             'fecha_pago' => ['required', 'date'],

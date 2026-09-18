@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\HistorialClinico;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ class HistorialClinicoController extends Controller
 
     public function store(Request $request, Paciente $paciente): RedirectResponse
     {
-        $datos = $this->validar($request);
+        $datos = $this->validar($request, $paciente);
         $datos['paciente_id'] = $paciente->id;
 
         HistorialClinico::create($datos);
@@ -63,7 +64,7 @@ class HistorialClinicoController extends Controller
 
     public function update(Request $request, HistorialClinico $historial): RedirectResponse
     {
-        $historial->update($this->validar($request));
+        $historial->update($this->validar($request, $historial->paciente));
 
         return redirect()->route('admin.historiales.index', $historial->paciente)
             ->with('exito', 'La consulta fue actualizada.');
@@ -89,11 +90,11 @@ class HistorialClinicoController extends Controller
             ->download('historia-clinica-'.$historial->paciente->numero_documento.'-'.$historial->fecha->format('Ymd').'.pdf');
     }
 
-    private function validar(Request $request): array
+    private function validar(Request $request, Paciente $paciente): array
     {
         return $request->validate([
             'doctor_id' => ['required', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($paciente->id)],
             'fecha' => ['required', 'date', 'before_or_equal:today'],
             'motivo_consulta' => ['required', 'string', 'max:2000'],
             'sintomas' => ['nullable', 'string', 'max:2000'],

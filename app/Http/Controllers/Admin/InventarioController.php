@@ -156,6 +156,13 @@ class InventarioController extends Controller
 
     private function validar(Request $request, ?int $ignorar = null): array
     {
+        // Código y nombre se guardan en mayúsculas: se normalizan antes de
+        // validar para que «unique» compare contra el valor real almacenado.
+        $request->merge([
+            'codigo' => mb_strtoupper(trim((string) $request->input('codigo'))),
+            'nombre' => mb_strtoupper(trim((string) $request->input('nombre'))),
+        ]);
+
         $datos = $request->validate([
             'codigo' => ['required', 'string', 'max:40', 'unique:insumos,codigo'.($ignorar ? ",{$ignorar}" : '')],
             'nombre' => ['required', 'string', 'max:150'],
@@ -177,8 +184,6 @@ class InventarioController extends Controller
             'fecha_vencimiento' => 'fecha de vencimiento',
         ]);
 
-        $datos['nombre'] = mb_strtoupper($datos['nombre']);
-        $datos['codigo'] = mb_strtoupper($datos['codigo']);
         $datos['activo'] = $request->boolean('activo');
 
         return $datos;

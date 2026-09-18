@@ -8,6 +8,7 @@ use App\Models\Cita;
 use App\Models\Doctor;
 use App\Models\DocumentoClinico;
 use App\Models\Paciente;
+use App\Rules\CitaDelPaciente;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -157,7 +158,7 @@ class DocumentoClinicoController extends Controller
         return $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['required', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'tipo' => ['required', 'in:'.implode(',', array_keys(DocumentoClinico::TIPOS))],
             'titulo' => ['required', 'string', 'max:180'],
             'contenido' => ['required', 'string', 'max:6000'],
