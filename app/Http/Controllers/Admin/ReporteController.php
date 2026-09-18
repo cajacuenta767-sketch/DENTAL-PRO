@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
 use App\Models\Cita;
+use App\Models\Doctor;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\PagoDetalle;
@@ -27,7 +28,7 @@ class ReporteController extends Controller
             $this->productividad($desde, $hasta),
             $this->padron($desde, $hasta),
             $this->rentabilidad($desde, $hasta),
-            ['doctores' => \App\Models\Doctor::orderBy('apellidos')->get()],
+            ['doctores' => Doctor::orderBy('apellidos')->get()],
         ));
     }
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class DocumentoClinico extends Model
 {
@@ -95,7 +96,7 @@ class DocumentoClinico extends Model
         return self::ICONOS[$this->tipo] ?? 'ti ti-file-text';
     }
 
-    public function getVenceElAttribute(): ?\Illuminate\Support\Carbon
+    public function getVenceElAttribute(): ?Carbon
     {
         return $this->vigencia_dias ? $this->fecha_emision->copy()->addDays($this->vigencia_dias) : null;
     }

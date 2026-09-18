@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Insumo;
+use App\Models\MovimientoInventario;
 use App\Models\Usuario;
 use App\Services\InventarioService;
 use Illuminate\Database\Seeder;
@@ -97,7 +98,7 @@ class InventarioSeeder extends Seeder
 
         $this->command->info(
             'Insumos: '.Insumo::count().
-            ' · Movimientos: '.\App\Models\MovimientoInventario::count().
+            ' · Movimientos: '.MovimientoInventario::count().
             ' · Bajo mínimo: '.Insumo::activos()->bajoMinimo()->count()
         );
     }
