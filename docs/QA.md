@@ -56,6 +56,7 @@ roto tampoco pasa desapercibido.
 | Reportes | `ReporteTest` | Las cuatro secciones y su exportación a PDF |
 | Reservas en línea | `ReservaOnlineTest` | Página pública por token, anticipación mínima y máxima, cupos, QR |
 | Cálculo fiscal | `Unit\DocumentoFiscalTest` | Desglose de IVA sin perder centavos y formato del número de control |
+| Idioma | `IdiomaTest` | Los mensajes de validación, acceso, contraseña y paginación salen en español y no como clave cruda |
 
 `HumoPanelTest` es la red de seguridad: cualquier vista, consulta o
 relación que se rompa en cualquier módulo aparece ahí sin tener que
@@ -78,10 +79,47 @@ Lo que la suite no puede ver:
 6. **Carga de archivos grandes** — estudios de hasta 20 MB según el
    límite de PHP del servidor (`upload_max_filesize`, `post_max_size`).
 
-## 5. Criterio para dar una versión por buena
+## 5. QA en vivo sobre la aplicación corriendo
+
+La suite corre contra una base recién migrada. Estas comprobaciones se hacen
+con el servidor levantado y la clínica demo cargada, porque tocan cosas que la
+suite no ve: el manifiesto real de Vite, el enlace de `storage`, los binarios
+que devuelven los PDF y el QR, y el comportamiento con la configuración
+cacheada.
+
+```bash
+php artisan migrate --seed && npm run build
+php artisan storage:link
+php artisan serve
+```
+
+1. **Recorrer todas las rutas GET** con un super administrador: ninguna debe
+   devolver 5xx ni rebotar al login.
+2. **Descargas binarias** — recibo, historia clínica, documento clínico,
+   presupuesto, documento fiscal y las cuatro secciones de reportes deben
+   devolver `application/pdf`; el QR, `image/svg+xml`.
+3. **Modo producción** — con `APP_ENV=production`, `APP_DEBUG=false` y los
+   cuatro cachés (`config`, `route`, `view`, `event`) el panel completo debe
+   seguir respondiendo. Es donde aparecen los fallos que solo ocurren con la
+   configuración cacheada.
+4. **Base vacía** — con solo `AjusteSeeder`, `RolPermisoSeeder` y
+   `UsuarioSeeder`, todos los módulos y los cuatro PDF de reportes deben
+   abrir sin datos. Es el arranque real de una clínica nueva.
+5. **Campos opcionales ausentes** — enviar un presupuesto o un recibo cuya
+   línea no incluya los campos `nullable` (pieza, cara, tratamiento). Debe
+   guardarse, no dar 500.
+6. **Mensajes en español** — provocar un error de validación en el panel y en
+   la reserva pública: no debe aparecer `validation.*` ni `passwords.*`.
+7. **Proxy TLS** — si hay proxy delante, con `TRUSTED_PROXIES` definido el
+   enlace y el QR de **Configuración → Turnos online** deben salir en `https`.
+8. **Log limpio** — `storage/logs/laravel.log` sin `ERROR` tras el recorrido.
+
+## 6. Criterio para dar una versión por buena
 
 - `php artisan test` en verde.
 - `./vendor/bin/pint --test` sin hallazgos.
 - `npm run build` sin errores.
 - `php artisan migrate:fresh --seed` funciona desde cero.
 - Los seis puntos de revisión manual, comprobados.
+- Los ocho puntos del QA en vivo, comprobados.
+- `docs/DESPLIEGUE.md` seguido de principio a fin en un servidor limpio.

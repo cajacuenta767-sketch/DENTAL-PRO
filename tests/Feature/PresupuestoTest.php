@@ -36,6 +36,31 @@ class PresupuestoTest extends CasoClinico
         ], $extra);
     }
 
+    public function test_una_linea_sin_los_campos_opcionales_se_guarda(): void
+    {
+        // Los campos de pieza, cara y tratamiento son «nullable», así que una
+        // línea que directamente no los envía debe guardarse igual y no
+        // reventar con «Undefined array key».
+        $datos = $this->datos([
+            'detalles' => [
+                [
+                    'descripcion' => 'CONSULTA DE URGENCIA',
+                    'cantidad' => 1,
+                    'precio_unitario' => 200,
+                ],
+            ],
+        ]);
+
+        $this->post('/admin/presupuestos', $datos)->assertRedirect();
+
+        $detalle = Presupuesto::first()->detalles()->sole();
+
+        $this->assertNull($detalle->tratamiento_id);
+        $this->assertNull($detalle->pieza_dental);
+        $this->assertNull($detalle->cara);
+        $this->assertSame('200.00', $detalle->subtotal);
+    }
+
     public function test_un_presupuesto_sin_seguro_cobra_el_total(): void
     {
         $this->post('/admin/presupuestos', $this->datos())->assertRedirect();

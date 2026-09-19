@@ -6,6 +6,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Proxies de confianza
+    |--------------------------------------------------------------------------
+    |
+    | Detrás de un proxy que termina el TLS (Cloudflare, un balanceador, nginx
+    | en otra máquina) Laravel vería «http» y generaría enlaces inseguros: el
+    | QR impreso de las reservas es el caso más visible. Aquí se declara en
+    | quién confiar para leer las cabeceras X-Forwarded-*.
+    |
+    | Vacío   → sin proxy (por defecto).
+    | «*»     → cualquiera; úsalo solo si el proxy es el único camino a la app.
+    | Lista   → IPs o rangos separados por coma.
+    |
+    */
+
+    'proxies_confiables' => env('TRUSTED_PROXIES'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Módulos del sistema
     |--------------------------------------------------------------------------
     |

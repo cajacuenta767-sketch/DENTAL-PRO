@@ -240,7 +240,7 @@ class PagoController extends Controller
     {
         foreach ($detalles as $detalle) {
             $pago->detalles()->create([
-                'tratamiento_id' => $detalle['tratamiento_id'] ?: null,
+                'tratamiento_id' => ($detalle['tratamiento_id'] ?? null) ?: null,
                 'descripcion' => $detalle['descripcion'],
                 'cantidad' => $detalle['cantidad'],
                 'precio_unitario' => $detalle['precio_unitario'],

@@ -88,6 +88,9 @@ php artisan serve
 
 Abre <http://localhost:8000>.
 
+> Para poner el sistema en un servidor (nginx, PHP-FPM, PostgreSQL, HTTPS y
+> copias de seguridad) sigue **[docs/DESPLIEGUE.md](docs/DESPLIEGUE.md)**.
+
 ### Cuentas de demostración
 
 | Rol | Correo | Contraseña |
@@ -188,6 +191,13 @@ altera el documento ya emitido. La numeración es correlativa por tipo y serie.
 > **no transmite a ninguna administración tributaria**. Para operar en producción
 > hay que conectar el firmado y el envío del organismo que corresponda a tu país.
 
+### Idioma
+
+La aplicación corre en español (`APP_LOCALE=es`) y las traducciones de Laravel
+viven en `lang/es`. Si borras ese directorio, los formularios pasan a mostrar la
+clave interna (`validation.required`) en lugar del mensaje: `IdiomaTest` vigila
+que eso no vuelva a pasar.
+
 ### Roles y permisos
 
 Los módulos, sus acciones y los roles predefinidos viven en
@@ -215,6 +225,7 @@ app/
     ├── AgendaService         cálculo de cupos disponibles
     ├── InventarioService     único punto de cambio de existencias
     └── QrService             códigos QR en SVG sin dependencias de imagen
+lang/es/                      mensajes de validación, acceso y paginación
 resources/views/
 ├── admin/                    vistas del panel por módulo
 ├── auth/                     pantallas de acceso

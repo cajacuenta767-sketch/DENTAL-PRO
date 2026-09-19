@@ -30,6 +30,27 @@ class PagoTest extends CasoClinico
         ], $extra);
     }
 
+    public function test_una_linea_sin_tratamiento_se_cobra_igual(): void
+    {
+        // «tratamiento_id» es opcional: una línea libre que no lo envía debe
+        // cobrarse igual, no fallar con «Undefined array key».
+        $datos = $this->datos([
+            'monto_pagado' => 200,
+            'detalles' => [[
+                'descripcion' => 'CONSULTA DE URGENCIA',
+                'cantidad' => 1,
+                'precio_unitario' => 200,
+            ]],
+        ]);
+
+        $this->post('/admin/pagos', $datos)->assertRedirect();
+
+        $pago = Pago::first();
+
+        $this->assertSame('200.00', $pago->monto_total);
+        $this->assertNull($pago->detalles()->sole()->tratamiento_id);
+    }
+
     public function test_un_cobro_completo_queda_sin_saldo(): void
     {
         $this->post('/admin/pagos', $this->datos())->assertRedirect();

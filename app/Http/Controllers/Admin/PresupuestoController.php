@@ -303,9 +303,9 @@ class PresupuestoController extends Controller
     {
         foreach (array_values($detalles) as $orden => $detalle) {
             $presupuesto->detalles()->create([
-                'tratamiento_id' => $detalle['tratamiento_id'] ?: null,
-                'pieza_dental' => $detalle['pieza_dental'] ?: null,
-                'cara' => $detalle['cara'] ?: null,
+                'tratamiento_id' => ($detalle['tratamiento_id'] ?? null) ?: null,
+                'pieza_dental' => ($detalle['pieza_dental'] ?? null) ?: null,
+                'cara' => ($detalle['cara'] ?? null) ?: null,
                 'descripcion' => $detalle['descripcion'],
                 'cantidad' => $detalle['cantidad'],
                 'precio_unitario' => $detalle['precio_unitario'],
