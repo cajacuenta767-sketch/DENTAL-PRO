@@ -71,7 +71,8 @@ class AppServiceProvider extends ServiceProvider
             }, 2);
 
             // Mapear operador ilike a like en consultas SQLite
-            $connection->setQueryGrammar(new class($connection) extends SQLiteGrammar {
+            $connection->setQueryGrammar(new class($connection) extends SQLiteGrammar
+            {
                 protected function whereBasic(Builder $query, $where): string
                 {
                     if (isset($where['operator']) && strtolower($where['operator']) === 'ilike') {
@@ -96,4 +97,3 @@ class AppServiceProvider extends ServiceProvider
         }
     }
 }
-

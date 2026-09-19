@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -178,7 +179,7 @@ class PerfilController extends Controller
         return Password::min(8)->letters()->numbers();
     }
 
-    public function desbloquearSillon(Request $request): \Illuminate\Http\JsonResponse
+    public function desbloquearSillon(Request $request): JsonResponse
     {
         $request->validate([
             'password' => ['required', 'string'],

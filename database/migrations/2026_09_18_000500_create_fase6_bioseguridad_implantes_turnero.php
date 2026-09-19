@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Table ciclos_esterilizacion (Bioseguridad Autoclave)
-        if (!Schema::hasTable('ciclos_esterilizacion')) {
+        if (! Schema::hasTable('ciclos_esterilizacion')) {
             Schema::create('ciclos_esterilizacion', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('clinica_id')->nullable()->constrained('clinicas')->cascadeOnDelete();
@@ -39,7 +39,7 @@ return new class extends Migration
         }
 
         // 2. Table implantes_paciente (Pasaporte Digital de Implantes)
-        if (!Schema::hasTable('implantes_paciente')) {
+        if (! Schema::hasTable('implantes_paciente')) {
             Schema::create('implantes_paciente', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('clinica_id')->nullable()->constrained('clinicas')->cascadeOnDelete();
@@ -72,16 +72,16 @@ return new class extends Migration
 
         // 3. Campos en citas para Turnero TV y CRM Post-Op
         Schema::table('citas', function (Blueprint $table) {
-            if (!Schema::hasColumn('citas', 'llamado_en')) {
+            if (! Schema::hasColumn('citas', 'llamado_en')) {
                 $table->timestamp('llamado_en')->nullable()->after('observacion');
             }
-            if (!Schema::hasColumn('citas', 'consultorio')) {
+            if (! Schema::hasColumn('citas', 'consultorio')) {
                 $table->string('consultorio', 50)->nullable()->after('llamado_en');
             }
-            if (!Schema::hasColumn('citas', 'postop_contactado_en')) {
+            if (! Schema::hasColumn('citas', 'postop_contactado_en')) {
                 $table->timestamp('postop_contactado_en')->nullable()->after('consultorio');
             }
-            if (!Schema::hasColumn('citas', 'postop_estado')) {
+            if (! Schema::hasColumn('citas', 'postop_estado')) {
                 $table->string('postop_estado', 30)->nullable()->after('postop_contactado_en');
             }
         });
@@ -90,10 +90,18 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('citas', function (Blueprint $table) {
-            if (Schema::hasColumn('citas', 'postop_estado')) $table->dropColumn('postop_estado');
-            if (Schema::hasColumn('citas', 'postop_contactado_en')) $table->dropColumn('postop_contactado_en');
-            if (Schema::hasColumn('citas', 'consultorio')) $table->dropColumn('consultorio');
-            if (Schema::hasColumn('citas', 'llamado_en')) $table->dropColumn('llamado_en');
+            if (Schema::hasColumn('citas', 'postop_estado')) {
+                $table->dropColumn('postop_estado');
+            }
+            if (Schema::hasColumn('citas', 'postop_contactado_en')) {
+                $table->dropColumn('postop_contactado_en');
+            }
+            if (Schema::hasColumn('citas', 'consultorio')) {
+                $table->dropColumn('consultorio');
+            }
+            if (Schema::hasColumn('citas', 'llamado_en')) {
+                $table->dropColumn('llamado_en');
+            }
         });
         Schema::dropIfExists('implantes_paciente');
         Schema::dropIfExists('ciclos_esterilizacion');

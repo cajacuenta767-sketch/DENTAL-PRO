@@ -51,6 +51,7 @@ class MedicamentoVademecum extends Model
     public function getNombreCompletoAttribute(): string
     {
         $comercial = $this->nombre_comercial ? " ({$this->nombre_comercial})" : '';
+
         return "{$this->principio_activo}{$comercial} {$this->concentracion} - {$this->presentacion}";
     }
 

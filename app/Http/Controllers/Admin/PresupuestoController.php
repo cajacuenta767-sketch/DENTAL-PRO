@@ -11,6 +11,7 @@ use App\Models\Pago;
 use App\Models\Presupuesto;
 use App\Models\PresupuestoDetalle;
 use App\Models\Tratamiento;
+use App\Rules\CitaDelPaciente;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -211,7 +212,7 @@ class PresupuestoController extends Controller
     {
         $datos = $request->validate([
             'estado' => ['required', 'in:'.implode(',', PresupuestoDetalle::ESTADOS)],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($detalle->presupuesto->paciente_id)],
         ]);
 
         $presupuesto = $detalle->presupuesto;

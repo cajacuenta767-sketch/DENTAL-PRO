@@ -17,7 +17,7 @@ class VademecumController extends Controller
         $medicamentos = MedicamentoVademecum::query()
             ->when($request->filled('familia'), fn ($q) => $q->where('familia', $request->familia))
             ->when($request->filled('q'), function ($q) use ($request) {
-                $t = '%' . mb_strtolower($request->q) . '%';
+                $t = '%'.mb_strtolower($request->q).'%';
                 $q->where(function ($sub) use ($t) {
                     $sub->whereRaw('LOWER(principio_activo) LIKE ?', [$t])
                         ->orWhereRaw('LOWER(COALESCE(nombre_comercial, "")) LIKE ?', [$t])
@@ -42,7 +42,7 @@ class VademecumController extends Controller
             return response()->json([]);
         }
 
-        $t = '%' . mb_strtolower($term) . '%';
+        $t = '%'.mb_strtolower($term).'%';
 
         $resultados = MedicamentoVademecum::activos()
             ->where(function ($sub) use ($t) {
@@ -74,7 +74,7 @@ class VademecumController extends Controller
             'nombre_comercial' => ['nullable', 'string', 'max:150'],
             'presentacion' => ['required', 'string', 'max:100'],
             'concentracion' => ['required', 'string', 'max:60'],
-            'familia' => ['required', 'in:' . implode(',', array_keys(MedicamentoVademecum::FAMILIAS))],
+            'familia' => ['required', 'in:'.implode(',', array_keys(MedicamentoVademecum::FAMILIAS))],
             'posologia_adulto' => ['nullable', 'string'],
             'posologia_pediatrica' => ['nullable', 'string'],
             'contraindicaciones' => ['nullable', 'string'],
@@ -95,7 +95,7 @@ class VademecumController extends Controller
             'nombre_comercial' => ['nullable', 'string', 'max:150'],
             'presentacion' => ['required', 'string', 'max:100'],
             'concentracion' => ['required', 'string', 'max:60'],
-            'familia' => ['required', 'in:' . implode(',', array_keys(MedicamentoVademecum::FAMILIAS))],
+            'familia' => ['required', 'in:'.implode(',', array_keys(MedicamentoVademecum::FAMILIAS))],
             'posologia_adulto' => ['nullable', 'string'],
             'posologia_pediatrica' => ['nullable', 'string'],
             'contraindicaciones' => ['nullable', 'string'],
@@ -116,6 +116,6 @@ class VademecumController extends Controller
         Auditoria::registrar('ELIMINAR', $vademecum, "Eliminó del vademécum: {$vademecum->nombre_completo}");
         $vademecum->delete();
 
-        return back()->with('exito', "Medicamento eliminado del vademécum.");
+        return back()->with('exito', 'Medicamento eliminado del vademécum.');
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use App\Models\EstudioImagen;
 use App\Models\Paciente;
 use App\Rules\ArchivoClinico;
+use App\Rules\CitaDelPaciente;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -277,7 +278,7 @@ class EstudioImagenController extends Controller
         $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'tipo' => ['required', 'in:'.implode(',', array_keys(EstudioImagen::TIPOS))],
             'titulo' => ['required', 'string', 'max:150'],
             'fecha_estudio' => ['required', 'date', 'before_or_equal:today'],

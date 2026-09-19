@@ -8,6 +8,7 @@ use App\Models\Auditoria;
 use App\Models\Doctor;
 use App\Models\ImplantePaciente;
 use App\Models\Paciente;
+use App\Services\QrService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,8 +33,8 @@ class ImplanteController extends Controller
             ->when($request->filled('buscar'), function ($q) use ($request) {
                 $b = "%{$request->buscar}%";
                 $q->where('numero_lote', 'like', $b)
-                  ->orWhere('modelo', 'like', $b)
-                  ->orWhereHas('paciente', fn ($p) => $p->where('nombres', 'like', $b)->orWhere('apellidos', 'like', $b));
+                    ->orWhere('modelo', 'like', $b)
+                    ->orWhereHas('paciente', fn ($p) => $p->where('nombres', 'like', $b)->orWhere('apellidos', 'like', $b));
             })
             ->orderByDesc('fecha_colocacion')->orderByDesc('id');
 
@@ -103,7 +104,7 @@ class ImplanteController extends Controller
         Auditoria::registrar('EDITAR', $implante, "Actualizó implante posición {$implante->posicion_fdi}");
 
         return redirect()->route('admin.implantes.paciente', $implante->paciente)
-            ->with('exito', "Datos del implante actualizados.");
+            ->with('exito', 'Datos del implante actualizados.');
     }
 
     public function destroy(ImplantePaciente $implante): RedirectResponse
@@ -121,7 +122,7 @@ class ImplanteController extends Controller
     public function pasaporte(ImplantePaciente $implante): Response
     {
         $implante->load(['paciente', 'doctor']);
-        $qrDataUri = app(\App\Services\QrService::class)->dataUri(
+        $qrDataUri = app(QrService::class)->dataUri(
             url("/admin/implantes/{$implante->id}/pasaporte"),
             140
         );
@@ -146,7 +147,7 @@ class ImplanteController extends Controller
             'numero_serie' => ['nullable', 'string', 'max:100'],
             'diametro_mm' => ['required', 'numeric', 'between:2.0,7.0'],
             'longitud_mm' => ['required', 'numeric', 'between:4.0,25.0'],
-            'tipo_conexion' => ['required', 'string', 'in:' . implode(',', array_keys(ImplantePaciente::CONEXIONES))],
+            'tipo_conexion' => ['required', 'string', 'in:'.implode(',', array_keys(ImplantePaciente::CONEXIONES))],
             'torque_insercion_ncm' => ['nullable', 'numeric', 'between:10,90'],
             'isq_estabilidad' => ['nullable', 'integer', 'between:20,99'],
             'injerto_oseo' => ['nullable', 'string', 'max:150'],
@@ -154,7 +155,7 @@ class ImplanteController extends Controller
             'fecha_colocacion' => ['required', 'date'],
             'fecha_rehabilitacion' => ['nullable', 'date'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'estado' => ['required', 'string', 'in:' . implode(',', array_keys(ImplantePaciente::ESTADOS))],
+            'estado' => ['required', 'string', 'in:'.implode(',', array_keys(ImplantePaciente::ESTADOS))],
             'observaciones' => ['nullable', 'string', 'max:1000'],
         ]);
     }

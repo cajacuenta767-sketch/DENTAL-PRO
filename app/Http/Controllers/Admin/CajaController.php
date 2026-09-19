@@ -65,7 +65,7 @@ class CajaController extends Controller
     {
         $request->validate([
             'fecha' => ['nullable', 'date'],
-            'turno' => ['nullable', 'string', 'in:' . implode(',', array_keys(CierreCaja::TURNOS))],
+            'turno' => ['nullable', 'string', 'in:'.implode(',', array_keys(CierreCaja::TURNOS))],
         ]);
 
         $fecha = $request->filled('fecha') ? Carbon::parse($request->fecha)->startOfDay() : now()->startOfDay();
@@ -87,7 +87,7 @@ class CajaController extends Controller
     {
         $datos = $request->validate([
             'fecha' => ['required', 'date', 'before_or_equal:today'],
-            'turno' => ['nullable', 'string', 'in:' . implode(',', array_keys(CierreCaja::TURNOS))],
+            'turno' => ['nullable', 'string', 'in:'.implode(',', array_keys(CierreCaja::TURNOS))],
             'fondo_inicial' => ['required', 'numeric', 'min:0'],
             'efectivo_contado' => ['required', 'numeric', 'min:0'],
             'observaciones' => ['nullable', 'string', 'max:1000'],
@@ -153,7 +153,7 @@ class CajaController extends Controller
 
         if ($cierre === null) {
             return back()->withInput()
-                ->with('error', 'La caja del ' . Carbon::parse($fecha)->format('d/m/Y') . ' (' . (CierreCaja::TURNOS[$turno] ?? $turno) . ') ya fue cerrada para esta sucursal.');
+                ->with('error', 'La caja del '.Carbon::parse($fecha)->format('d/m/Y').' ('.(CierreCaja::TURNOS[$turno] ?? $turno).') ya fue cerrada para esta sucursal.');
         }
 
         Auditoria::registrar('CERRAR', $cierre, sprintf(
@@ -165,10 +165,10 @@ class CajaController extends Controller
             number_format((float) $cierre->diferencia, 2),
         ));
 
-        $mensaje = 'Caja del ' . Carbon::parse($fecha)->format('d/m/Y') . ' cerrada con éxito.';
+        $mensaje = 'Caja del '.Carbon::parse($fecha)->format('d/m/Y').' cerrada con éxito.';
 
         if ((float) $cierre->diferencia !== 0.0) {
-            $mensaje .= ' Diferencia de ' . number_format((float) $cierre->diferencia, 2) . '.';
+            $mensaje .= ' Diferencia de '.number_format((float) $cierre->diferencia, 2).'.';
         }
 
         return redirect()->route('admin.caja.show', $cierre)->with('exito', $mensaje);
@@ -189,7 +189,7 @@ class CajaController extends Controller
             'cierre' => $cierre,
             'clinica' => Ajuste::actual(),
         ])->setPaper('letter')
-            ->stream('cierre-caja-' . $cierre->fecha->format('Ymd') . '-' . strtolower($cierre->turno) . '.pdf');
+            ->stream('cierre-caja-'.$cierre->fecha->format('Ymd').'-'.strtolower($cierre->turno).'.pdf');
     }
 
     private function cierreDe(string $fecha, ?int $sucursalId, ?string $turno = null): ?CierreCaja

@@ -9,7 +9,9 @@ use Illuminate\Support\Str;
 class Invitacion extends Model
 {
     protected $table = 'invitaciones';
+
     protected $fillable = ['clinica_id', 'creada_por', 'usada_por', 'email', 'rol', 'codigo_hash', 'codigo_cifrado', 'codigo_visible', 'usos_maximos', 'usos', 'vence_en', 'usada_en', 'activa', 'datos'];
+
     protected $hidden = ['codigo_hash', 'codigo_cifrado'];
 
     protected function casts(): array
@@ -17,9 +19,20 @@ class Invitacion extends Model
         return ['codigo_cifrado' => 'encrypted', 'vence_en' => 'datetime', 'usada_en' => 'datetime', 'activa' => 'boolean', 'datos' => 'array'];
     }
 
-    public function clinica(): BelongsTo { return $this->belongsTo(Clinica::class); }
-    public function creador(): BelongsTo { return $this->belongsTo(Usuario::class, 'creada_por'); }
-    public function usuario(): BelongsTo { return $this->belongsTo(Usuario::class, 'usada_por'); }
+    public function clinica(): BelongsTo
+    {
+        return $this->belongsTo(Clinica::class);
+    }
+
+    public function creador(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'creada_por');
+    }
+
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'usada_por');
+    }
 
     public static function generarCodigo(string $prefijo = 'INV'): string
     {

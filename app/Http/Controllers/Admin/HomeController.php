@@ -12,6 +12,7 @@ use App\Models\Pago;
 use App\Models\Tratamiento;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -79,7 +80,7 @@ class HomeController extends Controller
     {
         $desde = now()->subMonths(5)->startOfMonth();
 
-        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $driver = DB::connection()->getDriverName();
         $dateExpr = match ($driver) {
             'sqlite' => "strftime('%Y-%m', fecha)",
             'mysql', 'mariadb' => "DATE_FORMAT(fecha, '%Y-%m')",

@@ -15,12 +15,14 @@ class InvitacionController extends Controller
     private function clinica(Request $request): int
     {
         abort_unless($request->user()?->clinica_id && $request->user()->hasAnyRole(['ADMINISTRADOR', 'SUPER ADMINISTRADOR']), 403);
+
         return (int) $request->user()->clinica_id;
     }
 
     public function index(Request $request): View
     {
         $clinicaId = $this->clinica($request);
+
         return view('admin.invitaciones.index', [
             'invitaciones' => Invitacion::with('usuario')->where('clinica_id', $clinicaId)
                 ->whereIn('rol', ['DOCTOR', 'RECEPCION', 'PACIENTE'])->latest()->paginate(15),
@@ -60,6 +62,7 @@ class InvitacionController extends Controller
         $clinicaId = $this->clinica($request);
         abort_unless((int) $invitacion->clinica_id === $clinicaId, 404);
         $invitacion->update(['activa' => false]);
+
         return back()->with('exito', 'La invitación fue revocada.');
     }
 }

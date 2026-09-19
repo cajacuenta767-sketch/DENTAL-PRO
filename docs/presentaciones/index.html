@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OdontoSuite Presentaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+/* =====================================================================
+   OdontoSuite · Presentaciones de producto
+   Piezas promocionales de los módulos principales. Cada pieza es un
+   contenedor (container query) y todo se mide en cqw, de modo que la
+   composición es idéntica a 320px o a 1080px.
+   ===================================================================== */
+:root {
+  color-scheme: light dark;
+  --bg: #eef4f3;
+  --bg-2: #ffffff;
+  --ink: #12302e;
+  --ink-2: #4e6664;
+  --line: #d3e0de;
+  --accent: #0d9488;
+  --accent-ink: #0f766e;
+  --focus: #14b8a6;
+
+  /* Mundo visual de las piezas (fijo, no cambia con el tema) */
+  --card-bg-a: #115e59;
+  --card-bg-b: #042f2e;
+  --card-bg-c: #021a19;
+  --card-grid: rgba(255,255,255,.045);
+  --brand: #0d9488;
+  --brand-bright: #2dd4bf;
+  --brand-soft: #5eead4;
+  --card-text: #e6fffb;
+  --card-muted: rgba(230,255,251,.66);
+
+  /* Interfaz simulada (estilo Tabler claro) */
+  --ui-bg: #f1f5f5;
+  --ui-card: #ffffff;
+  --ui-ink: #1c2e2d;
+  --ui-muted: #6f8482;
+  --ui-line: #e2eae9;
+  --ui-primary: #206bc4;
+  --ui-warning: #f59f00;
+  --ui-azure: #4299e1;
+  --ui-success: #2fb344;
+  --ui-danger: #d63939;
+  --ui-purple: #7048e8;
+  --ui-indigo: #4263eb;
+  --ui-teal: #0ca678;
+  --ui-yellow: #f59f00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1918; --bg-2: #122624; --ink: #e3f1ef; --ink-2: #93aca9;
+    --line: #22403d; --accent: #2dd4bf; --accent-ink: #5eead4;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1918; --bg-2: #122624; --ink: #e3f1ef; --ink-2: #93aca9;
+  --line: #22403d; --accent: #2dd4bf; --accent-ink: #5eead4;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  padding-inline: clamp(16px, 3vw, 40px);
+  padding-block: 0 48px;
+}
+h1, h2, h3 { text-wrap: balance; }
+
+/* ---------- Barra de herramientas -------------------------------- */
+.toolbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  margin-inline: calc(-1 * clamp(16px, 3vw, 40px));
+  padding: 14px clamp(16px, 3vw, 40px);
+  display: flex; flex-wrap: wrap; align-items: end; gap: 12px 22px;
+}
+.toolbar .title { margin-right: auto; }
+.toolbar h1 { font-family: "Sora", "Manrope", sans-serif; font-size: 20px; margin: 0; letter-spacing: -.01em; }
+.toolbar h1 span { color: var(--accent); }
+.toolbar p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1 1 150px; max-width: 240px; }
+.field label, .seg-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.field input {
+  font: inherit; font-weight: 600; color: var(--ink);
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; width: 100%;
+}
+.field input:focus-visible, .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.seg { display: flex; flex-direction: column; gap: 4px; }
+.seg-row { display: flex; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 2px; }
+.seg label { position: relative; }
+.seg input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.seg span { display: block; padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.seg input:checked + span { background: var(--accent); color: #fff; }
+
+/* ---------- Rejilla de piezas ------------------------------------ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: clamp(14px, 2vw, 26px);
+  padding-top: 26px;
+}
+.grid[data-fmt="story"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.post { container-type: inline-size; min-width: 0; }
+.post-label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-2); margin: 8px 2px 0; }
+.post-label b { color: var(--ink); font-weight: 700; }
+
+/* ---------- La pieza ---------------------------------------------- */
+.card {
+  position: relative; overflow: hidden; isolation: isolate;
+  width: 100%; aspect-ratio: var(--ar, 1 / 1);
+  border-radius: 3.2cqw;
+  background: radial-gradient(circle at 14% 18%, var(--card-bg-a) 0%, var(--card-bg-b) 52%, var(--card-bg-c) 100%);
+  color: var(--card-text);
+  font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
+  display: flex; flex-direction: column;
+  padding: 5cqw;
+  box-shadow: 0 1.5cqw 5cqw rgba(2, 26, 25, .35);
+}
+.card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(var(--card-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--card-grid) 1px, transparent 1px);
+  background-size: 6cqw 6cqw;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.25));
+}
+.card .glow {
+  position: absolute; z-index: -1; pointer-events: none;
+  width: 90cqw; height: 60cqw; left: 5cqw; bottom: 8cqw;
+  background: radial-gradient(ellipse at center, rgba(45,212,191,.28) 0%, rgba(45,212,191,0) 62%);
+  filter: blur(2cqw);
+}
+.card .arc {
+  position: absolute; z-index: -1; pointer-events: none; inset: auto -20cqw -30cqw -20cqw; height: 70cqw;
+  border-radius: 50%; border: .35cqw solid rgba(94,234,212,.22);
+  box-shadow: 0 0 6cqw rgba(45,212,191,.28), inset 0 0 6cqw rgba(45,212,191,.12);
+}
+.card-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 3cqw; }
+.logo { flex: none; display: inline-flex; align-items: center; gap: 2cqw; min-width: 0; }
+.logo .mark { width: 7cqw; height: 7cqw; border-radius: 1.8cqw; background: var(--brand); display: grid; place-items: center; flex: none; }
+.logo .mark svg { width: 5.2cqw; height: 5.2cqw; }
+.logo .word { font-family: "Sora", "Manrope", sans-serif; font-weight: 800; font-size: 5.4cqw; letter-spacing: -.02em; white-space: nowrap; line-height: 1; }
+.chip {
+  flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 2.05cqw; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--brand-soft); border: .25cqw solid rgba(94,234,212,.38); border-radius: 99cqw;
+  padding: 1.2cqw 2.6cqw; white-space: nowrap;
+}
+.headline { flex: none; margin-top: 4.5cqw; max-width: 82cqw; }
+.headline h2 { font-family: "Sora", "Manrope", sans-serif; font-weight: 800; font-size: 6.2cqw; line-height: 1.12; letter-spacing: -.025em; margin: 0; }
+.headline h2 em { font-style: normal; color: var(--brand-bright); }
+.headline p { margin: 1.8cqw 0 0; font-size: 2.7cqw; line-height: 1.4; color: var(--card-muted); max-width: 70cqw; }
+
+.devices { position: relative; flex: 1; min-height: 0; margin-top: 3cqw; }
+.laptop { position: absolute; left: 0; bottom: 3cqw; width: 76cqw; }
+.laptop .lid {
+  background: #0f1d1c; border-radius: 1.8cqw 1.8cqw .6cqw .6cqw; padding: 1.1cqw 1.1cqw .9cqw;
+  box-shadow: 0 2.5cqw 5cqw rgba(0,0,0,.45);
+}
+.laptop .screen { aspect-ratio: 16 / 10; overflow: hidden; border-radius: .9cqw; background: var(--ui-bg); position: relative; }
+.laptop .base { height: 1.6cqw; margin: 0 -2.4cqw; border-radius: 0 0 1.8cqw 1.8cqw; background: linear-gradient(#e5edec, #b9c9c7); position: relative; }
+.laptop .base::after { content: ""; position: absolute; left: 50%; top: 0; width: 12cqw; height: .5cqw; transform: translateX(-50%); background: #9fb2b0; border-radius: 0 0 .6cqw .6cqw; }
+.phone { position: absolute; right: 0; bottom: 0; width: 24cqw; }
+.phone .body {
+  background: #0f1d1c; border-radius: 4cqw; padding: .9cqw;
+  box-shadow: 0 2.5cqw 5cqw rgba(0,0,0,.5), 0 0 0 .3cqw rgba(255,255,255,.08);
+}
+.phone .screen { aspect-ratio: 9 / 19; border-radius: 3.2cqw; overflow: hidden; background: var(--ui-bg); position: relative; }
+.phone .island { position: absolute; z-index: 3; top: 1cqw; left: 50%; transform: translateX(-50%); width: 7cqw; height: 2cqw; border-radius: 99cqw; background: #0f1d1c; }
+
+.badges { flex: none; display: flex; gap: 2.2cqw; flex-wrap: wrap; margin-top: 3cqw; }
+.badge {
+  display: inline-flex; align-items: center; gap: 1.6cqw; font-size: 2.6cqw; font-weight: 700; letter-spacing: .04em;
+  background: rgba(255,255,255,.08); border: .25cqw solid rgba(255,255,255,.18); backdrop-filter: blur(6px);
+  border-radius: 99cqw; padding: 1.4cqw 3cqw 1.4cqw 1.6cqw; color: var(--card-text); white-space: nowrap;
+}
+.badge .ic { width: 4cqw; height: 4cqw; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.badge .ic svg { width: 2.6cqw; height: 2.6cqw; }
+.badge.wa .ic { background: #25d366; }
+
+/* Formato 4:5 */
+.grid[data-fmt="portrait"] .card { --ar: 4 / 5; }
+.grid[data-fmt="portrait"] .headline { margin-top: 7cqw; }
+.grid[data-fmt="portrait"] .headline h2 { font-size: 7cqw; }
+.grid[data-fmt="portrait"] .headline p { font-size: 3cqw; }
+.grid[data-fmt="portrait"] .laptop { width: 80cqw; bottom: 4cqw; }
+.grid[data-fmt="portrait"] .phone { width: 26cqw; }
+.grid[data-fmt="portrait"] .pui { width: 92.31%; height: 92.31%; transform: scale(1.0833); transform-origin: top left; }
+.grid[data-fmt="portrait"] .badges { margin-top: 5cqw; }
+
+/* Formato 9:16 (historia) */
+.grid[data-fmt="story"] .card { --ar: 9 / 16; padding: 6cqw; }
+.grid[data-fmt="story"] .logo .mark { width: 8cqw; height: 8cqw; }
+.grid[data-fmt="story"] .logo .word { font-size: 5.2cqw; }
+.grid[data-fmt="story"] .chip { font-size: 2cqw; }
+.grid[data-fmt="story"] .headline { margin-top: 7cqw; max-width: 100%; }
+.grid[data-fmt="story"] .headline h2 { font-size: 7.4cqw; }
+.grid[data-fmt="story"] .headline p { font-size: 3.1cqw; max-width: 84cqw; }
+.grid[data-fmt="story"] .devices { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; margin-top: 5cqw; }
+.grid[data-fmt="story"] .laptop { position: relative; bottom: auto; width: 76cqw; }
+.grid[data-fmt="story"] .phone { position: relative; width: 31cqw; margin-top: -19cqw; align-self: flex-end; margin-right: 0; }
+.grid[data-fmt="story"] .pui { width: 77.42%; height: 77.42%; transform: scale(1.2917); transform-origin: top left; }
+.grid[data-fmt="story"] .phone .body { border-radius: 5.2cqw; padding: 1.1cqw; }
+.grid[data-fmt="story"] .phone .screen { border-radius: 4.2cqw; }
+.grid[data-fmt="story"] .phone .island { width: 9cqw; height: 2.5cqw; top: 1.3cqw; }
+.grid[data-fmt="story"] .badges { margin-top: 5cqw; justify-content: center; gap: 2.5cqw; }
+.grid[data-fmt="story"] .badge { font-size: 3.2cqw; }
+.grid[data-fmt="story"] .badge { font-size: 2.7cqw; padding: 1.6cqw 3cqw 1.6cqw 1.8cqw; }
+.grid[data-fmt="story"] .badge .ic { width: 4.4cqw; height: 4.4cqw; }
+.grid[data-fmt="story"] .badge .ic svg { width: 3.2cqw; height: 3.2cqw; }
+.grid[data-fmt="story"] .glow { bottom: 30cqw; }
+.grid[data-fmt="story"] .arc { inset: auto -30cqw -40cqw -30cqw; height: 90cqw; }
+
+/* ---------- Interfaz simulada ------------------------------------ */
+.ui { position: absolute; inset: 0; color: var(--ui-ink); font-size: 1.55cqw; line-height: 1.3; font-weight: 600; display: flex; flex-direction: column; }
+.ui * { min-width: 0; }
+.ui-nav { display: flex; align-items: center; gap: 1.4cqw; padding: 1.1cqw 1.6cqw; background: var(--ui-card); border-bottom: .12cqw solid var(--ui-line); flex: none; }
+.ui-nav .mark { width: 2.4cqw; height: 2.4cqw; border-radius: .6cqw; background: var(--brand); display: grid; place-items: center; }
+.ui-nav .mark svg { width: 1.7cqw; height: 1.7cqw; }
+.ui-nav b { font-weight: 800; font-size: 1.7cqw; }
+.ui-nav .search { flex: 1; max-width: 22cqw; margin-left: 1cqw; height: 2.6cqw; border-radius: .6cqw; border: .12cqw solid var(--ui-line); background: var(--ui-bg); color: var(--ui-muted); font-weight: 500; font-size: 1.35cqw; display: flex; align-items: center; padding-inline: 1cqw; }
+.ui-nav .right { margin-left: auto; display: flex; align-items: center; gap: 1.2cqw; }
+.dot { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; background: linear-gradient(135deg, #5eead4, #0d9488); }
+.ui-nav .sedes { font-size: 1.15cqw; color: var(--ui-muted); white-space: nowrap; }
+.ui-nav .moon { width: 1.5cqw; height: 1.5cqw; border-radius: 50%; box-shadow: inset -.45cqw -.3cqw 0 0 var(--ui-muted); }
+.ui-nav .who { display: flex; flex-direction: column; line-height: 1.15; white-space: nowrap; }
+.ui-nav .who b { font-size: 1.15cqw; }
+.ui-nav .who small { font-size: .85cqw; color: var(--ui-muted); font-weight: 600; }
+.bell { position: relative; width: 1.6cqw; height: 1.6cqw; border-radius: 50%; border: .18cqw solid var(--ui-muted); }
+.bell::after { content: ""; position: absolute; top: -.35cqw; right: -.35cqw; width: .8cqw; height: .8cqw; border-radius: 50%; background: var(--ui-danger); }
+.ui-main { display: flex; flex: 1; min-height: 0; }
+.ui-side { width: 15cqw; flex: none; background: var(--ui-card); border-right: .12cqw solid var(--ui-line); padding: 1cqw .8cqw; display: flex; flex-direction: column; gap: .25cqw; font-size: 1.35cqw; font-weight: 600; color: var(--ui-muted); }
+.ui-side .grp { font-size: 1cqw; letter-spacing: .1em; text-transform: uppercase; margin: .8cqw .8cqw .3cqw; color: #9fb0ae; }
+.ui-side .it { display: flex; align-items: center; gap: .8cqw; padding: .55cqw .8cqw; border-radius: .6cqw; white-space: nowrap; overflow: hidden; }
+.ui-side .it i { width: 1.3cqw; height: 1.3cqw; border-radius: .35cqw; background: currentColor; opacity: .45; flex: none; }
+.ui-side .it.on { background: rgba(13,148,136,.12); color: var(--accent-ink, #0f766e); color: #0f766e; }
+.ui-side .it.on i { opacity: 1; background: var(--brand); }
+.ui-body { flex: 1; min-width: 0; padding: 1.4cqw 1.6cqw; display: flex; flex-direction: column; gap: 1.2cqw; overflow: hidden; }
+.ph { display: flex; align-items: end; justify-content: space-between; gap: 1cqw; }
+.ph .pre { font-size: 1.05cqw; letter-spacing: .1em; text-transform: uppercase; color: var(--ui-muted); }
+.ph h4 { margin: 0; font-size: 2.1cqw; font-weight: 800; letter-spacing: -.01em; }
+.btn { display: inline-flex; align-items: center; gap: .6cqw; font-size: 1.3cqw; font-weight: 700; padding: .7cqw 1.3cqw; border-radius: .6cqw; background: var(--ui-primary); color: #fff; white-space: nowrap; }
+.btn.o { background: transparent; border: .12cqw solid var(--ui-primary); color: var(--ui-primary); }
+.btn.brand { background: var(--brand); }
+.btn.sm { font-size: 1.1cqw; padding: .5cqw 1cqw; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1cqw; }
+.kpi { background: var(--ui-card); border-radius: .8cqw; border: .12cqw solid var(--ui-line); border-left: .4cqw solid var(--c, var(--ui-primary)); padding: .9cqw 1cqw; display: flex; gap: .9cqw; align-items: center; }
+.kpi .ic { width: 3cqw; height: 3cqw; border-radius: .7cqw; background: color-mix(in srgb, var(--c, var(--ui-primary)) 14%, #fff); color: var(--c, var(--ui-primary)); display: grid; place-items: center; flex: none; }
+.kpi .ic svg { width: 1.7cqw; height: 1.7cqw; }
+.kpi .t { font-size: 1cqw; line-height: 1.15; color: var(--ui-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.kpi .v { font-size: 1.75cqw; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpi .f { font-size: .95cqw; color: var(--ui-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crd { background: var(--ui-card); border-radius: .8cqw; border: .12cqw solid var(--ui-line); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.crd .h { display: flex; align-items: center; gap: .8cqw; padding: .9cqw 1.2cqw; border-bottom: .12cqw solid var(--ui-line); font-size: 1.35cqw; font-weight: 800; }
+.crd .h .r { margin-left: auto; font-weight: 600; color: var(--ui-muted); font-size: 1.1cqw; }
+.crd .b { padding: 1cqw 1.2cqw; }
+.cols { display: grid; gap: 1.1cqw; min-height: 0; flex: 1; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 1.25cqw; }
+.tbl th { text-align: left; font-size: 1cqw; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-muted); padding: .7cqw 1.2cqw; background: #f7fafa; border-bottom: .12cqw solid var(--ui-line); white-space: nowrap; font-weight: 700; }
+.tbl td { padding: .75cqw 1.2cqw; border-bottom: .12cqw solid var(--ui-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 16cqw; vertical-align: middle; }
+.tbl td small { display: block; color: var(--ui-muted); font-weight: 500; font-size: 1.05cqw; }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font-size: 1cqw; font-weight: 800; padding: .3cqw .8cqw; border-radius: 99cqw; background: color-mix(in srgb, var(--c, var(--ui-primary)) 15%, #fff); color: var(--c, var(--ui-primary)); white-space: nowrap; }
+.tabs { display: flex; gap: 1.6cqw; border-bottom: .12cqw solid var(--ui-line); font-size: 1.25cqw; font-weight: 700; color: var(--ui-muted); }
+.tabs span { padding: .5cqw 0 .7cqw; white-space: nowrap; }
+.tabs span.on { color: var(--ui-primary); box-shadow: inset 0 -.25cqw 0 var(--ui-primary); }
+.list { display: flex; flex-direction: column; }
+.list .li { display: flex; align-items: center; gap: 1cqw; padding: .8cqw 1.2cqw; border-bottom: .12cqw solid var(--ui-line); font-size: 1.25cqw; }
+.list .li:last-child { border-bottom: 0; }
+.list .li .g { flex: 1; overflow: hidden; }
+.list .li .g small { display: block; color: var(--ui-muted); font-weight: 500; font-size: 1.05cqw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .li .t { color: var(--ui-muted); font-variant-numeric: tabular-nums; }
+.sw { width: 1cqw; height: 1cqw; border-radius: .3cqw; flex: none; }
+.bar { height: .7cqw; border-radius: 99cqw; background: #e8eeed; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--c, var(--brand)); border-radius: 99cqw; }
+.inp { height: 2.6cqw; border-radius: .6cqw; border: .12cqw solid #cfdad8; background: #fff; font-size: 1.2cqw; font-weight: 500; color: var(--ui-ink); display: flex; align-items: center; padding-inline: .9cqw; white-space: nowrap; overflow: hidden; }
+.inp.ph-txt { color: var(--ui-muted); }
+.lbl { font-size: 1.05cqw; font-weight: 700; margin-bottom: .35cqw; }
+.chart { display: block; width: 100%; height: auto; }
+
+/* Odontograma simulado */
+.odo { display: flex; flex-direction: column; gap: 1.4cqw; padding-block: .8cqw; align-items: center; }
+.odo .arch { display: flex; gap: 1.6cqw; }
+.odo .quad { display: flex; gap: .32cqw; }
+.odo .pz { width: 3.3cqw; text-align: center; font-size: .9cqw; color: var(--ui-muted); font-weight: 700; line-height: 1.1; }
+.odo .pz svg { width: 2.95cqw; height: 2.95cqw; display: block; margin: 0 auto; }
+.odo .pz svg * { stroke: #adb5bd; stroke-width: 1; }
+.odo .pz.on svg { outline: .18cqw solid var(--brand); outline-offset: .18cqw; border-radius: .3cqw; }
+.odo .pz.on { color: #0f766e; }
+.hallazgos { display: flex; flex-wrap: wrap; gap: .5cqw; flex: 1; }
+.crd .h > .hz-lbl { flex: none; font-size: 1.05cqw; letter-spacing: .08em; color: var(--ui-muted); }
+.hz { font-size: 1.05cqw; font-weight: 700; padding: .4cqw .8cqw; border-radius: .5cqw; border: .12cqw solid var(--c); color: var(--c); background: #fff; white-space: nowrap; }
+.hz.on { box-shadow: inset 0 0 0 .15cqw var(--c); }
+.hz .k { font-style: normal; font-size: .8cqw; background: #f1f5f5; color: #9fb0ae; border-radius: .3cqw; padding: 0 .35cqw; margin-left: .45cqw; }
+.hz-sm .hz { font-size: .88cqw; padding: .25cqw .5cqw; }
+.hz-sm .hz .k { font-size: .68cqw; margin-left: .3cqw; }
+.crd.arco-card { flex: 1; }
+.crd.arco-card .b { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.arco-wrap { flex: 1; min-height: 0; display: flex; justify-content: center; }
+.arco-svg { display: block; height: 100%; width: auto; max-width: 100%; }
+.odo-tools { display: flex; align-items: center; gap: .6cqw; font-size: 1.05cqw; color: var(--ui-muted); flex-wrap: wrap; }
+.odo-tools .tb { border: .12cqw solid #cfdad8; border-radius: .5cqw; padding: .4cqw .8cqw; color: var(--ui-ink); font-weight: 700; white-space: nowrap; background: #fff; }
+.odo-tools .tb.on { border-color: var(--ui-primary); color: var(--ui-primary); background: #eaf2fb; }
+.odo-tools .tb.rd { border-color: var(--ui-danger); color: var(--ui-danger); margin-left: auto; }
+.leg { display: flex; flex-wrap: wrap; gap: .4cqw 1cqw; font-size: .95cqw; color: var(--ui-muted); justify-content: center; }
+.leg span { display: inline-flex; align-items: center; gap: .35cqw; }
+.leg i { width: .8cqw; height: .8cqw; border-radius: .2cqw; border: .1cqw solid rgba(0,0,0,.2); }
+
+/* Interfaz del teléfono */
+.pui { position: absolute; inset: 0; color: var(--ui-ink); font-size: 1.45cqw; line-height: 1.3; font-weight: 600; display: flex; flex-direction: column; }
+.pui * { min-width: 0; }
+.pui .top { padding: 3.6cqw 1.6cqw 1cqw; display: flex; align-items: center; gap: .9cqw; background: var(--ui-card); border-bottom: .12cqw solid var(--ui-line); flex: none; }
+.pui .top .mark { width: 2.2cqw; height: 2.2cqw; border-radius: .55cqw; background: var(--brand); display: grid; place-items: center; }
+.pui .top .mark svg { width: 1.5cqw; height: 1.5cqw; }
+.pui .top b { font-weight: 800; font-size: 1.55cqw; }
+.pui .top .dot { margin-left: auto; width: 2.1cqw; height: 2.1cqw; }
+.pui .top.dark { background: #0b3b38; color: #fff; border: 0; }
+.pui .cnt { flex: 1; min-height: 0; padding: 1.3cqw; display: flex; flex-direction: column; gap: 1cqw; overflow: hidden; }
+.pui .crd .h { font-size: 1.25cqw; padding: .8cqw 1cqw; }
+.pui .crd .b { padding: .9cqw 1cqw; }
+.pui .kpi { padding: .8cqw .9cqw; }
+.pui .kpi .ic { width: 2.6cqw; height: 2.6cqw; }
+.pui .kpi .v { font-size: 1.45cqw; }
+.pui .kpi .ic { display: none; }
+.pui .list .li { padding: .7cqw 1cqw; font-size: 1.2cqw; }
+.pui .list .li .g small { font-size: 1cqw; }
+.pui .hero { background: radial-gradient(circle at 15% 20%, #115e59, #042f2e 60%, #021a19); color: #fff; padding: 1.6cqw 1.4cqw; }
+.pui .hero .eb { display: inline-block; font-size: .9cqw; letter-spacing: .08em; text-transform: uppercase; color: #5eead4; border: .1cqw solid rgba(45,212,191,.4); border-radius: 99cqw; padding: .25cqw .8cqw; }
+.pui .hero h5 { margin: .7cqw 0 0; font-family: "Sora", sans-serif; font-size: 1.85cqw; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
+.pui .hero h5 em { font-style: normal; color: #2dd4bf; }
+.pui .hero p { margin: .5cqw 0 0; font-size: 1.05cqw; color: rgba(255,255,255,.65); font-weight: 500; }
+.pui .nav { flex: none; display: flex; justify-content: space-around; padding: .9cqw .6cqw 1.4cqw; background: var(--ui-card); border-top: .12cqw solid var(--ui-line); }
+.pui .nav span { display: flex; flex-direction: column; align-items: center; gap: .3cqw; font-size: .85cqw; color: var(--ui-muted); font-weight: 700; }
+.pui .nav span i { width: 1.8cqw; height: 1.8cqw; border-radius: .5cqw; background: currentColor; opacity: .35; }
+.pui .nav span.on { color: var(--brand); }
+.pui .nav span.on i { opacity: 1; }
+.pui .btn { font-size: 1.2cqw; padding: .75cqw 1cqw; justify-content: center; }
+.pui .inp { height: 2.5cqw; font-size: 1.1cqw; }
+.pui .lbl { font-size: 1cqw; }
+.pui .tbl { font-size: 1.1cqw; }
+.pui .tbl td { padding: .6cqw .9cqw; max-width: 9cqw; }
+.pui .tbl th { padding: .5cqw .9cqw; font-size: .9cqw; }
+.pui .kpis { grid-template-columns: 1fr 1fr; gap: .8cqw; }
+.pui .tabs { font-size: 1.1cqw; gap: 1.2cqw; }
+.cupos { display: flex; flex-wrap: wrap; gap: .5cqw; }
+.cupos span { font-size: 1cqw; font-weight: 700; padding: .4cqw .7cqw; border-radius: .5cqw; border: .12cqw solid #cfdad8; background: #fff; }
+.cupos span.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.cupos span.x { opacity: .35; text-decoration: line-through; }
+.step { display: flex; align-items: center; gap: .7cqw; font-weight: 800; font-size: 1.25cqw; }
+.step i { width: 1.8cqw; height: 1.8cqw; border-radius: 99cqw; background: var(--brand); color: #fff; font-style: normal; font-size: 1cqw; display: grid; place-items: center; }
+.caras { display: grid; grid-template-columns: 1fr auto; gap: .5cqw 1cqw; align-items: center; font-size: 1.15cqw; }
+.caras .sel { display: flex; align-items: center; gap: .5cqw; border: .12cqw solid #cfdad8; border-radius: .5cqw; padding: .3cqw .7cqw; background: #fff; font-size: 1.05cqw; }
+.caras .sel i { width: .9cqw; height: .9cqw; border-radius: .25cqw; }
+.face-big { width: 100%; display: block; }
+.qr { display: block; width: 100%; height: auto; background: #fff; border-radius: .6cqw; }
+
+/* Modo exportación (captura de PNG) */
+body[data-export] { padding: 0; background: #000; }
+body[data-export] .toolbar, body[data-export] .post-label, body[data-export] .intro { display: none; }
+body[data-export] .grid { display: block; padding: 0; }
+body[data-export] .post { width: 1080px; }
+body[data-export] .card { border-radius: 0; box-shadow: none; }
+
+.intro { max-width: 68ch; color: var(--ink-2); margin: 22px 0 0; font-size: 14px; }
+.intro b { color: var(--ink); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .post { transition: transform .25s ease; }
+}
+@media (max-width: 520px) {
+  .toolbar { align-items: stretch; }
+  .field { max-width: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="toolbar" aria-label="Ajustes de las piezas">
+  <div class="title">
+    <h1>Odonto<span>Suite</span> · Presentaciones</h1>
+    <p>Piezas promocionales de los módulos principales. Cambia marca, WhatsApp y formato; todas las piezas se actualizan a la vez.</p>
+  </div>
+  <div class="field">
+    <label for="marca">Marca</label>
+    <input id="marca" type="text" value="OdontoSuite" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="wa">WhatsApp</label>
+    <input id="wa" type="text" value="+591 78680723" autocomplete="off">
+  </div>
+  <div class="seg" role="radiogroup" aria-label="Formato">
+    <span class="seg-label">Formato</span>
+    <div class="seg-row">
+      <label><input type="radio" name="fmt" id="fmt-square" value="square" checked><span>1:1 Post</span></label>
+      <label><input type="radio" name="fmt" id="fmt-portrait" value="portrait"><span>4:5 Feed</span></label>
+      <label><input type="radio" name="fmt" id="fmt-story" value="story"><span>9:16 Historia</span></label>
+    </div>
+  </div>
+</header>
+
+<p class="intro"><b>Cómo usarlas:</b> cada pieza escala con el ancho disponible, así que se ve igual en un teléfono, en una tablet o proyectada. Para publicarlas como imagen, usa los PNG exportados en la carpeta <b>img/</b> junto a este archivo (1080 px de ancho en los tres formatos, listos para Instagram, Facebook o WhatsApp).</p>
+
+<main class="grid" id="grid" data-fmt="square"></main>
+
+<script>
+(() => {
+  /* ---------------- Iconos ---------------- */
+  const tooth = (c = '#fff') => `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 7c-2 0-2.6.9-4.4.9C9.4 7.9 8 9.6 8 12.4c0 4.2 2.2 12.6 4.4 12.6 1.5 0 1.8-3.4 3.6-3.4s2.1 3.4 3.6 3.4c2.2 0 4.4-8.4 4.4-12.6 0-2.8-1.4-4.5-3.6-4.5-1.8 0-2.4-.9-4.4-.9z" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round"/></svg>`;
+  const globe = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg>`;
+  const wapp = `<svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.9-1.3A9.5 9.5 0 1 0 12 2.5zm0 2a7.5 7.5 0 1 1-3.9 13.9l-.4-.2-2.6.7.7-2.5-.3-.4A7.5 7.5 0 0 1 12 4.5zm-2.6 3.6c-.2 0-.5 0-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.2 2.4.9 2.9.8 3.4.7.5-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3l-2-.9c-.3-.1-.5-.2-.7.2l-.9 1.1c-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.4-1.5-.9-.8-1.5-1.8-1.6-2.1-.2-.3 0-.5.1-.6l.4-.5.3-.5c.1-.2 0-.4 0-.5L9.9 8.4c-.2-.4-.4-.4-.5-.4z"/></svg>`;
+  const ico = {
+    cal: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`,
+    users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>`,
+    coin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5a2.5 2.5 0 0 0-5 0c0 2.5 5 2.5 5 5a2.5 2.5 0 0 1-5 0M12 6v1.5M12 16.5V18"/></svg>`,
+    steth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 3v6a5 5 0 0 0 10 0V3M11 14v3a4 4 0 0 0 8 0v-3"/><circle cx="19" cy="11" r="2"/></svg>`,
+    clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>`,
+    cash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>`,
+    card: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg>`,
+    alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></svg>`,
+    box: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9zM3 7.5 12 12l9-4.5M12 12v9"/></svg>`,
+    receipt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21zM9 8h6M9 12h6"/></svg>`,
+    tooth: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><path d="M16 7c-2 0-2.6.9-4.4.9C9.4 7.9 8 9.6 8 12.4c0 4.2 2.2 12.6 4.4 12.6 1.5 0 1.8-3.4 3.6-3.4s2.1 3.4 3.6 3.4c2.2 0 4.4-8.4 4.4-12.6 0-2.8-1.4-4.5-3.6-4.5-1.8 0-2.4-.9-4.4-.9z"/></svg>`,
+  };
+
+  /* ---------------- Componentes de interfaz ---------------- */
+  const MODS = [
+    ['General', ['Home']],
+    ['Clínica', ['Pacientes', 'Doctores', 'Horarios', 'Citas', 'Mi Agenda']],
+    ['Catálogos', ['Especialidades', 'Tratamientos', 'Aseguradoras']],
+    ['Finanzas', ['Caja y Pagos', 'Presupuestos', 'Facturación', 'Inventario', 'Reportes']],
+  ];
+  const nav = (brand) => `<div class="ui-nav"><span class="mark">${tooth()}</span><b>${brand}</b><span class="search">Barra de búsqueda…</span><span class="right"><span class="sedes">▣ Todas las sedes ▾</span><span class="moon"></span><span class="bell"></span><span class="dot"></span><span class="who"><b>Administrador General</b><small>Rol: SUPER ADMINISTRADOR</small></span></span></div>`;
+  const side = (active) => `<aside class="ui-side">${MODS.map(([g, items]) => `<div class="grp">${g}</div>` + items.map(n => `<div class="it ${n === active ? 'on' : ''}"><i></i>${n}</div>`).join('')).join('')}</aside>`;
+  const shell = (brand, active, body) => `<div class="ui">${nav(brand)}<div class="ui-main">${side(active)}<div class="ui-body">${body}</div></div></div>`;
+  const ph = (pre, title, actions = '') => `<div class="ph"><div><div class="pre">${pre}</div><h4>${title}</h4></div><div>${actions}</div></div>`;
+  const kpis = (items) => `<div class="kpis">${items.map(([t, v, f, c, i]) => `<div class="kpi" style="--c:${c}"><span class="ic">${ico[i]}</span><div><div class="t">${t}</div><div class="v">${v}</div>${f ? `<div class="f">${f}</div>` : ''}</div></div>`).join('')}</div>`;
+  const pill = (txt, c) => `<span class="pill" style="--c:${c}">${txt}</span>`;
+  const tbl = (cols, rows) => `<table class="tbl"><thead><tr>${cols.map(c => `<th${/^\$|Total|Pagado|Saldo|Precio|Importe|Stock/.test(c) ? ' class="num"' : ''}>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td${typeof c === 'string' && c.startsWith('$') ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  const crd = (title, body, right = '') => `<div class="crd"><div class="h">${title}${right ? `<span class="r">${right}</span>` : ''}</div>${body}</div>`;
+  const list = (rows) => `<div class="list">${rows.map(([a, b, r, sw]) => `<div class="li">${sw ? `<span class="sw" style="background:${sw}"></span>` : ''}<div class="g">${a}${b ? `<small>${b}</small>` : ''}</div>${r || ''}</div>`).join('')}</div>`;
+
+  const AZ = '#4299e1', WA = '#f59f00', OK = '#2fb344', RD = '#d63939', PU = '#7048e8', IN = '#4263eb', TE = '#0ca678', PR = '#206bc4', CY = '#17a2b8';
+
+  /* Gráficas */
+  const areaChart = `<svg class="chart" viewBox="0 0 320 120" aria-hidden="true">
+    <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#206bc4" stop-opacity=".35"/><stop offset="1" stop-color="#206bc4" stop-opacity="0"/></linearGradient></defs>
+    ${[20, 45, 70, 95].map(y => `<line x1="30" x2="310" y1="${y}" y2="${y}" stroke="#e6eceb"/>`).join('')}
+    <path d="M30 78 L86 66 L142 72 L198 48 L254 40 L310 22 L310 100 L30 100Z" fill="url(#ga)"/>
+    <path d="M30 78 L86 66 L142 72 L198 48 L254 40 L310 22" fill="none" stroke="#206bc4" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M30 92 L86 88 L142 90 L198 80 L254 76 L310 68" fill="none" stroke="#2fb344" stroke-width="2" stroke-dasharray="4 3"/>
+    <circle cx="310" cy="22" r="3.5" fill="#206bc4"/>
+    ${['Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'].map((m, i) => `<text x="${30 + i * 56}" y="114" font-size="9" text-anchor="middle" fill="#6f8482" font-family="Manrope">${m}</text>`).join('')}
+    ${['0', '40', '80', '120'].map((t, i) => `<text x="24" y="${103 - i * 25}" font-size="8" text-anchor="end" fill="#9fb0ae" font-family="Manrope">${t}</text>`).join('')}
+  </svg>`;
+  const donut = (segs) => { const C = 2 * Math.PI * 34; let off = 0; return `<svg class="chart" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" fill="none" stroke="#edf1f0" stroke-width="12"/>${segs.map(([p, c]) => { const s = `<circle cx="50" cy="50" r="34" fill="none" stroke="${c}" stroke-width="12" stroke-dasharray="${C * p} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 50 50)"/>`; off += C * p; return s; }).join('')}<text x="50" y="47" text-anchor="middle" font-size="16" font-weight="800" fill="#1c2e2d" font-family="Sora">312</text><text x="50" y="60" text-anchor="middle" font-size="7" fill="#6f8482" font-family="Manrope">citas</text></svg>`; };
+  const barChart = (vals, color = '#0d9488') => { const max = Math.max(...vals); return `<svg class="chart" viewBox="0 0 320 110" aria-hidden="true">${[15, 40, 65, 90].map(y => `<line x1="8" x2="312" y1="${y}" y2="${y}" stroke="#e6eceb"/>`).join('')}${vals.map((v, i) => { const h = (v / max) * 78; return `<rect x="${14 + i * 51}" y="${90 - h}" width="34" height="${h}" rx="4" fill="${i === vals.length - 1 ? color : '#a7d8d2'}"/>`; }).join('')}${['Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'].map((m, i) => `<text x="${31 + i * 51}" y="104" font-size="9" text-anchor="middle" fill="#6f8482" font-family="Manrope">${m}</text>`).join('')}</svg>`; };
+
+  /* Odontograma (numeración FDI, cinco caras por pieza, colores reales del módulo) */
+  const EST = { sano: '#ffffff', caries: '#d63939', fractura: '#f76707', extraccion: '#e03131', movilidad: '#f59f00', obturado: '#206bc4', corona: '#7048e8', endodoncia: '#ae3ec9', sellante: '#4dabf7', implante: '#0ca678', protesis: '#12b886', ausente: '#868e96' };
+  const HALL = { 16: { o: 'caries', v: 'caries' }, 26: { o: 'obturado' }, 36: { o: 'corona', v: 'corona', l: 'corona', m: 'corona', d: 'corona' }, 46: { o: 'endodoncia' }, 11: { v: 'fractura' }, 21: { v: 'fractura' }, 24: { o: 'sellante' }, 34: { o: 'sellante' }, 47: { o: 'implante', v: 'implante', l: 'implante', m: 'implante', d: 'implante' }, 14: { o: 'obturado', d: 'obturado' }, 38: 'ausente', 18: 'ausente' };
+  const pieza = (n, active) => {
+    const h = HALL[n] || {}; const aus = h === 'ausente'; const f = (k) => EST[(h !== 'ausente' && h[k]) || 'sano'];
+    return `<div class="pz ${active === n ? 'on' : ''}" style="${aus ? 'opacity:.4' : ''}"><div>${n}</div><svg viewBox="0 0 40 40"><polygon points="0,0 40,0 30,10 10,10" fill="${f('v')}"/><polygon points="40,0 40,40 30,30 30,10" fill="${f('d')}"/><polygon points="0,40 10,30 30,30 40,40" fill="${f('l')}"/><polygon points="0,0 10,10 10,30 0,40" fill="${f('m')}"/><rect x="10" y="10" width="20" height="20" fill="${f('o')}"/></svg></div>`;
+  };
+  const range = (a, b) => { const r = []; if (a <= b) for (let i = a; i <= b; i++) r.push(i); else for (let i = a; i >= b; i--) r.push(i); return r; };
+  const odonto = (active = 16) => `<div class="odo">
+    <div class="arch"><div class="quad">${range(18, 11).map(n => pieza(n, active)).join('')}</div><div class="quad">${range(21, 28).map(n => pieza(n, active)).join('')}</div></div>
+    <div class="arch"><div class="quad">${range(48, 41).map(n => pieza(n, active)).join('')}</div><div class="quad">${range(31, 38).map(n => pieza(n, active)).join('')}</div></div>
+  </div>`;
+  /* Arcada superior en arco, con paladar y numeración por fuera */
+  const HALL_ARCO = { 16: { all: 'corona' }, 15: { o: 'corona' }, 14: { o: 'corona' }, 12: { all: 'movilidad' }, 21: { o: 'caries' }, 23: { all: 'obturado' } };
+  const arco = (active = 16) => {
+    const nums = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+    const cx = 200, cy = 205, rx = 168, ry = 178, S = 34;
+    const faces = (h) => { const f = (k) => EST[(h.all || h[k]) || 'sano']; return `<polygon points="4,4 30,4 23,11 11,11" fill="${f('v')}"/><polygon points="30,4 30,30 23,23 23,11" fill="${f('d')}"/><polygon points="4,30 11,23 23,23 30,30" fill="${f('l')}"/><polygon points="4,4 11,11 11,23 4,30" fill="${f('m')}"/><rect x="11" y="11" width="12" height="12" fill="${f('o')}"/>`; };
+    let g = '';
+    nums.forEach((n, i) => {
+      const t = Math.PI + 0.42 - (Math.PI + 0.84) * ((i + 0.5) / 16);
+      const x = cx + rx * Math.cos(t), y = cy - ry * Math.sin(t);
+      const lx = cx + (rx + 30) * Math.cos(t), ly = cy - (ry + 30) * Math.sin(t);
+      const rot = 90 - t * 180 / Math.PI;
+      const on = n === active;
+      g += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})"><g transform="translate(${-S / 2} ${-S / 2})" stroke="${on ? '#0d9488' : '#6b7f7e'}" stroke-width="${on ? 2.2 : 1.3}"><rect x="0" y="0" width="${S}" height="${S}" rx="8" fill="#fff"/>${faces(HALL_ARCO[n] || {})}</g></g><text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="${on ? 800 : 700}" fill="${on ? '#0f766e' : '#3b4a49'}" font-family="Manrope">${n}</text>`;
+    });
+    return `<svg class="arco-svg" viewBox="0 0 400 270" aria-hidden="true"><path d="M118 258 C 128 130, 165 62, 200 62 C 235 62, 272 130, 282 258 Z" fill="rgba(214,57,57,.10)" stroke="rgba(214,57,57,.45)" stroke-dasharray="4 3"/><text x="200" y="200" text-anchor="middle" font-size="12" font-weight="800" letter-spacing="1.5" fill="#3b4a49" font-family="Manrope">SUPERIOR</text>${g}</svg>`;
+  };
+  const HZ = [['Caries', EST.caries], ['Fractura', EST.fractura], ['Extracción', EST.extraccion], ['Movilidad', EST.movilidad], ['Obturado', EST.obturado], ['Corona', EST.corona], ['Endodoncia', EST.endodoncia], ['Sellante', EST.sellante], ['Implante', EST.implante], ['Prótesis', EST.protesis], ['Ausente', EST.ausente]];
+  const KEYS = { Caries: 1, Fractura: 2, 'Extracción': 3, Movilidad: 4, Obturado: 5, Corona: 6, Endodoncia: 7, Sellante: 8, Implante: 9 };
+  const hallazgosTeclas = (on = 'Corona') => `<div class="hallazgos">${HZ.map(([n, c]) => `<span class="hz ${n === on ? 'on' : ''}" style="--c:${c}">${n}${KEYS[n] ? `<i class="k">${KEYS[n]}</i>` : ''}</span>`).join('')}<span class="hz" style="--c:#6f8482">⌫ Borrar<i class="k">0</i></span></div>`;
+  const hallazgos = (on = 'Caries') => `<div class="hallazgos">${HZ.map(([n, c]) => `<span class="hz ${n === on ? 'on' : ''}" style="--c:${c}">${n}</span>`).join('')}</div>`;
+  const leyenda = `<div class="leg">${HZ.slice(0, 8).map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('')}</div>`;
+  const faceBig = `<svg class="face-big" viewBox="0 0 100 100" aria-hidden="true"><g stroke="#3b4a49" stroke-width="1.2"><polygon points="2,2 98,2 72,28 28,28" fill="${EST.caries}"/><polygon points="98,2 98,98 72,72 72,28" fill="#fff"/><polygon points="2,98 28,72 72,72 98,98" fill="#fff"/><polygon points="2,2 28,28 28,72 2,98" fill="#fff"/><rect x="28" y="28" width="44" height="44" fill="${EST.caries}"/></g><text x="50" y="18" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="Manrope">VESTIBULAR</text><text x="50" y="88" text-anchor="middle" font-size="7" font-weight="800" fill="#3b4a49" font-family="Manrope">LINGUAL</text><text x="50" y="52" text-anchor="middle" font-size="6.5" font-weight="800" fill="#fff" font-family="Manrope">OCLUSAL</text><text x="14" y="52" text-anchor="middle" font-size="6" font-weight="800" fill="#3b4a49" font-family="Manrope" transform="rotate(-90 14 52)">MESIAL</text><text x="86" y="52" text-anchor="middle" font-size="6" font-weight="800" fill="#3b4a49" font-family="Manrope" transform="rotate(90 86 52)">DISTAL</text></svg>`;
+
+  /* QR simulado (patrón determinista con marcadores de posición) */
+  const qr = () => { const N = 25; let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647; let cells = ''; const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#0b3b38"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#0b3b38"/>`; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const inF = (x < 8 && y < 8) || (x > N - 9 && y < 8) || (x < 8 && y > N - 9); if (!inF && rnd() > .55) cells += `<rect x="${x}" y="${y}" width="1" height="1" fill="#0b3b38"/>`; } return `<svg class="qr" viewBox="-1 -1 27 27" shape-rendering="crispEdges" aria-hidden="true">${cells}${finder(0, 0)}${finder(N - 7, 0)}${finder(0, N - 7)}</svg>`; };
+
+  /* Pantallas del teléfono */
+  const ptop = (brand, dark = false) => `<div class="top ${dark ? 'dark' : ''}"><span class="mark">${tooth()}</span><b>${brand}</b><span class="dot"></span></div>`;
+  const pnav = (on) => `<div class="nav">${['Inicio', 'Citas', 'Pacientes', 'Caja', 'Más'].map(n => `<span class="${n === on ? 'on' : ''}"><i></i>${n}</span>`).join('')}</div>`;
+  const pshell = (brand, on, body, dark = false) => `<div class="pui">${ptop(brand, dark)}<div class="cnt">${body}</div>${pnav(on)}</div>`;
+
+  /* ---------------- Las piezas ---------------- */
+  const PIEZAS = (b) => [
+    {
+      chip: 'Gestión odontológica',
+      h: `Tu clínica dental, <em>en control total.</em>`,
+      p: 'Pacientes, agenda, odontograma, caja, facturación y reportes en una sola plataforma.',
+      laptop: `<div class="ui" style="background:radial-gradient(circle at 15% 20%,#115e59,#042f2e 55%,#021a19);color:#fff">
+        <div style="display:flex;align-items:center;gap:1cqw;padding:1.3cqw 2cqw;background:#0b3b38"><span class="mark" style="width:2.4cqw;height:2.4cqw;border-radius:.6cqw;background:#0d9488;display:grid;place-items:center">${tooth()}</span><b style="font-size:1.7cqw">${b}</b><span style="margin-left:auto;display:flex;gap:1.6cqw;font-size:1.15cqw;color:rgba(255,255,255,.6)"><span>Módulos</span><span>Cómo funciona</span><span>Beneficios</span></span><span class="btn sm" style="background:#fff;color:#0b3b38;margin-left:1cqw">Iniciar sesión</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:2cqw;padding:2.2cqw 2cqw;flex:1;align-items:center">
+          <div><span style="font-size:.95cqw;letter-spacing:.08em;text-transform:uppercase;color:#5eead4;border:.1cqw solid rgba(45,212,191,.4);border-radius:99cqw;padding:.3cqw .9cqw">● Sistema líder para clínicas odontológicas</span>
+            <div style="font-family:Sora,sans-serif;font-size:3.1cqw;font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-top:1.2cqw">Gestiona tu clínica dental <span style="color:#2dd4bf">con un solo sistema.</span></div>
+            <div style="font-size:1.15cqw;color:rgba(255,255,255,.6);font-weight:500;margin-top:.9cqw">${b} centraliza pacientes, doctores, tratamientos y agenda en una plataforma moderna, segura y fácil de usar.</div>
+            <div style="display:flex;gap:.8cqw;margin-top:1.3cqw"><span class="btn brand">Comenzar ahora →</span><span class="btn o" style="border-color:rgba(255,255,255,.5);color:#fff">Ver módulos</span></div>
+            <div style="display:flex;gap:3cqw;margin-top:1.6cqw"><div><div style="font-size:2.2cqw;font-weight:800">+24</div><div style="font-size:.95cqw;color:rgba(255,255,255,.55)">Módulos integrados</div></div><div><div style="font-size:2.2cqw;font-weight:800">100%</div><div style="font-size:.95cqw;color:rgba(255,255,255,.55)">Agenda en la nube</div></div><div><div style="font-size:2.2cqw;font-weight:800">24/7</div><div style="font-size:.95cqw;color:rgba(255,255,255,.55)">Reservas en línea</div></div></div>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border:.12cqw solid rgba(148,163,184,.3);border-radius:1cqw;padding:1.2cqw;position:relative">
+            <div style="display:flex;gap:.4cqw;margin-bottom:.9cqw"><i class="sw" style="background:#d63939;border-radius:50%"></i><i class="sw" style="background:#f59f00;border-radius:50%"></i><i class="sw" style="background:#2fb344;border-radius:50%"></i><span style="margin-left:auto;font-size:1cqw;color:rgba(255,255,255,.5)">Agenda del día</span></div>
+            ${[['Valentina Ríos', '09:00 · Limpieza dental', 'Confirmada', AZ], ['Mateo Ospina', '09:40 · Endodoncia', 'Pendiente', WA], ['Laura Cárdenas', '10:30 · Ortodoncia', 'Completada', OK], ['Samuel Torres', '11:15 · Implante', 'Confirmada', AZ], ['Isabella Mora', '12:00 · Blanqueamiento', 'En curso', '#f76707']].map(([n, d, e, c]) => `<div style="display:flex;align-items:center;gap:1cqw;padding:.55cqw .3cqw;font-size:1.15cqw"><span style="flex:1">${n}</span><span style="color:rgba(255,255,255,.5);font-size:1cqw;font-weight:500">${d}</span>${pill(e, c)}</div>`).join('')}
+            <div style="position:absolute;left:1cqw;bottom:-1.6cqw;background:#fff;color:#1c2e2d;border-radius:.7cqw;padding:.6cqw .9cqw;display:flex;gap:.6cqw;align-items:center;box-shadow:0 .6cqw 1.5cqw rgba(0,0,0,.3)"><span style="color:#2fb344;font-size:1.6cqw">✔</span><div><div style="font-size:1.05cqw">Cita confirmada</div><div style="font-size:.85cqw;color:#6f8482">correo enviado al paciente</div></div></div>
+          </div>
+        </div></div>`,
+      phone: `<div class="pui"><div class="hero" style="padding-top:3.6cqw;flex:none"><span class="eb">● Gestión integral</span><h5>Tu clínica, <em>en control total.</em></h5></div>
+        <div class="cnt" style="justify-content:center;gap:1.1cqw">
+          <div style="text-align:center"><span class="mark" style="display:inline-grid;place-items:center;width:3.4cqw;height:3.4cqw;border-radius:.9cqw;background:#0d9488">${tooth()}</span><div style="font-size:1.6cqw;font-weight:800;margin-top:.5cqw">Bienvenido de nuevo</div><div style="font-size:1cqw;color:var(--ui-muted);font-weight:500">Ingresa a tu cuenta para continuar</div></div>
+          <div><div class="lbl">Correo electrónico</div><div class="inp">dra.sofia@clinica.com</div></div>
+          <div><div class="lbl">Contraseña</div><div class="inp">••••••••</div></div>
+          <span class="btn brand">Iniciar sesión</span>
+          <div style="text-align:center;font-size:.9cqw;color:var(--ui-muted)">— o continúa con —</div>
+          <div class="inp" style="justify-content:center;font-weight:700"><span style="color:#d63939;margin-right:.5cqw">G</span> Continuar con Google</div>
+        </div></div>`,
+    },
+    {
+      chip: 'Módulo · Panel de control',
+      h: `Todo tu día <em>en una sola pantalla.</em>`,
+      p: '8 indicadores en vivo, evolución de citas a 6 meses y reparto por estado.',
+      laptop: shell(b, 'Home', ph(b.toUpperCase(), 'Panel de Control', `<span class="btn o sm">Nuevo Paciente</span> <span class="btn sm">Bandeja de Citas</span>`) +
+        kpis([['Citas de Hoy', '24', '6 pend · 12 conf · 6 aten', PR, 'cal'], ['Pacientes Registrados', '1.248', '+38 nuevos este mes', OK, 'users'], ['Ingresos en Caja (Mes)', '$ 18.450.000', '96 pagos registrados', WA, 'coin'], ['Equipo Médico', '10', 'Doctores · 8 especialidades', AZ, 'steth']]) +
+        `<div class="cols" style="grid-template-columns:1.9fr 1fr">${crd('Rendimiento de Citas (Últimos 6 Meses)', `<div class="b">${areaChart}</div>`)}${crd('Estado Global de Citas', `<div class="b" style="display:flex;gap:1cqw;align-items:center"><div style="width:9cqw">${donut([[.58, OK], [.27, AZ], [.15, WA]])}</div><div style="display:grid;gap:.4cqw;font-size:1.1cqw"><div><b>181</b> <span style="color:var(--ui-muted)">Completadas</span></div><div><b>84</b> <span style="color:var(--ui-muted)">Confirmadas</span></div><div><b>47</b> <span style="color:var(--ui-muted)">Pendientes</span></div></div></div>`)}</div>`),
+      phone: pshell(b, 'Inicio', `<div><div class="pre" style="font-size:.9cqw;letter-spacing:.1em;text-transform:uppercase;color:var(--ui-muted)">${b.toUpperCase()}</div><div style="font-size:1.7cqw;font-weight:800">Panel de Control</div></div>` +
+        kpis([['Citas de hoy', '24', '', PR, 'cal'], ['Pacientes', '1.248', '', OK, 'users'], ['Caja del mes', '$ 18,4 M', '', WA, 'coin'], ['Doctores', '10', '', AZ, 'steth']]) +
+        crd('Citas · 6 meses', `<div class="b" style="padding:.6cqw">${areaChart}</div>`) +
+        crd('Próximas citas', list([['Valentina Ríos', 'Limpieza dental · 09:00', pill('Conf.', AZ)], ['Mateo Ospina', 'Endodoncia · 09:40', pill('Pend.', WA)]]))),
+    },
+    {
+      chip: 'Módulo · Citas y Agenda',
+      h: `Agenda sin huecos <em>ni turnos dobles.</em>`,
+      p: 'Cupos reales por doctor, 5 estados, confirmación por correo y recordatorios automáticos.',
+      laptop: shell(b, 'Citas', ph('Administración', 'Gestión de Citas Médicas', `<span class="btn sm">＋ Agendar Cita</span>`) +
+        kpis([['Citas para hoy', '24', 'programadas', PR, 'cal'], ['Por confirmar', '6', 'pendientes', WA, 'clock'], ['Confirmadas', '12', 'citas', AZ, 'check'], ['Completadas', '6', 'atendidas', OK, 'check']]) +
+        crd('Listado de Citas Registradas', tbl(['Paciente', 'Doctor / Especialidad', 'Tratamiento', 'Fecha y hora', 'Estado'], [
+          ['<b>Valentina Ríos</b><small>CC 1.023.456.789</small>', 'Dra. Sofía Arancibia<small>Odontología general</small>', 'Limpieza dental', '14/09/2026 09:00', pill('Confirmada', AZ)],
+          ['<b>Mateo Ospina</b><small>CC 80.123.456</small>', 'Dr. Andrés Villalba<small>Endodoncia</small>', 'Endodoncia molar', '14/09/2026 09:40', pill('Pendiente', WA)],
+          ['<b>Laura Cárdenas</b><small>TI 1.001.234.567</small>', 'Dra. Camila Restrepo<small>Ortodoncia</small>', 'Control ortodoncia', '14/09/2026 10:30', pill('Completada', OK)],
+          ['<b>Samuel Torres</b><small>CC 79.456.123</small>', 'Dr. Julián Herrera<small>Implantología</small>', 'Implante unitario', '14/09/2026 11:15', pill('Confirmada', AZ)],
+          ['<b>Isabella Mora</b><small>CC 52.789.012</small>', 'Dra. Sofía Arancibia<small>Estética dental</small>', 'Blanqueamiento', '14/09/2026 12:00', pill('En curso', '#f76707')],
+        ]), '312 registros')),
+      phone: pshell(b, 'Citas', `<div><div style="font-size:1.7cqw;font-weight:800">Buenos días, Sofía</div><div style="font-size:1cqw;color:var(--ui-muted);font-weight:500">Tenés 8 turnos programados para hoy.</div></div>
+        <div style="display:flex;gap:.6cqw"><div class="inp" style="flex:1">Dra. Sofía Arancibia</div><div class="inp">Hoy</div></div>` +
+        crd('Línea de tiempo', list([['<b>09:00</b> Valentina Ríos', 'Limpieza dental', pill('Conf.', AZ), AZ], ['<b>09:40</b> Cupo libre', '40 min disponibles', '', '#d9e2e1'], ['<b>10:30</b> Laura Cárdenas', 'Control ortodoncia', pill('Aten.', OK), OK], ['<b>11:15</b> Samuel Torres', 'Implante unitario', pill('Conf.', AZ), AZ], ['<b>12:00</b> Isabella Mora', 'Blanqueamiento', pill('Curso', '#f76707'), '#f76707']])) +
+        `<span class="btn">＋ Crear turno</span>`),
+    },
+    {
+      chip: 'Módulo · Odontograma',
+      h: `Odontograma interactivo <em>por pieza y cara.</em>`,
+      p: 'Numeración FDI, adulto e infantil, 11 hallazgos por capas y presupuesto generado desde los hallazgos.',
+      laptop: shell(b, 'Pacientes', ph('Historia clínica · Valentina Ríos', 'Odontograma adulto', `<span class="btn o sm">Generar presupuesto</span> <span class="btn brand sm">Guardar</span>`) +
+        `<div class="cols" style="grid-template-columns:2.1fr 1fr">${crd(`<span class="hz-lbl">HALLAZGO:</span><span class="hz-sm" style="display:contents">${hallazgosTeclas('Corona')}</span>`, `<div class="b" style="gap:.7cqw;padding-top:.7cqw">
+          <div class="odo-tools"><span class="tb on">▢ Pintar cara</span><span class="tb">Pieza completa</span><span class="tb">↶</span><span class="tb">↷</span><span>⌨ 1-9 hallazgo · ← → pieza</span><span class="tb rd">⌫ Limpiar todo</span></div>
+          <div class="arco-wrap">${arco(16)}</div></div>`).replace('class="crd"', 'class="crd arco-card"')}
+        ${crd('Pieza 16', `<div class="b" style="display:flex;flex-direction:column;gap:.7cqw"><div style="width:9cqw;margin:0 auto">${faceBig.split(EST.caries).join(EST.corona)}</div><div style="font-size:.95cqw;color:var(--ui-muted);text-align:center">Toca una cara para aplicarle el hallazgo elegido.</div><div class="lbl">PIEZA COMPLETA</div>${hallazgos('Corona')}<div class="lbl">CARAS</div><div class="caras"><span>Vestibular</span><span class="sel"><i style="background:#fff;border:.1cqw solid #cfdad8"></i>Sano ▾</span><span>Lingual</span><span class="sel"><i style="background:#fff;border:.1cqw solid #cfdad8"></i>Sano ▾</span></div></div>`, '1er molar superior')}</div>`),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Pieza 16</div>${pill('1er molar superior', PR)}</div>
+        <div style="width:11cqw;margin:0 auto">${faceBig.split(EST.caries).join(EST.corona)}</div>
+        <div style="font-size:.95cqw;color:var(--ui-muted);text-align:center;font-weight:500">Toca una cara para aplicarle el hallazgo elegido.</div>
+        <div class="lbl">PIEZA COMPLETA</div>${hallazgos('Corona')}
+        <div class="lbl" style="margin-top:.3cqw">CARAS</div>
+        <div class="caras"><span>Vestibular</span><span class="sel"><i style="background:${EST.corona}"></i>Corona</span><span>Oclusal</span><span class="sel"><i style="background:${EST.corona}"></i>Corona</span><span>Lingual</span><span class="sel"><i style="background:#fff;border:.1cqw solid #cfdad8"></i>Sano</span><span>Mesial</span><span class="sel"><i style="background:#fff;border:.1cqw solid #cfdad8"></i>Sano</span></div>`),
+    },
+    {
+      chip: 'Módulo · Historia Clínica',
+      h: `Historia clínica digital, <em>completa y ordenada.</em>`,
+      p: 'Antecedentes, alergias, consultas, imagenología, recetas y presupuestos en una sola ficha.',
+      laptop: shell(b, 'Pacientes', `<div class="ph"><div style="display:flex;gap:1.2cqw;align-items:center"><span class="dot" style="width:4.2cqw;height:4.2cqw"></span><div><h4>Valentina Ríos Peñaloza</h4><div style="font-size:1.1cqw;color:var(--ui-muted)">CC 1.023.456.789 · 29 años · +57 310 555 2211 · ${pill('Alergia: Penicilina', RD)}</div></div></div><div><span class="btn o sm">Editar ficha</span> <span class="btn sm">＋ Nueva consulta</span></div></div>
+        <div class="tabs">${['Datos', 'Historia clínica', 'Odontograma', 'Imagenología', 'Recetas y certificados', 'Presupuestos', 'Pagos'].map((t, i) => `<span class="${i === 1 ? 'on' : ''}">${t}</span>`).join('')}</div>
+        <div class="cols" style="grid-template-columns:1.6fr 1fr">${crd('Consultas registradas', tbl(['Fecha', 'Doctor', 'Diagnóstico', 'Tratamiento', 'Receta'], [
+          ['12/09/2026', 'Dra. S. Arancibia', 'Caries oclusal pieza 16', 'Obturación con resina', pill('PDF', PR)],
+          ['28/08/2026', 'Dr. A. Villalba', 'Pulpitis irreversible 46', 'Endodoncia · sesión 2/2', pill('PDF', PR)],
+          ['02/07/2026', 'Dra. S. Arancibia', 'Gingivitis leve', 'Profilaxis + fluorización', '—'],
+          ['15/05/2026', 'Dra. C. Restrepo', 'Apiñamiento leve', 'Valoración ortodoncia', '—'],
+        ]), '4 consultas')}<div style="display:flex;flex-direction:column;gap:1.1cqw">${crd('Antecedentes', `<div class="b" style="font-size:1.15cqw;display:grid;gap:.5cqw"><div><b>Médicos:</b> hipotiroidismo controlado</div><div><b>Alergias:</b> ${pill('Penicilina', RD)}</div><div><b>Hábitos:</b> bruxismo nocturno</div><div><b>Emergencia:</b> Marta Peñaloza · +57 311 222 3344</div></div>`)}${crd('Saldo del paciente', `<div class="b" style="display:flex;align-items:end;justify-content:space-between"><div><div style="font-size:2cqw;font-weight:800;color:${RD}">$ 240.000</div><div style="font-size:1cqw;color:var(--ui-muted)">pendiente de 1 recibo</div></div><span class="btn sm">Registrar pago</span></div>`)}</div></div>`),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;gap:.8cqw;align-items:center"><span class="dot" style="width:3.4cqw;height:3.4cqw"></span><div><div style="font-size:1.5cqw;font-weight:800">Valentina Ríos</div><div style="font-size:.95cqw;color:var(--ui-muted);font-weight:500">CC 1.023.456.789 · 29 años</div></div></div>
+        <div style="display:flex;gap:.5cqw;flex-wrap:wrap">${pill('Alergia: Penicilina', RD)}${pill('Bruxismo', WA)}${pill('Saldo $ 240.000', RD)}</div>
+        <div class="tabs">${['Datos', 'Historia', 'Odontograma', 'Imágenes'].map((t, i) => `<span class="${i === 1 ? 'on' : ''}">${t}</span>`).join('')}</div>` +
+        crd('Consultas', list([['Caries oclusal pieza 16', '12/09/2026 · Dra. S. Arancibia', pill('PDF', PR)], ['Pulpitis irreversible 46', '28/08/2026 · Dr. A. Villalba', pill('PDF', PR)], ['Gingivitis leve', '02/07/2026 · Dra. S. Arancibia', ''], ['Apiñamiento leve', '15/05/2026 · Dra. C. Restrepo', '']])) +
+        `<span class="btn">＋ Nueva consulta</span>`),
+    },
+    {
+      chip: 'Módulo · Caja y Facturación',
+      h: `Del cobro al documento fiscal <em>en un clic.</em>`,
+      p: 'Recibos con detalle, 4 métodos de cobro, saldos, anulación y factura electrónica con serie y correlativo.',
+      laptop: shell(b, 'Caja y Pagos', ph('Administración Financiera', 'Caja y Pagos', `<span class="btn sm">＋ Registrar Nuevo Pago</span>`) +
+        kpis([['Total Recaudado', '$ 18.450.000', 'este mes', OK, 'coin'], ['Ingresos en Efectivo', '$ 7.120.000', '38 recibos', AZ, 'cash'], ['QR / Tarjeta / Banco', '$ 11.330.000', '58 recibos', IN, 'card'], ['Saldos por Cobrar', '$ 1.960.000', '9 pacientes', WA, 'alert']]) +
+        crd('Recibos', tbl(['Recibo', 'Paciente', 'Fecha', 'Método', 'Total', 'Pagado', 'Saldo', 'Estado'], [
+          ['<b>REC-000318</b>', 'Valentina Ríos', '14/09/2026', pill('QR', IN), '$ 320.000', '$ 320.000', '$ 0', pill('Pagado', OK)],
+          ['<b>REC-000317</b>', 'Samuel Torres', '14/09/2026', pill('Tarjeta', IN), '$ 2.800.000', '$ 1.400.000', '$ 1.400.000', pill('Parcial', WA)],
+          ['<b>REC-000316</b>', 'Laura Cárdenas', '13/09/2026', pill('Efectivo', AZ), '$ 180.000', '$ 180.000', '$ 0', pill('Pagado', OK)],
+          ['<b>REC-000315</b>', 'Mateo Ospina', '13/09/2026', pill('Transferencia', IN), '$ 950.000', '$ 950.000', '$ 0', pill('Facturado', PU)],
+          ['<b>REC-000314</b>', 'Isabella Mora', '12/09/2026', pill('Efectivo', AZ), '$ 450.000', '$ 0', '$ 450.000', pill('Anulado', RD)],
+        ]), '96 registros')),
+      phone: pshell(b, 'Caja', `<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em">RECIBO</div><div style="font-size:1.6cqw;font-weight:800">REC-000318</div></div>${pill('Pagado', OK)}</div>` +
+        crd('Detalle', list([['Obturación con resina', 'Pieza 16 · Dra. S. Arancibia', '<b>$ 220.000</b>'], ['Profilaxis', 'Dra. S. Arancibia', '<b>$ 100.000</b>']])) +
+        `<div style="display:flex;justify-content:space-between;font-size:1.15cqw;padding:0 .3cqw"><span style="color:var(--ui-muted)">Método</span><span>${pill('QR', IN)}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:end;padding:0 .3cqw"><span style="color:var(--ui-muted);font-size:1.1cqw">Total pagado</span><span style="font-size:2cqw;font-weight:800">$ 320.000</span></div>
+        <span class="btn brand">Emitir factura electrónica</span>
+        <span class="btn o">Descargar recibo PDF</span>`),
+    },
+    {
+      chip: 'Módulo · Reportes',
+      h: `Reportes que responden <em>preguntas de negocio.</em>`,
+      p: 'Financiero, productividad, padrón y rentabilidad por tratamiento, con exportación a PDF.',
+      laptop: shell(b, 'Reportes', ph('Inteligencia y Analítica Clínica', 'Centro de Reportes y Estadísticas', `<span class="btn o sm">Este Mes</span> <span class="btn sm">Exportar PDF</span>`) +
+        `<div class="tabs">${['1. Financiero & Caja', '2. Citas & Productividad', '3. Padrón de Pacientes', '4. Tratamientos & Rentabilidad'].map((t, i) => `<span class="${i === 0 ? 'on' : ''}">${t}</span>`).join('')}</div>` +
+        kpis([['Total Ingresos Recaudados', '$ 98.700.000', 'abr – sep', OK, 'coin'], ['Saldos por Cobrar', '$ 4.120.000', '', RD, 'alert'], ['Efectivo vs Digital', '38.900 / 59.800', 'miles COP', AZ, 'card'], ['Recibos Emitidos', '541', '', IN, 'receipt']]) +
+        `<div class="cols" style="grid-template-columns:1.5fr 1fr">${crd('Ingresos por mes', `<div class="b">${barChart([11.2, 13.8, 15.1, 17.9, 19.6, 21.1])}</div>`)}${crd('Productividad por doctor', `<div class="b" style="display:grid;gap:.7cqw;font-size:1.1cqw">${[['Dra. S. Arancibia', 92, TE], ['Dr. A. Villalba', 74, PR], ['Dra. C. Restrepo', 66, PU], ['Dr. J. Herrera', 51, AZ]].map(([n, v, c]) => `<div><div style="display:flex;justify-content:space-between"><span>${n}</span><b>${v} citas</b></div><div class="bar"><i style="--c:${c};width:${v}%"></i></div></div>`).join('')}</div>`)}</div>`),
+      phone: pshell(b, 'Más', `<div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em;text-transform:uppercase">Reportes</div><div style="font-size:1.6cqw;font-weight:800">Financiero & Caja</div></div>
+        <div style="display:flex;gap:.5cqw">${['Hoy', 'Semana', 'Este Mes', 'Año'].map((t, i) => `<span class="pill" style="--c:${i === 2 ? PR : '#6f8482'}">${t}</span>`).join('')}</div>` +
+        kpis([['Recaudado', '$ 18,4 M', '', OK, 'coin'], ['Por cobrar', '$ 1,96 M', '', RD, 'alert']]) +
+        crd('Ingresos por mes', `<div class="b" style="padding:.6cqw">${barChart([11.2, 13.8, 15.1, 17.9, 19.6, 21.1])}</div>`) +
+        crd('Tratamientos más rentables', list([['Implante unitario', '12 ejecutados', '<b>$ 33,6 M</b>'], ['Ortodoncia', '28 controles', '<b>$ 19,2 M</b>'], ['Endodoncia', '31 ejecutadas', '<b>$ 14,8 M</b>']]))),
+    },
+    {
+      chip: 'Módulo · Turnos online',
+      h: `Tus pacientes reservan <em>24/7 desde un QR.</em>`,
+      p: 'Página pública con cupos reales por doctor. La reserva entra pendiente a la agenda y se confirma desde el panel.',
+      laptop: shell(b, 'Home', ph('Configuración', 'Turnos online', `<span class="btn o sm">Regenerar enlace</span> <span class="btn brand sm">Guardar cambios</span>`) +
+        `<div class="cols" style="grid-template-columns:1.5fr 1fr">${crd('Reserva en línea', `<div class="b" style="display:grid;gap:1cqw;font-size:1.15cqw">
+          <div style="display:flex;align-items:center;gap:.8cqw"><span style="width:3cqw;height:1.6cqw;border-radius:99cqw;background:${OK};position:relative;display:inline-block"><i style="position:absolute;right:.2cqw;top:.2cqw;width:1.2cqw;height:1.2cqw;border-radius:50%;background:#fff"></i></span><b>Reservas activas</b> <span style="color:var(--ui-muted)">· los pacientes pueden reservar sin cuenta</span></div>
+          <div><div class="lbl">Enlace público</div><div class="inp" style="font-family:monospace;font-size:1.1cqw">https://tu-clinica.com/reservar/9f3c2a7e…</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1cqw"><div><div class="lbl">Anticipación mínima</div><div class="inp">2 horas</div></div><div><div class="lbl">Anticipación máxima</div><div class="inp">30 días</div></div></div>
+          <div><div class="lbl">Mensaje para el paciente</div><div class="inp" style="height:auto;padding:.7cqw .9cqw;white-space:normal">Elige la especialidad, el profesional y el horario que mejor te acomode. Te confirmamos por correo.</div></div>
+        </div>`)}${crd('Código QR', `<div class="b" style="display:flex;flex-direction:column;align-items:center;gap:.8cqw"><div style="width:12cqw">${qr()}</div><div style="font-size:1cqw;color:var(--ui-muted);text-align:center">Imprímelo en recepción o compártelo por WhatsApp.</div><span class="btn o sm">Descargar SVG</span></div>`, 'listo')}</div>`),
+      phone: `<div class="pui">${ptop(b, true)}<div class="hero" style="flex:none"><span class="eb">Reserva en línea</span><h5>Agenda tu cita <em>en un minuto.</em></h5></div>
+        <div class="cnt">
+          <div class="step"><i>1</i>¿Qué necesitas?</div>
+          <div style="display:grid;gap:.5cqw"><div class="inp">Ortodoncia</div><div class="inp">Control ortodoncia</div><div class="inp">Dra. Camila Restrepo</div></div>
+          <div class="step"><i>2</i>¿Cuándo te viene bien?</div>
+          <div class="inp">Vie 18 · sep · 2026</div>
+          <div class="cupos">${['08:00', '08:40', '09:20', '10:00', '10:40', '11:20', '15:00', '15:40'].map((h, i) => `<span class="${i === 3 ? 'on' : i === 1 || i === 5 ? 'x' : ''}">${h}</span>`).join('')}</div>
+          <div class="step"><i>3</i>Tus datos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5cqw"><div class="inp">Laura</div><div class="inp">Cárdenas</div></div>
+          <span class="btn brand">Confirmar reserva</span>
+        </div></div>`,
+    },
+    {
+      chip: 'Módulo · Presupuestos',
+      h: `Presupuestos e inventario <em>bajo control.</em>`,
+      p: 'Plan por pieza con cobertura de aseguradora, y kardex de insumos con alertas de stock mínimo.',
+      laptop: shell(b, 'Presupuestos', ph('Presupuesto PRE-000142 · Valentina Ríos', 'Plan de tratamiento', `${pill('Aprobado', OK)} <span class="btn o sm">PDF</span> <span class="btn brand sm">Cobrar ejecutados</span>`) +
+        crd('Líneas del plan', tbl(['Pieza', 'Tratamiento', 'Doctor', 'Precio', 'Estado'], [
+          ['<b>16</b>', 'Obturación con resina', 'Dra. S. Arancibia', '$ 220.000', pill('Ejecutado', OK)],
+          ['<b>46</b>', 'Endodoncia molar', 'Dr. A. Villalba', '$ 650.000', pill('Ejecutado', OK)],
+          ['<b>36</b>', 'Corona de zirconio', 'Dr. J. Herrera', '$ 1.400.000', pill('Pendiente', WA)],
+          ['<b>11 · 21</b>', 'Carillas de porcelana', 'Dra. S. Arancibia', '$ 1.900.000', pill('Evaluación', AZ)],
+        ]), '4 piezas') +
+        `<div class="cols" style="grid-template-columns:1fr 1fr 1fr">${crd('Subtotal', `<div class="b"><div style="font-size:1.9cqw;font-weight:800">$ 4.170.000</div><div style="font-size:1cqw;color:var(--ui-muted)">Descuento 5 % · $ 208.500</div></div>`)}${crd('Cobertura Sanitas', `<div class="b"><div style="font-size:1.9cqw;font-weight:800;color:${TE}">− $ 1.188.450</div><div style="font-size:1cqw;color:var(--ui-muted)">30 % · tope anual $ 3.000.000</div></div>`)}${crd('Paga el paciente', `<div class="b"><div style="font-size:1.9cqw;font-weight:800;color:${PR}">$ 2.773.050</div><div style="font-size:1cqw;color:var(--ui-muted)">$ 870.000 ya cobrados</div></div>`)}</div>`),
+      phone: pshell(b, 'Más', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Inventario</div>${pill('3 alertas', RD)}</div>` +
+        kpis([['Insumos', '30', '', PR, 'box'], ['Valorizado', '$ 12,9 M', '', OK, 'coin']]) +
+        crd('Stock bajo mínimo', list([['Resina compuesta A2', 'Mín. 10 · quedan <b style="color:#d63939">4</b>', pill('Pedir', RD), RD], ['Anestesia lidocaína 2 %', 'Mín. 50 · quedan <b style="color:#d63939">18</b>', pill('Pedir', RD), RD], ['Guantes nitrilo M', 'Mín. 500 · quedan <b style="color:#f59f00">520</b>', pill('OK', WA), WA]])) +
+        crd('Últimos movimientos', list([['Salida · Resina A2', 'Cita 14/09 · Dra. Arancibia', '<b>−2</b>'], ['Entrada · Guantes M', 'Compra Dental Ltda.', '<b>+500</b>'], ['Merma · Anestesia', 'Vencimiento lote L-231', '<b>−6</b>']]))),
+    },
+    {
+      chip: 'Módulo · Doctores',
+      h: `Tu equipo médico <em>con su disponibilidad real.</em>`,
+      p: 'Ficha profesional, colegiatura, especialidad y turnos semanales con detección de solapamientos.',
+      laptop: shell(b, 'Doctores', ph('Clínica', 'Doctores', `<span class="btn o sm">Horarios</span> <span class="btn sm">＋ Nuevo Doctor</span>`) +
+        kpis([['Doctores activos', '10', '8 especialidades', AZ, 'steth'], ['Turnos semanales', '48', '46 activos', IN, 'clock'], ['Citas esta semana', '132', '18 por doctor', PR, 'cal'], ['Ocupación media', '78 %', 'de los cupos', OK, 'check']]) +
+        `<div class="cols" style="grid-template-columns:1.6fr 1fr">${crd('Equipo médico', tbl(['Doctor', 'Especialidad', 'Colegiatura', 'Turnos', 'Estado'], [
+          ['<b>Dra. Sofía Arancibia</b><small>sofia.arancibia@clinica.com</small>', pill('Odontología general', TE), 'COP 14.522', 'Lun–Vie · 08:00–13:00', pill('Activa', OK)],
+          ['<b>Dr. Andrés Villalba</b><small>andres.villalba@clinica.com</small>', pill('Endodoncia', PU), 'COP 18.907', 'Lun, Mié, Vie · 14:00–19:00', pill('Activo', OK)],
+          ['<b>Dra. Camila Restrepo</b><small>camila.restrepo@clinica.com</small>', pill('Ortodoncia', AZ), 'COP 21.310', 'Mar, Jue · 08:00–17:00', pill('Activa', OK)],
+          ['<b>Dr. Julián Herrera</b><small>julian.herrera@clinica.com</small>', pill('Implantología', IN), 'COP 16.044', 'Lun–Jue · 09:00–14:00', pill('Activo', OK)],
+          ['<b>Dra. Paula Méndez</b><small>paula.mendez@clinica.com</small>', pill('Odontopediatría', WA), 'COP 23.118', 'Sáb · 08:00–12:00', pill('Vacaciones', WA)],
+        ]), '10 doctores')}${crd('Horario semanal · Dra. Arancibia', `<div class="b" style="display:grid;gap:.45cqw;font-size:1.1cqw">${[['Lunes', '08:00 – 13:00', OK], ['Martes', '08:00 – 13:00', OK], ['Miércoles', '08:00 – 13:00 · 15:00 – 18:00', OK], ['Jueves', '08:00 – 13:00', OK], ['Viernes', '08:00 – 12:00', OK], ['Sábado', 'Sin atención', '#9fb0ae']].map(([d, t, c]) => `<div style="display:flex;justify-content:space-between;gap:.6cqw;padding:.4cqw 0;border-bottom:.1cqw solid var(--ui-line)"><b>${d}</b><span style="color:${c === OK ? 'var(--ui-ink)' : c}">${t}</span></div>`).join('')}<div style="margin-top:.5cqw">${pill('Sin solapamientos', OK)}</div></div>`)}</div>`),
+      phone: pshell(b, 'Más', `<div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em;text-transform:uppercase">Horarios</div><div style="font-size:1.6cqw;font-weight:800">Nuevo turno</div></div>
+        <div><div class="lbl">Doctor</div><div class="inp">Dra. Sofía Arancibia</div></div>
+        <div><div class="lbl">Día</div><div class="cupos">${['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((d, i) => `<span class="${i === 2 ? 'on' : ''}">${d}</span>`).join('')}</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5cqw"><div><div class="lbl">Desde</div><div class="inp">15:00</div></div><div><div class="lbl">Hasta</div><div class="inp">18:00</div></div></div>
+        <div><div class="lbl">Intervalo de cita</div><div class="inp">40 minutos</div></div>
+        <div style="display:flex;gap:.5cqw;align-items:center;font-size:1cqw;color:var(--ui-muted)"><span style="color:#2fb344;font-size:1.3cqw">✔</span> No se solapa con el turno de 08:00 – 13:00</div>
+        <span class="btn brand">Guardar horario</span>`),
+    },
+    {
+      chip: 'Módulo · Roles y Permisos',
+      h: `Cada usuario ve <em>solo lo que le corresponde.</em>`,
+      p: '5 roles predefinidos y 82 permisos por acción, editables desde la interfaz. Usuarios activos o inactivos.',
+      laptop: shell(b, 'Home', ph('Configuración', 'Roles y permisos · Recepción', `<span class="btn o sm">Cancelar</span> <span class="btn brand sm">Guardar rol</span>`) +
+        `<div class="cols" style="grid-template-columns:1fr 2.1fr">${crd('Roles', list([['<b>Super Administrador</b>', '82 permisos · 1 usuario', pill('Sistema', PU)], ['<b>Administrador</b>', '74 permisos · 2 usuarios', ''], ['<b>Recepción</b>', '31 permisos · 3 usuarios', pill('Editando', PR)], ['<b>Doctor</b>', '26 permisos · 10 usuarios', ''], ['<b>Paciente</b>', '4 permisos · 214 usuarios', '']]))}
+        ${crd('Permisos por módulo', `<table class="tbl"><thead><tr><th>Módulo</th>${['Ver', 'Crear', 'Editar', 'Eliminar', 'Confirmar', 'Atender'].map(a => `<th style="text-align:center">${a}</th>`).join('')}</tr></thead><tbody>${[['Pacientes', [1, 1, 1, 0, -1, -1]], ['Citas', [1, 1, 1, 0, 1, 0]], ['Mi Agenda', [1, -1, -1, -1, -1, -1]], ['Historia Clínica', [1, 0, 0, 0, -1, -1]], ['Caja y Pagos', [1, 1, 0, 0, -1, -1]], ['Reportes', [0, -1, -1, -1, -1, -1]], ['Ajustes', [0, -1, 0, -1, -1, -1]]].map(([m, v]) => `<tr><td><b>${m}</b></td>${v.map(x => `<td style="text-align:center">${x < 0 ? '<span style="color:#c9d3d1">—</span>' : `<span style="display:inline-grid;place-items:center;width:1.5cqw;height:1.5cqw;border-radius:.35cqw;border:.12cqw solid ${x ? '#0d9488' : '#cfdad8'};background:${x ? '#0d9488' : '#fff'};color:#fff;font-size:1cqw">${x ? '✔' : ''}</span>`}</td>`).join('')}</tr>`).join('')}</tbody></table>`, '31 de 82 activos')}</div>`),
+      phone: pshell(b, 'Más', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Usuarios</div>${pill('16 activos', OK)}</div>
+        <div class="inp ph-txt">🔍 Buscar por nombre o correo…</div>` +
+        crd('Equipo', list([['<b>Administrador General</b>', 'admin@clinica.com', pill('Super Admin', PU)], ['<b>Marcela Quiroga</b>', 'secretaria@clinica.com', pill('Recepción', PR)], ['<b>Dra. Sofía Arancibia</b>', 'sofia.arancibia@clinica.com', pill('Doctor', AZ)], ['<b>Dr. Andrés Villalba</b>', 'andres.villalba@clinica.com', pill('Doctor', AZ)], ['<b>Carlos Peña</b>', 'carlos.pena@clinica.com', pill('Inactivo', RD)]])) +
+        `<span class="btn">＋ Nuevo usuario</span>`),
+    },
+    {
+      chip: 'Módulo · Imagenología',
+      h: `Radiografías y fotos clínicas <em>junto a la historia.</em>`,
+      p: 'Panorámicas, periapicales y fotos intraorales por paciente, con visor de zoom y descarga del original.',
+      laptop: shell(b, 'Pacientes', ph('Historia clínica · Valentina Ríos', 'Imagenología', `<span class="btn o sm">Filtrar por tipo</span> <span class="btn brand sm">＋ Subir estudio</span>`) +
+        `<div class="tabs">${['Datos', 'Historia clínica', 'Odontograma', 'Imagenología', 'Recetas y certificados', 'Presupuestos', 'Pagos'].map((t, i) => `<span class="${i === 3 ? 'on' : ''}">${t}</span>`).join('')}</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1cqw">${[['Panorámica', '12/09/2026', 'radial-gradient(ellipse at 50% 30%, #e8e8e8 0%, #9a9a9a 30%, #2b2b2b 70%, #111 100%)'], ['Periapical 16', '12/09/2026', 'radial-gradient(circle at 45% 55%, #f0f0f0 0%, #8f8f8f 35%, #1c1c1c 80%)'], ['Foto intraoral', '28/08/2026', 'linear-gradient(160deg, #f5c8c0 0%, #d98a80 45%, #f7f3ee 46%, #e9e2da 70%, #c96e63 100%)'], ['Bitewing der.', '02/07/2026', 'radial-gradient(ellipse at 50% 50%, #dcdcdc 0%, #7a7a7a 40%, #151515 85%)'], ['Foto sonrisa', '02/07/2026', 'linear-gradient(180deg, #f2d9cf 0%, #e6b4a6 40%, #fbfaf7 41%, #efe9e2 65%, #d59185 100%)'], ['Periapical 46', '28/08/2026', 'radial-gradient(circle at 55% 45%, #ededed 0%, #858585 38%, #191919 82%)'], ['Cefalometría', '15/05/2026', 'radial-gradient(ellipse at 40% 50%, #e0e0e0 0%, #8c8c8c 35%, #202020 75%, #0e0e0e 100%)'], ['Foto oclusal', '15/05/2026', 'linear-gradient(200deg, #f3cdc4 0%, #dc9184 50%, #f6f1ea 51%, #e5ded6 100%)']].map(([t, d, bg]) => `<div class="crd"><div style="aspect-ratio:4/3;background:${bg};position:relative"><span class="pill" style="--c:#fff;position:absolute;left:.5cqw;top:.5cqw;background:rgba(0,0,0,.45);color:#fff">🔍 Zoom</span></div><div style="padding:.6cqw .8cqw;font-size:1.1cqw"><b>${t}</b><div style="color:var(--ui-muted);font-size:.95cqw">${d} · Dra. S. Arancibia</div></div></div>`).join('')}</div>`),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.5cqw;font-weight:800">Panorámica</div>${pill('12/09/2026', PR)}</div>
+        <div style="aspect-ratio:4/3;border-radius:.8cqw;background:radial-gradient(ellipse at 50% 30%, #e8e8e8 0%, #9a9a9a 30%, #2b2b2b 70%, #111 100%);position:relative;overflow:hidden"><div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:2.2cqw 2.2cqw"></div><span style="position:absolute;right:.6cqw;bottom:.6cqw;display:flex;gap:.4cqw"><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">−</span><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">2.5×</span><span class="pill" style="--c:#fff;background:rgba(0,0,0,.5);color:#fff">＋</span></span></div>
+        <div style="font-size:1.05cqw;color:var(--ui-muted)">Valentina Ríos · Dra. S. Arancibia · 4,2 MB · JPG</div>
+        <div><div class="lbl">Observaciones</div><div class="inp" style="height:auto;padding:.6cqw .8cqw;white-space:normal;font-size:1.05cqw">Lesión periapical en 46 compatible con necrosis pulpar. Se indica endodoncia.</div></div>
+        <span class="btn">Descargar original</span>
+        <span class="btn o">Adjuntar a la consulta</span>`),
+    },
+    {
+      chip: 'Módulo · Recetas',
+      h: `Documentos clínicos <em>con folio y firma en PDF.</em>`,
+      p: '6 tipos de documento con numeración correlativa, vigencia y descarga firmada desde la ficha del paciente.',
+      laptop: shell(b, 'Pacientes', ph('Documentos clínicos', 'Recetas y certificados', `<span class="btn o sm">Ver vencidos</span> <span class="btn brand sm">＋ Nuevo documento</span>`) +
+        kpis([['Emitidos este mes', '64', '6 tipos', PR, 'receipt'], ['Recetas', '38', 'con vigencia 30 días', TE, 'check'], ['Certificados', '19', 'incapacidad y asistencia', IN, 'receipt'], ['Por vencer', '5', 'en los próximos 7 días', WA, 'alert']]) +
+        crd('Últimos documentos', tbl(['Folio', 'Tipo', 'Paciente', 'Doctor', 'Emitido', 'Vigente hasta', 'PDF'], [
+          ['<b>REC-2026-000214</b>', pill('Receta', TE), 'Valentina Ríos', 'Dra. S. Arancibia', '14/09/2026', '14/10/2026', pill('Firmado', OK)],
+          ['<b>CER-2026-000071</b>', pill('Certificado de asistencia', IN), 'Mateo Ospina', 'Dr. A. Villalba', '14/09/2026', '—', pill('Firmado', OK)],
+          ['<b>INC-2026-000018</b>', pill('Incapacidad', RD), 'Samuel Torres', 'Dr. J. Herrera', '13/09/2026', '16/09/2026', pill('Firmado', OK)],
+          ['<b>ORD-2026-000133</b>', pill('Orden de estudio', AZ), 'Laura Cárdenas', 'Dra. C. Restrepo', '13/09/2026', '13/11/2026', pill('Firmado', OK)],
+          ['<b>CON-2026-000090</b>', pill('Consentimiento', PU), 'Isabella Mora', 'Dra. S. Arancibia', '12/09/2026', '—', pill('Pendiente firma', WA)],
+        ]), '64 registros')),
+      phone: pshell(b, 'Pacientes', `<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em">RECETA</div><div style="font-size:1.5cqw;font-weight:800">REC-2026-000214</div></div>${pill('Vigente', OK)}</div>
+        <div class="crd" style="padding:1cqw;font-size:1.05cqw;display:grid;gap:.5cqw"><div style="display:flex;align-items:center;gap:.6cqw"><span class="mark" style="width:2cqw;height:2cqw;border-radius:.5cqw;background:#0d9488;display:grid;place-items:center">${tooth()}</span><b>${b}</b></div><div><b>Paciente:</b> Valentina Ríos · 29 años</div><div><b>Diagnóstico:</b> Pulpitis irreversible 46</div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw"><b>Rp.</b><br>Ibuprofeno 400 mg · 1 c/8 h · 5 días<br>Amoxicilina 500 mg · 1 c/8 h · 7 días</div><div style="color:var(--ui-muted)">Vigente hasta 14/10/2026</div><div style="text-align:right;font-family:Sora;font-style:italic;color:#0f766e">Dra. S. Arancibia</div></div>
+        <span class="btn brand">Descargar PDF firmado</span>
+        <span class="btn o">Enviar por WhatsApp</span>`),
+    },
+    {
+      chip: 'Módulo · Facturación',
+      h: `Factura electrónica <em>con serie y correlativo.</em>`,
+      p: 'Documentos tributarios con IVA, número de control, código de generación y anulación, emitidos desde el recibo.',
+      laptop: shell(b, 'Facturación', ph('Administración Financiera', 'Facturación electrónica', `<span class="btn o sm">Exportar</span> <span class="btn brand sm">＋ Emitir documento</span>`) +
+        kpis([['Emitidos este mes', '58', 'serie F001', PR, 'receipt'], ['Base imponible', '$ 15.504.200', 'sin IVA', OK, 'coin'], ['IVA 19 %', '$ 2.945.800', 'recaudado', IN, 'cash'], ['Anulados', '2', 'con nota de crédito', RD, 'alert']]) +
+        crd('Documentos tributarios', tbl(['Documento', 'Cliente', 'Recibo', 'Fecha', 'Neto', 'IVA', 'Total', 'Estado'], [
+          ['<b>F001-00000318</b><small>Factura</small>', 'Valentina Ríos<small>CC 1.023.456.789</small>', 'REC-000318', '14/09/2026', '$ 268.908', '$ 51.092', '$ 320.000', pill('Emitida', OK)],
+          ['<b>F001-00000317</b><small>Factura</small>', 'Mateo Ospina<small>CC 80.123.456</small>', 'REC-000315', '13/09/2026', '$ 798.319', '$ 151.681', '$ 950.000', pill('Emitida', OK)],
+          ['<b>B001-00000094</b><small>Boleta</small>', 'Laura Cárdenas<small>Consumidor final</small>', 'REC-000316', '13/09/2026', '$ 151.261', '$ 28.739', '$ 180.000', pill('Emitida', OK)],
+          ['<b>F001-00000312</b><small>Factura</small>', 'Sanitas EPS<small>NIT 800.251.440-6</small>', 'REC-000301', '10/09/2026', '$ 2.352.941', '$ 447.059', '$ 2.800.000', pill('Emitida', OK)],
+          ['<b>F001-00000309</b><small>Factura</small>', 'Isabella Mora<small>CC 52.789.012</small>', 'REC-000298', '09/09/2026', '$ 378.151', '$ 71.849', '$ 450.000', pill('Anulada', RD)],
+        ]), '58 registros')),
+      phone: pshell(b, 'Caja', `<div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em">FACTURA</div><div style="font-size:1.5cqw;font-weight:800">F001-00000318</div></div>${pill('Emitida', OK)}</div>
+        <div class="crd" style="padding:1cqw;font-size:1.05cqw;display:grid;gap:.45cqw"><div><b>Cliente:</b> Valentina Ríos</div><div><b>Recibo origen:</b> REC-000318</div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw;display:flex;justify-content:space-between"><span>Obturación con resina</span><b>$ 220.000</b></div><div style="display:flex;justify-content:space-between"><span>Profilaxis</span><b>$ 100.000</b></div><div style="border-top:.1cqw dashed var(--ui-line);padding-top:.5cqw;display:flex;justify-content:space-between;color:var(--ui-muted)"><span>Neto</span><span>$ 268.908</span></div><div style="display:flex;justify-content:space-between;color:var(--ui-muted)"><span>IVA 19 %</span><span>$ 51.092</span></div><div style="display:flex;justify-content:space-between;font-size:1.4cqw"><b>Total</b><b>$ 320.000</b></div></div>
+        <div style="font-size:.9cqw;color:var(--ui-muted);font-family:monospace">Control DTE-01-F0010000-000000000000318 · Sello 8A3F…E21C</div>
+        <span class="btn brand">Descargar PDF</span>
+        <span class="btn o" style="border-color:#d63939;color:#d63939">Anular con nota de crédito</span>`),
+    },
+    {
+      chip: 'Módulo · Inventario',
+      h: `El stock solo cambia <em>por movimientos.</em>`,
+      p: 'Insumos con kardex: entradas, salidas, ajustes y mermas dejan su saldo, y ninguna salida deja el stock en negativo.',
+      laptop: shell(b, 'Inventario', ph('Inventario', 'Kardex · Resina compuesta A2', `<span class="btn o sm">Ajuste</span> <span class="btn sm">＋ Entrada</span> <span class="btn o sm" style="border-color:#d63939;color:#d63939">− Salida</span>`) +
+        kpis([['Stock actual', '4 jeringas', 'mínimo 10', RD, 'box'], ['Costo promedio', '$ 68.500', 'por jeringa', PR, 'coin'], ['Valorizado', '$ 274.000', 'a costo promedio', OK, 'cash'], ['Consumo mensual', '18', 'últimos 30 días', IN, 'alert']]) +
+        crd('Movimientos', tbl(['Fecha', 'Tipo', 'Detalle', 'Cantidad', 'Saldo', 'Responsable'], [
+          ['14/09/2026 11:20', pill('Salida', RD), 'Cita · Valentina Ríos · obturación 16', '−2', '<b>4</b>', 'Dra. S. Arancibia'],
+          ['12/09/2026 09:05', pill('Salida', RD), 'Cita · Mateo Ospina · obturación 25', '−1', '<b>6</b>', 'Dr. A. Villalba'],
+          ['08/09/2026 16:40', pill('Merma', WA), 'Vencimiento lote L-231', '−3', '<b>7</b>', 'Marcela Quiroga'],
+          ['01/09/2026 10:00', pill('Entrada', OK), 'Compra Dental Ltda. · factura 4471', '+10', '<b>10</b>', 'Marcela Quiroga'],
+          ['28/08/2026 08:30', pill('Ajuste', AZ), 'Conteo físico de cierre de mes', '−1', '<b>0</b>', 'Administrador General'],
+        ]), 'saldo resultante por línea')),
+      phone: pshell(b, 'Más', `<div><div style="font-size:.9cqw;color:var(--ui-muted);letter-spacing:.08em;text-transform:uppercase">Inventario</div><div style="font-size:1.6cqw;font-weight:800">Registrar salida</div></div>
+        <div><div class="lbl">Insumo</div><div class="inp">Resina compuesta A2 · stock 4</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5cqw"><div><div class="lbl">Cantidad</div><div class="inp">6</div></div><div><div class="lbl">Motivo</div><div class="inp">Consumo en cita</div></div></div>
+        <div style="background:#fdecec;border:.12cqw solid #f1b5b5;border-radius:.6cqw;padding:.7cqw .8cqw;font-size:1.05cqw;color:#a12323"><b>Salida rechazada.</b> Dejaría el stock en −2. Disponible: 4 jeringas.</div>
+        <div><div class="lbl">Cantidad</div><div class="inp" style="border-color:#0d9488">2</div></div>
+        <span class="btn brand">Confirmar salida</span>` +
+        crd('Alertas de stock', list([['Resina compuesta A2', 'quedan 4 · mín. 10', pill('Pedir', RD), RD], ['Anestesia lidocaína 2 %', 'quedan 18 · mín. 50', pill('Pedir', RD), RD]]))),
+    },
+    {
+      chip: 'Módulo · Catálogos',
+      h: `Catálogos que alimentan <em>la agenda y la caja.</em>`,
+      p: 'Tratamientos con precio y duración, especialidades con color, y obras sociales con cobertura y tope anual.',
+      laptop: shell(b, 'Tratamientos', ph('Catálogos', 'Tratamientos', `<span class="btn o sm">Especialidades</span> <span class="btn o sm">Aseguradoras</span> <span class="btn sm">＋ Nuevo Tratamiento</span>`) +
+        `<div class="cols" style="grid-template-columns:1.7fr 1fr">${crd('Catálogo de tratamientos', tbl(['Tratamiento', 'Especialidad', 'Duración', 'Precio', 'Estado'], [
+          ['<b>Limpieza dental</b>', pill('Odontología general', TE), '40 min', '$ 100.000', pill('Activo', OK)],
+          ['<b>Obturación con resina</b>', pill('Odontología general', TE), '40 min', '$ 220.000', pill('Activo', OK)],
+          ['<b>Endodoncia molar</b>', pill('Endodoncia', PU), '80 min', '$ 650.000', pill('Activo', OK)],
+          ['<b>Control ortodoncia</b>', pill('Ortodoncia', AZ), '30 min', '$ 180.000', pill('Activo', OK)],
+          ['<b>Implante unitario</b>', pill('Implantología', IN), '120 min', '$ 2.800.000', pill('Activo', OK)],
+          ['<b>Blanqueamiento</b>', pill('Estética dental', WA), '60 min', '$ 450.000', pill('Activo', OK)],
+          ['<b>Corona de zirconio</b>', pill('Rehabilitación', '#f76707'), '60 min', '$ 1.400.000', pill('Inactivo', '#9fb0ae')],
+        ]), '30 tratamientos')}${crd('Aseguradoras', list([['<b>Sanitas EPS</b>', 'Cubre 30 % · tope anual $ 3.000.000', pill('Activa', OK)], ['<b>Sura</b>', 'Cubre 40 % · tope anual $ 2.500.000', pill('Activa', OK)], ['<b>Colsanitas</b>', 'Cubre 25 % · sin tope', pill('Activa', OK)], ['<b>Compensar</b>', 'Cubre 20 % · tope anual $ 1.800.000', pill('Activa', OK)], ['<b>Nueva EPS</b>', 'Cubre 15 % · tope anual $ 1.200.000', pill('Suspendida', WA)]]), '6 convenios')}</div>`),
+      phone: pshell(b, 'Más', `<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:1.6cqw;font-weight:800">Especialidades</div>${pill('8', PR)}</div>` +
+        crd('Catálogo', list([['<b>Odontología general</b>', '9 tratamientos · 3 doctores', '', TE], ['<b>Endodoncia</b>', '4 tratamientos · 1 doctor', '', PU], ['<b>Ortodoncia</b>', '5 tratamientos · 2 doctores', '', AZ], ['<b>Implantología</b>', '3 tratamientos · 1 doctor', '', IN], ['<b>Estética dental</b>', '4 tratamientos · 2 doctores', '', WA], ['<b>Odontopediatría</b>', '3 tratamientos · 1 doctor', '', OK], ['<b>Periodoncia</b>', '2 tratamientos · 1 doctor', '', RD]])) +
+        `<span class="btn">＋ Nueva especialidad</span>`),
+    },
+    {
+      chip: 'Módulo · Ajustes',
+      h: `Configura tu clínica <em>y encuentra todo.</em>`,
+      p: 'Datos, divisa, logotipo, intervalo de cita y recordatorios, más un buscador global de pacientes, citas, recibos y presupuestos.',
+      laptop: shell(b, 'Home', ph('Configuración', 'Ajustes de la clínica', `<span class="btn o sm">Turnos online</span> <span class="btn brand sm">Guardar cambios</span>`) +
+        `<div class="tabs">${['Datos generales', 'Agenda y recordatorios', 'Facturación', 'Turnos online', 'Apariencia'].map((t, i) => `<span class="${i === 0 ? 'on' : ''}">${t}</span>`).join('')}</div>
+        <div class="cols" style="grid-template-columns:1.6fr 1fr">${crd('Datos de la clínica', `<div class="b" style="display:grid;grid-template-columns:1fr 1fr;gap:.8cqw 1cqw"><div><div class="lbl">Nombre</div><div class="inp">${b}</div></div><div><div class="lbl">Divisa</div><div class="inp">COP · Peso colombiano</div></div><div><div class="lbl">Teléfono / WhatsApp</div><div class="inp">+591 78680723</div></div><div><div class="lbl">Correo</div><div class="inp">contacto@clinica.com</div></div><div style="grid-column:1/-1"><div class="lbl">Dirección</div><div class="inp">Av. Principal 123 · Piso 2 · Consultorio 204</div></div><div><div class="lbl">Intervalo de cita</div><div class="inp">40 minutos</div></div><div><div class="lbl">Recordatorio</div><div class="inp">24 horas antes · correo</div></div></div>`)}
+        ${crd('Logotipo', `<div class="b" style="display:flex;flex-direction:column;gap:.8cqw;align-items:center"><div style="width:100%;aspect-ratio:16/9;border:.15cqw dashed #cfdad8;border-radius:.8cqw;display:grid;place-items:center;background:#fff"><span style="display:inline-flex;align-items:center;gap:.6cqw"><span class="mark" style="width:3cqw;height:3cqw;border-radius:.8cqw;background:#0d9488;display:grid;place-items:center">${tooth()}</span><b style="font-family:Sora;font-size:1.8cqw">${b}</b></span></div><div style="font-size:1cqw;color:var(--ui-muted);text-align:center">PNG o SVG · se usa en el panel, correos y PDF</div><span class="btn o sm">Cambiar logotipo</span></div>`)}</div>`),
+      phone: pshell(b, 'Inicio', `<div class="inp" style="border-color:#0d9488;font-weight:700">🔍 ríos</div>` +
+        crd('Resultados', list([['<b>Valentina Ríos Peñaloza</b>', 'Paciente · CC 1.023.456.789', pill('Paciente', TE)], ['<b>Cita 14/09 · 09:00</b>', 'Valentina Ríos · Limpieza dental', pill('Cita', AZ)], ['<b>REC-000318</b>', 'Recibo · $ 320.000 · pagado', pill('Recibo', OK)], ['<b>PRE-000142</b>', 'Presupuesto · plan de 4 piezas', pill('Presupuesto', PU)], ['<b>Dr. Camilo Ríos</b>', 'Doctor · Periodoncia', pill('Doctor', IN)]])) +
+        `<div style="font-size:.95cqw;color:var(--ui-muted);text-align:center">5 resultados en pacientes, citas, recibos, presupuestos y doctores</div>`),
+    },
+  ];
+
+  /* ---------------- Render ---------------- */
+  const grid = document.getElementById('grid');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function render() {
+    const brand = esc($('marca').value.trim() || 'OdontoSuite');
+    const wa = esc($('wa').value.trim() || '+591 78680723');
+    const piezas = PIEZAS(brand);
+    grid.innerHTML = piezas.map((p, i) => `<article class="post" data-n="${i + 1}">
+      <div class="card">
+        <span class="glow"></span><span class="arc"></span>
+        <div class="card-top"><span class="logo"><span class="mark">${tooth()}</span><span class="word">${brand}</span></span><span class="chip">${p.chip}</span></div>
+        <div class="headline"><h2>${p.h}</h2><p>${p.p}</p></div>
+        <div class="devices">
+          <div class="laptop"><div class="lid"><div class="screen">${p.laptop}</div></div><div class="base"></div></div>
+          <div class="phone"><div class="body"><div class="screen"><span class="island"></span>${p.phone}</div></div></div>
+        </div>
+        <div class="badges"><span class="badge wa"><span class="ic">${wapp}</span>${wa}</span></div>
+      </div>
+      <div class="post-label"><b>${String(i + 1).padStart(2, '0')} · ${p.chip.replace('Módulo · ', '')}</b><span>${esc(brand)}</span></div>
+    </article>`).join('');
+  }
+
+  /* Preferencias por visitante */
+  const KEY = 'odontosuite-presentaciones';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ marca: $('marca').value, wa: $('wa').value, fmt: grid.dataset.fmt })); } catch {} };
+
+  const params = new URLSearchParams(location.search);
+  const pref = params.has('export') ? {} : load();
+  if (pref.marca) $('marca').value = pref.marca;
+  if (pref.wa) $('wa').value = pref.wa;
+  const fmt = params.get('fmt') || pref.fmt || 'square';
+  grid.dataset.fmt = fmt;
+  const radio = document.querySelector(`input[name="fmt"][value="${fmt}"]`);
+  if (radio) radio.checked = true;
+  if (params.has('marca')) $('marca').value = params.get('marca');
+  if (params.has('wa')) $('wa').value = params.get('wa');
+  if (params.has('export')) document.body.dataset.export = '1';
+
+  ['marca', 'wa'].forEach(id => $(id).addEventListener('input', () => { render(); save(); }));
+  document.querySelectorAll('input[name="fmt"]').forEach(r => r.addEventListener('change', () => { grid.dataset.fmt = r.value; save(); }));
+  render();
+})();
+</script>
+</body>
+</html>

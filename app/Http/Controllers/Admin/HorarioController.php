@@ -9,7 +9,6 @@ use App\Models\Sucursal;
 use App\Support\SucursalActiva;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class HorarioController extends Controller
@@ -52,7 +51,11 @@ class HorarioController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $datos = $this->validar($request);
-        $this->comprobarSolape($datos);
+
+        if ($this->seSolapa($datos)) {
+            return back()->withInput()
+                ->with('error', 'Ese doctor ya tiene un horario que se cruza con el rango indicado.');
+        }
 
         Horario::create($datos);
 
@@ -72,7 +75,11 @@ class HorarioController extends Controller
     public function update(Request $request, Horario $horario): RedirectResponse
     {
         $datos = $this->validar($request);
-        $this->comprobarSolape($datos, $horario->id);
+
+        if ($this->seSolapa($datos, $horario->id)) {
+            return back()->withInput()
+                ->with('error', 'Ese doctor ya tiene un horario que se cruza con el rango indicado.');
+        }
 
         $horario->update($datos);
 
@@ -127,26 +134,20 @@ class HorarioController extends Controller
      * Evita que un doctor tenga dos bloques activos cruzados el mismo día.
      * Un turno desactivado no bloquea; y un bloque nuevo inactivo tampoco.
      */
-    private function comprobarSolape(array $datos, ?int $ignorar = null): void
+    private function seSolapa(array $datos, ?int $ignorar = null): bool
     {
-        if (! $datos['activo']) {
-            return;
+        if (isset($datos['activo']) && ! $datos['activo']) {
+            return false;
         }
 
-        $cruce = Horario::query()
+        return Horario::query()
             ->where('doctor_id', $datos['doctor_id'])
             ->where('dia_semana', $datos['dia_semana'])
             ->where('activo', true)
             ->when($ignorar, fn ($q) => $q->where('id', '!=', $ignorar))
             ->where('hora_inicio', '<', $datos['hora_fin'])
             ->where('hora_fin', '>', $datos['hora_inicio'])
-            ->first();
-
-        if ($cruce) {
-            throw ValidationException::withMessages([
-                'hora_inicio' => 'Ese doctor ya tiene un turno de '.substr($cruce->hora_inicio, 0, 5).' a '.substr($cruce->hora_fin, 0, 5).' que se cruza con el rango indicado.',
-            ]);
-        }
+            ->exists();
     }
 
     /** Ordena los días en secuencia natural y no alfabética. */

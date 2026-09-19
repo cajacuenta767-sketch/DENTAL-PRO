@@ -248,7 +248,7 @@ class Paciente extends Model
                 || str_contains($medTexto, 'eliquis') || str_contains($medTexto, 'xarelto')
                 || str_contains($medTexto, 'clopidogrel');
 
-            if ($tieneAnticoag && !in_array('ANTICOAGULANTE', array_column($alertas, 'tipo'), true)) {
+            if ($tieneAnticoag && ! in_array('ANTICOAGULANTE', array_column($alertas, 'tipo'), true)) {
                 $alertas[] = [
                     'tipo' => 'ANTICOAGULANTE',
                     'texto' => 'Medicación Anticoagulante / Antiagregante (Riesgo quirúrgico)',

@@ -173,6 +173,13 @@ class InventarioController extends Controller
 
     private function validar(Request $request, ?int $ignorar = null): array
     {
+        // Código y nombre se guardan en mayúsculas: se normalizan antes de
+        // validar para que «unique» compare contra el valor real almacenado.
+        $request->merge([
+            'codigo' => mb_strtoupper(trim((string) $request->input('codigo'))),
+            'nombre' => mb_strtoupper(trim((string) $request->input('nombre'))),
+        ]);
+
         $datos = $request->validate([
             'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'codigo' => ['required', 'string', 'max:40', 'unique:insumos,codigo'.($ignorar ? ",{$ignorar}" : '')],

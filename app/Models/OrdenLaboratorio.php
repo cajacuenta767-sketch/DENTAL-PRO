@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class OrdenLaboratorio extends Model
 {
@@ -78,9 +77,9 @@ class OrdenLaboratorio extends Model
     {
         static::creating(function (self $orden) {
             if (empty($orden->folio)) {
-                $prefijo = 'LAB-' . date('Ym') . '-';
-                $ultimo = static::withTrashed()->where('folio', 'like', $prefijo . '%')->count() + 1;
-                $orden->folio = $prefijo . str_pad((string) $ultimo, 4, '0', STR_PAD_LEFT);
+                $prefijo = 'LAB-'.date('Ym').'-';
+                $ultimo = static::withTrashed()->where('folio', 'like', $prefijo.'%')->count() + 1;
+                $orden->folio = $prefijo.str_pad((string) $ultimo, 4, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -122,7 +121,7 @@ class OrdenLaboratorio extends Model
 
     public function getEstaVencidaAttribute(): bool
     {
-        return !in_array($this->estado, ['TERMINADO', 'ENTREGADO'], true) && $this->fecha_prometida->isPast();
+        return ! in_array($this->estado, ['TERMINADO', 'ENTREGADO'], true) && $this->fecha_prometida->isPast();
     }
 
     public function getColorGuiaAttribute(): ?string
@@ -135,6 +134,7 @@ class OrdenLaboratorio extends Model
         if (empty($this->piezas_dentales)) {
             return [];
         }
+
         return array_values(array_filter(array_map('trim', explode(',', $this->piezas_dentales))));
     }
 

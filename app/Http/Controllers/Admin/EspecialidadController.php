@@ -61,6 +61,8 @@ class EspecialidadController extends Controller
 
     private function validar(Request $request, ?int $ignorar = null): array
     {
+        $request->merge(['nombre' => mb_strtoupper(trim((string) $request->input('nombre')))]);
+
         $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100', 'unique:especialidades,nombre'.($ignorar ? ",{$ignorar}" : '')],
             'descripcion' => ['nullable', 'string', 'max:255'],
@@ -68,6 +70,7 @@ class EspecialidadController extends Controller
             'activo' => ['nullable', 'boolean'],
         ]);
 
+        $datos['nombre'] = mb_strtoupper($datos['nombre']);
         $datos['activo'] = $request->boolean('activo');
 
         return $datos;

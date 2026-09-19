@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Table conductometrias (Endodoncia)
-        if (!Schema::hasTable('conductometrias')) {
+        if (! Schema::hasTable('conductometrias')) {
             Schema::create('conductometrias', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('clinica_id')->nullable()->constrained('clinicas')->cascadeOnDelete();
@@ -37,7 +37,7 @@ return new class extends Migration
         }
 
         // 2. Table trazados_cefalometricos (Ortodoncia)
-        if (!Schema::hasTable('trazados_cefalometricos')) {
+        if (! Schema::hasTable('trazados_cefalometricos')) {
             Schema::create('trazados_cefalometricos', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('clinica_id')->nullable()->constrained('clinicas')->cascadeOnDelete();
@@ -63,7 +63,7 @@ return new class extends Migration
 
         // 3. Mejoras en odontogramas para Odontopediatría
         Schema::table('odontogramas', function (Blueprint $table) {
-            if (!Schema::hasColumn('odontogramas', 'escala_frankl')) {
+            if (! Schema::hasColumn('odontogramas', 'escala_frankl')) {
                 $table->unsignedTinyInteger('escala_frankl')->nullable()->after('tipo');
             }
         });

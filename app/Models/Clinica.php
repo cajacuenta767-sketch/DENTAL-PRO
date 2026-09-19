@@ -14,8 +14,23 @@ class Clinica extends Model
         return ['vence_en' => 'datetime'];
     }
 
-    public function usuarios(): HasMany { return $this->hasMany(Usuario::class); }
-    public function pacientes(): HasMany { return $this->hasMany(Paciente::class); }
-    public function sucursales(): HasMany { return $this->hasMany(Sucursal::class); }
-    public function invitaciones(): HasMany { return $this->hasMany(Invitacion::class); }
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(Usuario::class);
+    }
+
+    public function pacientes(): HasMany
+    {
+        return $this->hasMany(Paciente::class);
+    }
+
+    public function sucursales(): HasMany
+    {
+        return $this->hasMany(Sucursal::class);
+    }
+
+    public function invitaciones(): HasMany
+    {
+        return $this->hasMany(Invitacion::class);
+    }
 }

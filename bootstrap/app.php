@@ -3,9 +3,9 @@
 use App\Http\Middleware\CompartirAjustes;
 use App\Http\Middleware\ExigirCambioPassword;
 use App\Http\Middleware\SoloPacientes;
+use App\Http\Middleware\VerificarClinicaActiva;
 use App\Http\Middleware\VerificarLicencia;
 use App\Http\Middleware\VerificarUsuarioActivo;
-use App\Http\Middleware\VerificarClinicaActiva;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ajuste;
 use App\Models\Auditoria;
 use App\Models\Doctor;
 use App\Models\LaboratorioDental;
@@ -28,7 +29,7 @@ class LaboratorioController extends Controller
             ->when($request->filled('doctor_id'), fn ($q) => $q->where('doctor_id', $request->doctor_id))
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->estado))
             ->when($request->filled('q'), function ($q) use ($request) {
-                $term = '%' . mb_strtolower($request->q) . '%';
+                $term = '%'.mb_strtolower($request->q).'%';
                 $q->where(function ($sub) use ($term) {
                     $sub->whereRaw('LOWER(folio) LIKE ?', [$term])
                         ->orWhereRaw('LOWER(tipo_trabajo) LIKE ?', [$term])
@@ -90,7 +91,7 @@ class LaboratorioController extends Controller
             'fecha_prometida' => ['required', 'date', 'after_or_equal:fecha_envio'],
             'costo_laboratorio' => ['nullable', 'numeric', 'min:0'],
             'precio_paciente' => ['nullable', 'numeric', 'min:0'],
-            'estado' => ['required', 'in:' . implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
+            'estado' => ['required', 'in:'.implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
             'notas_tecnicas' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -140,7 +141,7 @@ class LaboratorioController extends Controller
             'fecha_entrega' => ['nullable', 'date'],
             'costo_laboratorio' => ['nullable', 'numeric', 'min:0'],
             'precio_paciente' => ['nullable', 'numeric', 'min:0'],
-            'estado' => ['required', 'in:' . implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
+            'estado' => ['required', 'in:'.implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
             'notas_tecnicas' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -155,7 +156,7 @@ class LaboratorioController extends Controller
     public function cambiarEstado(Request $request, OrdenLaboratorio $orden): JsonResponse|RedirectResponse
     {
         $request->validate([
-            'estado' => ['required', 'in:' . implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
+            'estado' => ['required', 'in:'.implode(',', array_keys(OrdenLaboratorio::ESTADOS))],
         ]);
 
         $orden->estado = $request->estado;
@@ -194,7 +195,7 @@ class LaboratorioController extends Controller
 
         return Pdf::loadView('pdf.orden-laboratorio', [
             'orden' => $orden,
-            'clinica' => \App\Models\Ajuste::actual(),
+            'clinica' => Ajuste::actual(),
         ])->setPaper('a5', 'portrait')
             ->download("orden-laboratorio-{$orden->folio}.pdf");
     }
@@ -248,12 +249,12 @@ class LaboratorioController extends Controller
     public function catalogoDestroy(LaboratorioDental $laboratorio): RedirectResponse
     {
         if ($laboratorio->ordenes()->exists()) {
-            return back()->with('error', "No se puede eliminar el laboratorio porque tiene órdenes de trabajo registradas.");
+            return back()->with('error', 'No se puede eliminar el laboratorio porque tiene órdenes de trabajo registradas.');
         }
 
         Auditoria::registrar('ELIMINAR', $laboratorio, "Eliminó el laboratorio {$laboratorio->nombre}");
         $laboratorio->delete();
 
-        return back()->with('exito', "Laboratorio eliminado correctamente.");
+        return back()->with('exito', 'Laboratorio eliminado correctamente.');
     }
 }

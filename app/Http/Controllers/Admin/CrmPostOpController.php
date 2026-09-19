@@ -49,6 +49,6 @@ class CrmPostOpController extends Controller
 
         Auditoria::registrar('EDITAR', $cita, "Marcó seguimiento post-op como {$request->postop_estado} para {$cita->paciente->nombre_completo}");
 
-        return back()->with('exito', "Seguimiento post-operatorio registrado correctamente.");
+        return back()->with('exito', 'Seguimiento post-operatorio registrado correctamente.');
     }
 }

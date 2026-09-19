@@ -173,7 +173,7 @@ class EspecialidadesClinicasTest extends CasoClinico
     public function test_odontograma_soporta_denticion_mixta_y_escala_frankl(): void
     {
         $piezas = [];
-        foreach (\App\Models\Odontograma::cuadrantes('MIXTO') as $cuadrante => $numeros) {
+        foreach (Odontograma::cuadrantes('MIXTO') as $cuadrante => $numeros) {
             foreach ($numeros as $num) {
                 $piezas[(string) $num] = [
                     'estado' => 'sano',

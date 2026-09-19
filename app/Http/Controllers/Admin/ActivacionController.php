@@ -50,7 +50,7 @@ class ActivacionController extends Controller
         ]);
 
         if ($activacion->email) {
-            Mail::raw("Has recibido una activación de OdontoSuite. Regístrate en ".route('register', ['codigo' => $codigo])."\n\nCódigo: {$codigo}\nVence: ".$activacion->vence_en->format('d/m/Y H:i'),
+            Mail::raw('Has recibido una activación de OdontoSuite. Regístrate en '.route('register', ['codigo' => $codigo])."\n\nCódigo: {$codigo}\nVence: ".$activacion->vence_en->format('d/m/Y H:i'),
                 fn ($mensaje) => $mensaje->to($activacion->email)->subject('Activación de tu clínica en OdontoSuite'));
         }
 

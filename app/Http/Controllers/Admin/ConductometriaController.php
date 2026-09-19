@@ -128,7 +128,7 @@ class ConductometriaController extends Controller
             'medicacion_intraconducto' => ['nullable', 'string', 'max:150'],
             'cemento_sellador' => ['nullable', 'string', 'max:150'],
             'tecnica_obturacion' => ['nullable', 'string', 'max:150'],
-            'estado' => ['required', 'string', 'in:' . implode(',', array_keys(Conductometria::ESTADOS))],
+            'estado' => ['required', 'string', 'in:'.implode(',', array_keys(Conductometria::ESTADOS))],
             'observaciones' => ['nullable', 'string', 'max:2000'],
             'conductos' => ['required', 'array', 'min:1'],
             'conductos.*.nombre' => ['required', 'string', 'max:50'],

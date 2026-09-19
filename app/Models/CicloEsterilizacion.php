@@ -78,7 +78,10 @@ class CicloEsterilizacion extends Model
 
     public function getColorResultadoAttribute(): string
     {
-        if ($this->resultado !== 'APROBADO') return 'danger';
+        if ($this->resultado !== 'APROBADO') {
+            return 'danger';
+        }
+
         return $this->fecha_caducidad_paquetes->isPast() ? 'warning' : 'success';
     }
 }

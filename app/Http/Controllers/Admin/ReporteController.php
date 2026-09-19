@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -197,7 +198,7 @@ class ReporteController extends Controller
         $total = $base()->count();
         $completadas = $base()->where('estado', 'COMPLETADA')->count();
 
-        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $driver = DB::connection()->getDriverName();
         $dateExpr = match ($driver) {
             'sqlite' => "strftime('%Y-%m', fecha)",
             'mysql', 'mariadb' => "DATE_FORMAT(fecha, '%Y-%m')",

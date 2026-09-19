@@ -92,18 +92,21 @@ class TrazadoCefalometrico extends Model
      */
     public static function calcularAngulo(array $p1, array $p2, array $p3): float
     {
-        $v1x = (float)$p1['x'] - (float)$p2['x'];
-        $v1y = (float)$p1['y'] - (float)$p2['y'];
-        $v2x = (float)$p3['x'] - (float)$p2['x'];
-        $v2y = (float)$p3['y'] - (float)$p2['y'];
+        $v1x = (float) $p1['x'] - (float) $p2['x'];
+        $v1y = (float) $p1['y'] - (float) $p2['y'];
+        $v2x = (float) $p3['x'] - (float) $p2['x'];
+        $v2y = (float) $p3['y'] - (float) $p2['y'];
 
         $dot = $v1x * $v2x + $v1y * $v2y;
         $mag1 = sqrt($v1x * $v1x + $v1y * $v1y);
         $mag2 = sqrt($v2x * $v2x + $v2y * $v2y);
 
-        if ($mag1 == 0 || $mag2 == 0) return 0.0;
+        if ($mag1 == 0 || $mag2 == 0) {
+            return 0.0;
+        }
 
         $cos = max(-1.0, min(1.0, $dot / ($mag1 * $mag2)));
+
         return round(rad2deg(acos($cos)), 1);
     }
 
@@ -132,10 +135,10 @@ class TrazadoCefalometrico extends Model
         // 4. Ángulo Mandibular Go-Gn a S-N (GoGn-SN)
         if (isset($puntos['Go'], $puntos['Gn'], $puntos['S'], $puntos['N'])) {
             // Ángulo entre vectores (Gn - Go) y (N - S)
-            $v1x = (float)$puntos['Gn']['x'] - (float)$puntos['Go']['x'];
-            $v1y = (float)$puntos['Gn']['y'] - (float)$puntos['Go']['y'];
-            $v2x = (float)$puntos['N']['x'] - (float)$puntos['S']['x'];
-            $v2y = (float)$puntos['N']['y'] - (float)$puntos['S']['y'];
+            $v1x = (float) $puntos['Gn']['x'] - (float) $puntos['Go']['x'];
+            $v1y = (float) $puntos['Gn']['y'] - (float) $puntos['Go']['y'];
+            $v2x = (float) $puntos['N']['x'] - (float) $puntos['S']['x'];
+            $v2y = (float) $puntos['N']['y'] - (float) $puntos['S']['y'];
             $dot = $v1x * $v2x + $v1y * $v2y;
             $mag1 = sqrt($v1x * $v1x + $v1y * $v1y);
             $mag2 = sqrt($v2x * $v2x + $v2y * $v2y);

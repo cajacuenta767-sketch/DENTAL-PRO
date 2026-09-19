@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Usuario;
 use App\Models\Clinica;
 use App\Models\Invitacion;
+use App\Models\Usuario;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisterController extends Controller
@@ -71,6 +71,7 @@ class RegisterController extends Controller
             if ($invitacion) {
                 $invitacion->update(['usos' => $invitacion->usos + 1, 'usada_por' => $usuario->id, 'usada_en' => now(), 'activa' => $invitacion->usos + 1 < $invitacion->usos_maximos]);
             }
+
             return $usuario;
         });
 

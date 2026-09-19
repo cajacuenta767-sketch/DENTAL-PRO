@@ -54,7 +54,7 @@ class CefalometriaController extends Controller
 
         // Si se ingresaron puntos pero faltan medidas, computar automáticamente
         $puntos = $datos['puntos'] ?? [];
-        if (!empty($puntos)) {
+        if (! empty($puntos)) {
             $analisis = TrazadoCefalometrico::computarAnalisis($puntos);
             $datos['medidas'] = array_merge($analisis['medidas'], $datos['medidas'] ?? []);
             if (empty($datos['diagnostico_esqueletico'])) {
@@ -73,7 +73,7 @@ class CefalometriaController extends Controller
         Auditoria::registrar('CREAR', $cefalometria, "Registró trazado cefalométrico para {$paciente->nombre_completo} [{$cefalometria->diagnostico_esqueletico}]");
 
         return redirect()->route('admin.cefalometrias.index', $paciente)
-            ->with('exito', "Trazado cefalométrico registrado con éxito.");
+            ->with('exito', 'Trazado cefalométrico registrado con éxito.');
     }
 
     public function show(TrazadoCefalometrico $cefalometria): View
@@ -113,7 +113,7 @@ class CefalometriaController extends Controller
         }
 
         $puntos = $datos['puntos'] ?? [];
-        if (!empty($puntos)) {
+        if (! empty($puntos)) {
             $analisis = TrazadoCefalometrico::computarAnalisis($puntos);
             $datos['medidas'] = array_merge($analisis['medidas'], $datos['medidas'] ?? []);
             if (empty($datos['diagnostico_esqueletico'])) {
@@ -129,7 +129,7 @@ class CefalometriaController extends Controller
         Auditoria::registrar('EDITAR', $cefalometria, "Actualizó trazado cefalométrico ID {$cefalometria->id}");
 
         return redirect()->route('admin.cefalometrias.index', $cefalometria->paciente)
-            ->with('exito', "Trazado cefalométrico actualizado.");
+            ->with('exito', 'Trazado cefalométrico actualizado.');
     }
 
     public function destroy(TrazadoCefalometrico $cefalometria): RedirectResponse
@@ -144,7 +144,7 @@ class CefalometriaController extends Controller
         $cefalometria->delete();
 
         return redirect()->route('admin.cefalometrias.index', $paciente)
-            ->with('exito', "Trazado cefalométrico eliminado.");
+            ->with('exito', 'Trazado cefalométrico eliminado.');
     }
 
     public function pdf(TrazadoCefalometrico $cefalometria): Response

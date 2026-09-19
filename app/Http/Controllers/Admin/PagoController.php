@@ -13,6 +13,7 @@ use App\Models\Pago;
 use App\Models\PresupuestoDetalle;
 use App\Models\Sucursal;
 use App\Models\Tratamiento;
+use App\Rules\CitaDelPaciente;
 use App\Support\SucursalActiva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -254,7 +255,7 @@ class PagoController extends Controller
         $datos = $request->validate([
             'paciente_id' => ['required', 'exists:pacientes,id'],
             'doctor_id' => ['nullable', 'exists:doctores,id'],
-            'cita_id' => ['nullable', 'exists:citas,id'],
+            'cita_id' => ['nullable', 'exists:citas,id', new CitaDelPaciente($request->input('paciente_id'))],
             'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'metodo_pago' => ['required', 'in:'.implode(',', Pago::METODOS)],
             'monto_pagado' => ['required', 'numeric', 'min:0'],
@@ -279,7 +280,7 @@ class PagoController extends Controller
         // Si el método es MIXTO, validar el desglose y su suma
         if ($datos['metodo_pago'] === 'MIXTO') {
             $desglose = $request->input('desglose_metodos', []);
-            if (!is_array($desglose) || empty($desglose)) {
+            if (! is_array($desglose) || empty($desglose)) {
                 throw ValidationException::withMessages([
                     'desglose_metodos' => 'Para pagos mixtos debes especificar el desglose por método.',
                     'metodo_pago' => 'Para pagos mixtos debes especificar el desglose por método.',

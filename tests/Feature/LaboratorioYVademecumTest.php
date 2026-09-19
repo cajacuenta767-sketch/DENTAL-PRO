@@ -2,11 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Doctor;
 use App\Models\LaboratorioDental;
-use App\Models\MedicamentoVademecum;
 use App\Models\OrdenLaboratorio;
-use App\Models\Paciente;
 use Database\Seeders\VademecumSeeder;
 use Tests\CasoClinico;
 

@@ -6,12 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Ajuste;
 use App\Models\Auditoria;
 use App\Models\CicloEsterilizacion;
-use App\Models\Sucursal;
+use App\Services\QrService;
 use App\Support\SucursalActiva;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,7 +88,7 @@ class EsterilizacionController extends Controller
             'temperatura' => ['required', 'numeric', 'between:100,160'],
             'presion' => ['required', 'numeric', 'between:0.5,4.0'],
             'tiempo_esterilizacion' => ['required', 'integer', 'between:3,120'],
-            'tipo_carga' => ['required', 'string', 'in:' . implode(',', array_keys(CicloEsterilizacion::TIPOS_CARGA))],
+            'tipo_carga' => ['required', 'string', 'in:'.implode(',', array_keys(CicloEsterilizacion::TIPOS_CARGA))],
             'indicador_quimico' => ['required', 'string', 'in:CONFORME,NO_CONFORME'],
             'indicador_biologico' => ['required', 'string', 'in:NEGATIVO,POSITIVO,PENDIENTE'],
             'resultado' => ['required', 'string', 'in:APROBADO,RECHAZADO'],
@@ -112,7 +111,7 @@ class EsterilizacionController extends Controller
 
     public function etiquetas(CicloEsterilizacion $ciclo): Response
     {
-        $qrDataUri = app(\App\Services\QrService::class)->dataUri(
+        $qrDataUri = app(QrService::class)->dataUri(
             route('esterilizacion.verificar-publica', $ciclo->qr_token),
             140
         );
