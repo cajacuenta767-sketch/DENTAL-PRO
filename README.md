@@ -50,6 +50,28 @@ presupuestos, inventario, caja, facturación electrónica y centro de reportes.
 
 ## Instalación
 
+### En un comando
+
+Con PostgreSQL corriendo:
+
+```bash
+git clone <url-del-repositorio> odontosuite
+cd odontosuite
+
+./scripts/instalar.sh     # dependencias, bases, migraciones, demo y assets
+php artisan serve
+```
+
+El script comprueba los requisitos, deja la clínica de demostración cargada y
+verifica el resultado. Si algo falta, para y dice qué hacer. Acepta
+`--en-blanco` (sin datos de demo) y `--sin-node` (sin compilar los assets).
+Para comprobar una instalación existente, `./scripts/verificar.sh`.
+
+> Si vas a trabajar en el código —o si eres un agente de IA— empieza por
+> **[AGENTS.md](AGENTS.md)**: mapa del proyecto, convenciones y trampas conocidas.
+
+### Paso a paso
+
 ```bash
 git clone <url-del-repositorio> odontosuite
 cd odontosuite
@@ -216,11 +238,11 @@ php artisan db:seed --class=RolPermisoSeeder
 ```
 app/
 ├── Http/
-│   ├── Controllers/Admin/    21 controladores del panel
+│   ├── Controllers/Admin/    23 controladores del panel
 │   ├── Controllers/Auth/     login, registro, recuperación, Socialite
 │   └── Middleware/           ajustes compartidos y bloqueo de cuentas inactivas
 ├── Mail/                     confirmación de cita y comprobante de pago
-├── Models/                   19 modelos Eloquent
+├── Models/                   20 modelos Eloquent
 └── Services/
     ├── AgendaService         cálculo de cupos disponibles
     ├── InventarioService     único punto de cambio de existencias
@@ -232,7 +254,8 @@ resources/views/
 ├── componentes/              componentes Blade (kpi, campo, odontograma…)
 ├── emails/                   plantillas de correo
 ├── layouts/                  admin, público y autenticación
-├── pdf/                      recibo, historia clínica y 4 reportes
+├── pdf/                      recibo, historia clínica, presupuesto, receta,
+│                             documento fiscal y 4 reportes
 └── publico/                  landing
 ```
 

@@ -7,6 +7,11 @@ como un usuario con `sudo`.
 El sistema **no usa colas ni tareas programadas**: los correos se envían en el
 mismo momento de la petición. No hace falta un worker ni una entrada de cron.
 
+> Existe `./scripts/instalar.sh`, pero está pensado para desarrollo: instala
+> también las dependencias de desarrollo y no genera los cachés de producción.
+> En un servidor sigue los pasos de esta guía. Lo que sí sirve en ambos sitios
+> es `./scripts/verificar.sh`, para comprobar que no quedó nada suelto.
+
 ---
 
 ## 1. Paquetes del sistema
